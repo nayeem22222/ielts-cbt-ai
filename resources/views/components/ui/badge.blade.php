@@ -1,0 +1,3 @@
+@props(['tone'=>'blue'])
+@php $tones=['blue'=>'bg-brand-50 text-brand-600 dark:bg-blue-500/10 dark:text-blue-300','green'=>'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300','amber'=>'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300','red'=>'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300','neutral'=>'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300']; @endphp
+<span {{ $attributes->merge(['class'=>'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold '.($tones[$tone]??$tones['neutral'])]) }}>{{ $slot }}</span>

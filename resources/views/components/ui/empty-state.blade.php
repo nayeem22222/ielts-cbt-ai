@@ -1,0 +1,1 @@
+<div class="rounded-3xl border border-dashed border-neutral-300 p-10 text-center dark:border-neutral-800"><div class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-neutral-100 dark:bg-neutral-800">✨</div><h3 class="mt-4 font-semibold">{{ $title ?? 'Nothing here yet' }}</h3><p class="mt-1 text-sm aa-muted">{{ $slot }}</p></div>

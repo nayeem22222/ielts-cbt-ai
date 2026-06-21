@@ -1,0 +1,3 @@
+<x-layouts.app :title="$title ?? 'IELTS CBT Exam'">
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-950"><header class="sticky top-0 z-40 border-b border-neutral-200 bg-white/90 backdrop-blur-xl dark:border-neutral-800 dark:bg-neutral-950/90"><div class="flex h-16 items-center justify-between px-4 sm:px-6"><div class="flex items-center gap-3"><span class="grid h-10 w-10 place-items-center rounded-2xl bg-brand-500 font-black text-white">CBT</span><div><h1 class="font-bold">{{ $heading ?? 'IELTS Mock Test' }}</h1><p class="text-xs aa-muted">Autosaved • Accessible • Responsive</p></div></div><x-ui.timer :time="$time ?? '39:58'"/></div></header><main>{{ $slot }}</main></div>
+</x-layouts.app>

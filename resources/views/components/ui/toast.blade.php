@@ -1,0 +1,1 @@
+<div x-data="{show:false,message:''}" @aa-toast.window="message=$event.detail.message;show=true;setTimeout(()=>show=false,3000)" x-show="show" x-cloak class="fixed right-4 top-4 z-50 rounded-2xl bg-neutral-950 px-4 py-3 text-sm font-medium text-white shadow-xl" x-text="message"></div>

@@ -1,0 +1,2 @@
+@props(['title'=>'Modal'])
+<div x-data="{open:false}" {{ $attributes }}><span @click="open=true">{{ $trigger ?? '' }}</span><div x-show="open" x-cloak class="fixed inset-0 z-50 grid place-items-center bg-neutral-950/50 p-4"><div @click.outside="open=false" class="aa-card w-full max-w-lg p-6"><div class="flex items-center justify-between"><h2 class="text-lg font-semibold">{{ $title }}</h2><button @click="open=false" class="rounded-xl p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800">✕</button></div><div class="mt-4">{{ $slot }}</div></div></div></div>

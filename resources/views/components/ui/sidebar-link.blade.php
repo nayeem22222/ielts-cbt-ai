@@ -1,0 +1,2 @@
+@props(['active'=>false,'href'=>'#'])
+<a href="{{ $href }}" {{ $attributes->merge(['class'=>'flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition '.($active?'bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-blue-300':'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-white')]) }}>{{ $slot }}</a>

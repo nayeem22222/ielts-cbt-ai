@@ -60,6 +60,22 @@ return [
             'report' => false,
         ],
 
+        'audio' => [
+            'driver' => 'local',
+            'root' => storage_path('app/audio'),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        'uploads' => [
+            'driver' => 'local',
+            'root' => storage_path('app/uploads'),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

@@ -1,0 +1,1 @@
+<div class="flex h-16 items-center justify-center gap-1 rounded-3xl bg-brand-50 dark:bg-brand-500/10">@foreach([20,36,54,30,62,42,24,48,58,34,22,44,60,28] as $h)<span class="w-1.5 rounded-full bg-brand-500" style="height:{{ $h }}%"></span>@endforeach</div>
