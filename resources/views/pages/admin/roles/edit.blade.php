@@ -1,4 +1,13 @@
-<x-layouts.admin>
+<x-layouts.admin
+    title="Manage Role Permissions"
+    heading="Manage Role Permissions"
+    eyebrow="Access Management"
+    :breadcrumbs="[
+        ['label' => 'Dashboard', 'href' => route('admin.dashboard')],
+        ['label' => 'Roles', 'href' => route('admin.roles.index')],
+        ['label' => $role->label],
+    ]"
+>
     <div class="mb-6">
         <h2 class="text-xl font-bold">Manage Role Permissions</h2>
         <p class="text-sm aa-muted">Assign capabilities to the {{ $role->label }} role.</p>

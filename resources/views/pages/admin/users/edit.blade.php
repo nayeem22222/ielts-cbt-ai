@@ -1,4 +1,13 @@
-<x-layouts.admin>
+<x-layouts.admin
+    title="Edit User"
+    heading="Edit User"
+    eyebrow="Access Management"
+    :breadcrumbs="[
+        ['label' => 'Dashboard', 'href' => route('admin.dashboard')],
+        ['label' => 'Users', 'href' => route('admin.users.index')],
+        ['label' => $user->name],
+    ]"
+>
     <div class="mb-6">
         <h2 class="text-xl font-bold">Edit User</h2>
         <p class="text-sm aa-muted">Update account details, role, status, or password.</p>

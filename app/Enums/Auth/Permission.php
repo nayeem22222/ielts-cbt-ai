@@ -26,6 +26,9 @@ enum Permission: string
     case PermissionsView = 'permissions.view';
     case PermissionsAssign = 'permissions.assign';
 
+    case SettingsView = 'settings.view';
+    case SettingsUpdate = 'settings.update';
+
     public function label(): string
     {
         return match ($this) {
@@ -41,6 +44,8 @@ enum Permission: string
             self::RolesManagePermissions => 'Manage role permissions',
             self::PermissionsView => 'View permissions',
             self::PermissionsAssign => 'Assign user permissions',
+            self::SettingsView => 'View settings',
+            self::SettingsUpdate => 'Update settings',
         };
     }
 
@@ -62,6 +67,9 @@ enum Permission: string
 
             self::PermissionsView,
             self::PermissionsAssign => 'permissions',
+
+            self::SettingsView,
+            self::SettingsUpdate => 'settings',
         };
     }
 
@@ -85,6 +93,8 @@ enum Permission: string
                 self::UsersDelete,
                 self::RolesView,
                 self::PermissionsView,
+                self::SettingsView,
+                self::SettingsUpdate,
             ],
             UserRole::SuperAdmin => self::cases(),
         };

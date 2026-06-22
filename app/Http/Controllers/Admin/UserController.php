@@ -4,53 +4,60 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Crud\CrudQuery;
 use App\Enums\Auth\UserRole;
 use App\Enums\Auth\UserStatus;
+use App\Http\Controllers\Admin\Concerns\HandlesCrudOperations;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\SyncUserPermissionsRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Http\Requests\Crud\CrudIndexRequest;
 use App\Events\Auth\PasswordChanged;
 use App\Models\User;
+use App\Services\Admin\UserCrudService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    public function index(Request $request): View
+    use HandlesCrudOperations;
+
+    public function __construct(private readonly UserCrudService $users)
+    {
+    }
+
+    protected function crudService(): UserCrudService
+    {
+        return $this->users;
+    }
+
+    protected function crudModelClass(): string
+    {
+        return User::class;
+    }
+
+    protected function crudRoutePrefix(): string
+    {
+        return 'admin.users';
+    }
+
+    public function index(CrudIndexRequest $request): View
     {
         $this->authorize('viewAny', User::class);
 
-        $search = trim((string) $request->query('search', ''));
-        $role = (string) $request->query('role', '');
-        $status = (string) $request->query('status', '');
+        $crudQuery = CrudQuery::fromRequest($request, $this->users->definition());
+        $users = $this->users->paginate($crudQuery);
 
-        $users = User::query()
-            ->with('roles')
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where(function ($inner) use ($search): void {
-                    $inner->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%");
-                });
-            })
-            ->when($role !== '', fn ($query) => $query->whereHas('roles', fn ($inner) => $inner->where('slug', $role)))
-            ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->latest('id')
-            ->paginate(15)
-            ->withQueryString();
-
-        return view('pages.admin.users.index', [
-            'users' => $users,
-            'roles' => UserRole::cases(),
-            'statuses' => UserStatus::cases(),
-            'filters' => [
-                'search' => $search,
-                'role' => $role,
-                'status' => $status,
-            ],
-        ]);
+        return view('pages.admin.users.index', array_merge(
+            $this->crudIndexData($crudQuery, $users),
+            [
+                'users' => $users,
+                'roles' => UserRole::cases(),
+                'statuses' => UserStatus::cases(),
+                'routePrefix' => $this->crudRoutePrefix(),
+            ]
+        ));
     }
 
     public function create(): View

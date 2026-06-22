@@ -1,4 +1,12 @@
-<x-layouts.admin>
+<x-layouts.admin
+    title="Roles"
+    heading="Roles"
+    eyebrow="Access Management"
+    :breadcrumbs="[
+        ['label' => 'Dashboard', 'href' => route('admin.dashboard')],
+        ['label' => 'Roles'],
+    ]"
+>
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h2 class="text-xl font-bold">Roles</h2>

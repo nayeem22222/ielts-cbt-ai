@@ -1,4 +1,12 @@
-<x-layouts.admin>
+<x-layouts.admin
+    title="Permissions"
+    heading="Permissions"
+    eyebrow="Access Management"
+    :breadcrumbs="[
+        ['label' => 'Dashboard', 'href' => route('admin.dashboard')],
+        ['label' => 'Permissions'],
+    ]"
+>
     <div class="mb-6">
         <h2 class="text-xl font-bold">Permissions</h2>
         <p class="text-sm aa-muted">System permission registry grouped by feature area.</p>

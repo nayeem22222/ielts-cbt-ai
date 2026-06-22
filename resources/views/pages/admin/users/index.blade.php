@@ -1,4 +1,12 @@
-<x-layouts.admin>
+<x-layouts.admin
+    title="Users"
+    heading="Users"
+    eyebrow="Access Management"
+    :breadcrumbs="[
+        ['label' => 'Dashboard', 'href' => route('admin.dashboard')],
+        ['label' => 'Users'],
+    ]"
+>
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h2 class="text-xl font-bold">Users</h2>
@@ -11,30 +19,23 @@
         <x-ui.alert tone="green" class="mb-4">{{ session('status') }}</x-ui.alert>
     @endif
 
-    <x-ui.card title="User Directory" subtitle="Search, filter, and manage platform accounts">
-        <form method="GET" action="{{ route('admin.users.index') }}" class="mb-4 grid gap-3 md:grid-cols-[1.4fr_.8fr_.8fr_auto]">
-            <x-ui.input name="search" value="{{ $filters['search'] }}" placeholder="Search name, email, or phone"/>
-            <x-ui.select name="role" label="Role">
-                <option value="">All roles</option>
-                @foreach ($roles as $roleOption)
-                    <option value="{{ $roleOption->value }}" @selected($filters['role'] === $roleOption->value)>{{ $roleOption->label() }}</option>
-                @endforeach
-            </x-ui.select>
-            <x-ui.select name="status" label="Status">
-                <option value="">All statuses</option>
-                @foreach ($statuses as $statusOption)
-                    <option value="{{ $statusOption->value }}" @selected($filters['status'] === $statusOption->value)>{{ $statusOption->label() }}</option>
-                @endforeach
-            </x-ui.select>
-            <div class="flex items-end gap-2">
-                <x-ui.button type="submit">Filter</x-ui.button>
-                <x-ui.button href="{{ route('admin.users.index') }}" variant="outline">Reset</x-ui.button>
-            </div>
-        </form>
+    <x-ui.card title="User Directory" subtitle="Search, filter, sort, export, import, and bulk manage accounts">
+        <x-admin.crud-toolbar
+            :route-prefix="$routePrefix"
+            :filters="$filters"
+            :sort="$sort"
+            :direction="$direction"
+            :definition="$definition"
+            :roles="$roles"
+            :statuses="$statuses"
+            show-role-filter
+            show-status-filter
+        />
 
         <x-ui.table>
             <thead>
                 <tr class="text-left text-xs uppercase aa-muted">
+                    <th class="p-4"><input type="checkbox" data-crud-select-all></th>
                     <th class="p-4">Name</th>
                     <th class="p-4">Email</th>
                     <th class="p-4">Phone</th>
@@ -52,6 +53,7 @@
                         $statusTone = $user->status === 'active' ? 'green' : 'red';
                     @endphp
                     <tr>
+                        <td class="p-4"><input type="checkbox" data-crud-row-checkbox value="{{ $user->id }}"></td>
                         <td class="p-4 font-medium">{{ $user->name }}</td>
                         <td class="p-4">{{ $user->email }}</td>
                         <td class="p-4">{{ $user->phone ?: '—' }}</td>
@@ -99,7 +101,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="p-8">
+                        <td colspan="9" class="p-8">
                             <x-ui.empty-state title="No users found">Try adjusting your search or filters.</x-ui.empty-state>
                         </td>
                     </tr>

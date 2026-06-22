@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\ConfirmPasswordController;
@@ -73,6 +74,11 @@ Route::middleware(['auth', 'verified', 'role:teacher'])->group(function (): void
 
 Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->prefix('admin')->name('admin.')->group(function (): void {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/users/trash', [UserController::class, 'trash'])->name('users.trash');
+    Route::get('/users/export', [UserController::class, 'export'])->name('users.export');
+    Route::get('/users/import', [UserController::class, 'importForm'])->name('users.import.form');
+    Route::post('/users/import', [UserController::class, 'import'])->name('users.import');
+    Route::post('/users/bulk', [UserController::class, 'bulk'])->name('users.bulk');
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
@@ -82,6 +88,8 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->prefix('admin
     Route::delete('/users/{user}/email-verification', [UserController::class, 'unverifyEmail'])->name('users.email.unverify');
     Route::put('/users/{user}/permissions', [UserController::class, 'syncPermissions'])->name('users.permissions.sync');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::put('/users/{id}/restore', [UserController::class, 'restore'])->name('users.restore')->whereNumber('id');
+    Route::delete('/users/{id}/force', [UserController::class, 'forceDestroy'])->name('users.force-destroy')->whereNumber('id');
 
     Route::middleware('permission:roles.view')->group(function (): void {
         Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
@@ -92,6 +100,15 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->prefix('admin
     Route::get('/permissions', [PermissionController::class, 'index'])
         ->middleware('permission:permissions.view')
         ->name('permissions.index');
+
+    Route::middleware('permission:settings.view')->group(function (): void {
+        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    });
+
+    Route::middleware('permission:settings.update')->group(function (): void {
+        Route::put('/settings/{group}', [SettingsController::class, 'update'])->name('settings.update');
+        Route::post('/settings/backup/run', [SettingsController::class, 'runBackup'])->name('settings.backup.run');
+    });
 });
 
 Route::redirect('/student', '/student/dashboard');
