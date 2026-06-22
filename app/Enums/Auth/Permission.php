@@ -44,6 +44,16 @@ enum Permission: string
     case EnrollmentsUpdate = 'enrollments.update';
     case EnrollmentsDelete = 'enrollments.delete';
 
+    case TestsView = 'tests.view';
+    case TestsCreate = 'tests.create';
+    case TestsUpdate = 'tests.update';
+    case TestsDelete = 'tests.delete';
+
+    case QuestionBanksView = 'question_banks.view';
+    case QuestionBanksCreate = 'question_banks.create';
+    case QuestionBanksUpdate = 'question_banks.update';
+    case QuestionBanksDelete = 'question_banks.delete';
+
     public function label(): string
     {
         return match ($this) {
@@ -73,6 +83,14 @@ enum Permission: string
             self::EnrollmentsCreate => 'Create enrollments',
             self::EnrollmentsUpdate => 'Update enrollments',
             self::EnrollmentsDelete => 'Delete enrollments',
+            self::TestsView => 'View reading tests',
+            self::TestsCreate => 'Create reading tests',
+            self::TestsUpdate => 'Update reading tests',
+            self::TestsDelete => 'Delete reading tests',
+            self::QuestionBanksView => 'View question banks',
+            self::QuestionBanksCreate => 'Create question banks',
+            self::QuestionBanksUpdate => 'Update question banks',
+            self::QuestionBanksDelete => 'Delete question banks',
         };
     }
 
@@ -112,6 +130,16 @@ enum Permission: string
             self::EnrollmentsCreate,
             self::EnrollmentsUpdate,
             self::EnrollmentsDelete => 'enrollments',
+
+            self::TestsView,
+            self::TestsCreate,
+            self::TestsUpdate,
+            self::TestsDelete => 'tests',
+
+            self::QuestionBanksView,
+            self::QuestionBanksCreate,
+            self::QuestionBanksUpdate,
+            self::QuestionBanksDelete => 'question_banks',
         };
     }
 
@@ -149,6 +177,14 @@ enum Permission: string
                 self::EnrollmentsCreate,
                 self::EnrollmentsUpdate,
                 self::EnrollmentsDelete,
+                self::TestsView,
+                self::TestsCreate,
+                self::TestsUpdate,
+                self::TestsDelete,
+                self::QuestionBanksView,
+                self::QuestionBanksCreate,
+                self::QuestionBanksUpdate,
+                self::QuestionBanksDelete,
             ],
             UserRole::SuperAdmin => self::cases(),
         };

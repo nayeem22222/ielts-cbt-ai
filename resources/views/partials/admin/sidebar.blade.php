@@ -36,6 +36,14 @@
             ],
         ],
         [
+            'key' => 'tests',
+            'label' => 'Test Builder',
+            'items' => [
+                ['label' => 'Reading Tests', 'href' => route('admin.reading-tests.index'), 'icon' => 'reading-tests', 'active' => request()->routeIs('admin.reading-tests.*')],
+                ['label' => 'Question Banks', 'href' => route('admin.question-banks.index'), 'icon' => 'question-banks', 'active' => request()->routeIs('admin.question-banks.*')],
+            ],
+        ],
+        [
             'key' => 'platform',
             'label' => 'Platform',
             'items' => [
@@ -86,6 +94,8 @@
                   @case('resources') 📎 @break
                   @case('packages') 📦 @break
                   @case('enrollments') 🎓 @break
+                  @case('reading-tests') 📖 @break
+                  @case('question-banks') 🗃️ @break
                   @case('settings') ⚙️ @break
                   @case('ui') 🧩 @break
                 @endswitch

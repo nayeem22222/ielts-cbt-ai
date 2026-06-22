@@ -126,6 +126,7 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->prefix('admin
     require __DIR__.'/admin/courses.php';
     require __DIR__.'/admin/packages.php';
     require __DIR__.'/admin/enrollments.php';
+    require __DIR__.'/admin/tests.php';
 });
 
 Route::redirect('/student', '/student/dashboard');
@@ -137,7 +138,12 @@ Route::view('/courses', 'pages.courses.index')->name('courses.index');
 Route::view('/courses/show', 'pages.courses.show')->name('courses.show');
 
 Route::middleware(['auth', 'verified', 'role:student'])->group(function (): void {
-    Route::view('/exam/reading', 'pages.exams.reading')->middleware('module:reading')->name('exam.reading');
+    Route::get('/exam/reading', [\App\Http\Controllers\Student\ReadingPlayerController::class, 'show'])
+        ->middleware('module:reading')
+        ->name('exam.reading');
+    Route::put('/exam/reading/attempts/{attempt}/autosave', [\App\Http\Controllers\Student\ReadingPlayerController::class, 'autosave'])
+        ->middleware('module:reading')
+        ->name('exam.reading.autosave');
     Route::view('/exam/listening', 'pages.exams.listening')->middleware('module:listening')->name('exam.listening');
     Route::view('/exam/writing', 'pages.exams.writing')->middleware('module:writing')->name('exam.writing');
     Route::view('/exam/speaking', 'pages.exams.speaking')->middleware('module:speaking')->name('exam.speaking');
