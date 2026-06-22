@@ -37,10 +37,10 @@
                     <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">{{ $group }}</h3>
                     <div class="grid gap-2 md:grid-cols-2">
                         @foreach ($groupPermissions as $permission)
-                            <label class="flex items-start gap-2 rounded-xl border border-neutral-200 px-3 py-2">
+                            <label class="flex items-start gap-2 rounded-xl border border-neutral-200 px-3 py-2 dark:border-neutral-700">
                                 <input type="checkbox" name="permissions[]" value="{{ $permission->name }}" @checked(in_array($permission->name, $assigned, true))>
                                 <span>
-                                    <span class="block font-medium">{{ $permission->description }}</span>
+                                    <span class="block font-medium text-neutral-900 dark:text-white">{{ $permission->description }}</span>
                                     <span class="block text-xs aa-muted">{{ $permission->name }}</span>
                                 </span>
                             </label>

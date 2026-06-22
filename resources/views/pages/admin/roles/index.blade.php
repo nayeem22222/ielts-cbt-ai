@@ -9,7 +9,7 @@
 >
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h2 class="text-xl font-bold">Roles</h2>
+            <h2 class="text-xl font-bold text-neutral-900 dark:text-white">Roles</h2>
             <p class="text-sm aa-muted">Review roles and manage permission assignments.</p>
         </div>
         <x-ui.button href="{{ route('admin.permissions.index') }}" variant="secondary">View Permissions</x-ui.button>
@@ -23,7 +23,7 @@
         <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
                 <thead>
-                    <tr class="border-b border-neutral-200 text-left">
+                    <tr class="border-b border-neutral-200 text-left dark:border-neutral-800">
                         <th class="px-3 py-2">Role</th>
                         <th class="px-3 py-2">Users</th>
                         <th class="px-3 py-2">Permissions</th>
@@ -32,13 +32,13 @@
                 </thead>
                 <tbody>
                     @foreach ($roles as $role)
-                        <tr class="border-b border-neutral-100">
+                        <tr class="border-b border-neutral-100 dark:border-neutral-800">
                             <td class="px-3 py-3">
-                                <div class="font-semibold">{{ $role->label }}</div>
+                                <div class="font-semibold text-neutral-900 dark:text-white">{{ $role->label }}</div>
                                 <div class="text-xs aa-muted">{{ $role->slug }}</div>
                             </td>
                             <td class="px-3 py-3">{{ $role->users_count }}</td>
-                            <td class="px-3 py-3">{{ $role->permissions_count }}</td>
+                            <td class="px-3 py-3">{{ $role->displayPermissionsCount() }}</td>
                             <td class="px-3 py-3 text-right">
                                 @can('updatePermissions', $role)
                                     <x-ui.button href="{{ route('admin.roles.edit', $role) }}" variant="secondary">Manage</x-ui.button>

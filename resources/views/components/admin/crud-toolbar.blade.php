@@ -59,7 +59,7 @@
     <div class="flex flex-wrap items-center gap-2">
         @unless ($trashed)
             <x-ui.button href="{{ route($routePrefix.'.export', request()->query()) }}" variant="outline">Export CSV</x-ui.button>
-            <x-ui.button href="{{ route($routePrefix.'.import.form') }}" variant="secondary">Import Excel</x-ui.button>
+            <x-ui.button href="{{ route($routePrefix.'.import.form') }}" variant="outline">Import Excel</x-ui.button>
             <x-ui.button href="{{ route($routePrefix.'.trash') }}" variant="outline">Trash</x-ui.button>
         @else
             <x-ui.button href="{{ route($routePrefix.'.index') }}" variant="outline">Back to list</x-ui.button>

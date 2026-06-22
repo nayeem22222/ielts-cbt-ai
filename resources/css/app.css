@@ -33,4 +33,45 @@
     .aa-muted { @apply text-neutral-600 dark:text-neutral-400; }
     .aa-kicker { @apply text-sm font-semibold uppercase tracking-[0.22em] text-brand-500; }
     .aa-gradient-text { @apply bg-gradient-to-r from-brand-600 via-brand-500 to-sky-400 bg-clip-text text-transparent; }
+
+    .btn-orange {
+        @apply inline-flex h-[50px] w-full items-center justify-center rounded-xl bg-gradient-to-b from-[#ff9300] to-[#ff7300] px-7 text-base font-bold text-white shadow-lg shadow-orange-500/25 transition hover:-translate-y-0.5 hover:shadow-xl;
+    }
+
+    .auth-page .auth-card h1,
+    .auth-page .auth-card label {
+        @apply text-neutral-900;
+    }
+}
+
+/* aa-ui.css sets body color without a dark variant; restore readable admin/auth text in dark mode. */
+html.dark body {
+    @apply bg-neutral-950 text-neutral-100;
+}
+
+html.dark .auth-page {
+    @apply bg-neutral-950;
+}
+
+html.dark .auth-card {
+    @apply border-neutral-800 bg-neutral-900 text-neutral-100;
+}
+
+html.dark .auth-card h1,
+html.dark .auth-card label {
+    @apply text-neutral-100;
+}
+
+html.dark .auth-card p,
+html.dark .field label {
+    @apply text-neutral-400;
+}
+
+html.dark .field input {
+    @apply border-neutral-700 bg-neutral-950 text-neutral-100;
+}
+
+/* aa-ui.css sets `a { color: inherit }` which breaks link-styled buttons. */
+a.inline-flex.items-center.justify-center {
+    text-decoration: none;
 }

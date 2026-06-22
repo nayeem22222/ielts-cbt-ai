@@ -38,7 +38,7 @@
                                 'bg-brand-500' => $activity['tone'] === 'blue',
                             ])></span>
                             <div class="min-w-0 flex-1">
-                                <p class="font-medium">{{ $activity['title'] }}</p>
+                                <p class="font-medium text-neutral-900 dark:text-white">{{ $activity['title'] }}</p>
                                 <p class="truncate text-sm aa-muted">{{ $activity['description'] }}</p>
                             </div>
                             <span class="shrink-0 text-xs aa-muted">{{ $activity['time'] }}</span>
@@ -61,7 +61,7 @@
                         >
                             <span class="text-xl" aria-hidden="true">{{ $action['icon'] }}</span>
                             <span>
-                                <span class="block font-semibold">{{ $action['label'] }}</span>
+                                <span class="block font-semibold text-neutral-900 dark:text-white">{{ $action['label'] }}</span>
                                 <span class="mt-1 block text-sm aa-muted">{{ $action['description'] }}</span>
                             </span>
                         </a>
@@ -78,7 +78,7 @@
                             'border-neutral-200 dark:border-neutral-800' => ! $notification['unread'],
                         ])>
                             <div class="flex items-start justify-between gap-3">
-                                <p class="font-medium">{{ $notification['title'] }}</p>
+                                <p class="font-medium text-neutral-900 dark:text-white">{{ $notification['title'] }}</p>
                                 @if ($notification['unread'])
                                     <span class="rounded-full bg-brand-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">New</span>
                                 @endif
@@ -97,7 +97,7 @@
                     @foreach ($serverHealth as $check)
                         <div class="flex items-center justify-between gap-3 rounded-2xl border border-neutral-200 px-4 py-3 dark:border-neutral-800">
                             <div>
-                                <p class="font-medium">{{ $check['label'] }}</p>
+                                <p class="font-medium text-neutral-900 dark:text-white">{{ $check['label'] }}</p>
                                 <p class="text-sm aa-muted">{{ $check['detail'] }}</p>
                             </div>
                             <x-ui.badge :tone="match ($check['status']) {
@@ -116,7 +116,7 @@
                 <div class="mb-4 grid grid-cols-2 gap-3">
                     @foreach ($aiQueue['summary'] as $status => $count)
                         <div class="rounded-2xl border border-neutral-200 px-3 py-3 text-center dark:border-neutral-800">
-                            <p class="text-2xl font-bold">{{ number_format($count) }}</p>
+                            <p class="text-2xl font-bold text-neutral-900 dark:text-white">{{ number_format($count) }}</p>
                             <p class="mt-1 text-xs uppercase tracking-wide aa-muted">{{ $status }}</p>
                         </div>
                     @endforeach

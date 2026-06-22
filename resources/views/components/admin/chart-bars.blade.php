@@ -12,7 +12,7 @@
         @endphp
         <div>
             <div class="mb-2 flex items-center justify-between gap-3 text-sm">
-                <span class="font-medium">{{ $item['label'] }}</span>
+                <span class="font-medium text-neutral-900 dark:text-white">{{ $item['label'] }}</span>
                 <span class="aa-muted">{{ number_format((int) $item['value']) }}</span>
             </div>
             <div class="h-3 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">

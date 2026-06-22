@@ -74,4 +74,17 @@ class Role extends Model
 
         $this->permissions()->syncWithoutDetaching($permissionIds);
     }
+
+    public function displayPermissionsCount(): int
+    {
+        $assigned = (int) ($this->permissions_count ?? $this->permissions()->count());
+
+        if ($assigned > 0) {
+            return $assigned;
+        }
+
+        $role = UserRole::tryFrom($this->slug);
+
+        return $role ? count(PermissionEnum::forRole($role)) : 0;
+    }
 }

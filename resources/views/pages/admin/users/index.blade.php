@@ -9,7 +9,7 @@
 >
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h2 class="text-xl font-bold">Users</h2>
+            <h2 class="text-xl font-bold text-neutral-900 dark:text-white">Users</h2>
             <p class="text-sm aa-muted">Manage student, teacher, and admin accounts.</p>
         </div>
         <x-ui.button href="{{ route('admin.users.create') }}">Add User</x-ui.button>
@@ -54,7 +54,7 @@
                     @endphp
                     <tr>
                         <td class="p-4"><input type="checkbox" data-crud-row-checkbox value="{{ $user->id }}"></td>
-                        <td class="p-4 font-medium">{{ $user->name }}</td>
+                        <td class="p-4 font-medium text-neutral-900 dark:text-white">{{ $user->name }}</td>
                         <td class="p-4">{{ $user->email }}</td>
                         <td class="p-4">{{ $user->phone ?: '—' }}</td>
                         <td class="p-4">
