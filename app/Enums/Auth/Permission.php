@@ -29,6 +29,16 @@ enum Permission: string
     case SettingsView = 'settings.view';
     case SettingsUpdate = 'settings.update';
 
+    case CoursesView = 'courses.view';
+    case CoursesCreate = 'courses.create';
+    case CoursesUpdate = 'courses.update';
+    case CoursesDelete = 'courses.delete';
+
+    case PackagesView = 'packages.view';
+    case PackagesCreate = 'packages.create';
+    case PackagesUpdate = 'packages.update';
+    case PackagesDelete = 'packages.delete';
+
     public function label(): string
     {
         return match ($this) {
@@ -46,6 +56,14 @@ enum Permission: string
             self::PermissionsAssign => 'Assign user permissions',
             self::SettingsView => 'View settings',
             self::SettingsUpdate => 'Update settings',
+            self::CoursesView => 'View courses',
+            self::CoursesCreate => 'Create courses',
+            self::CoursesUpdate => 'Update courses',
+            self::CoursesDelete => 'Delete courses',
+            self::PackagesView => 'View packages',
+            self::PackagesCreate => 'Create packages',
+            self::PackagesUpdate => 'Update packages',
+            self::PackagesDelete => 'Delete packages',
         };
     }
 
@@ -70,6 +88,16 @@ enum Permission: string
 
             self::SettingsView,
             self::SettingsUpdate => 'settings',
+
+            self::CoursesView,
+            self::CoursesCreate,
+            self::CoursesUpdate,
+            self::CoursesDelete => 'courses',
+
+            self::PackagesView,
+            self::PackagesCreate,
+            self::PackagesUpdate,
+            self::PackagesDelete => 'packages',
         };
     }
 
@@ -95,6 +123,14 @@ enum Permission: string
                 self::PermissionsView,
                 self::SettingsView,
                 self::SettingsUpdate,
+                self::CoursesView,
+                self::CoursesCreate,
+                self::CoursesUpdate,
+                self::CoursesDelete,
+                self::PackagesView,
+                self::PackagesCreate,
+                self::PackagesUpdate,
+                self::PackagesDelete,
             ],
             UserRole::SuperAdmin => self::cases(),
         };

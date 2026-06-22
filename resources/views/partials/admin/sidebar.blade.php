@@ -17,10 +17,27 @@
             ],
         ],
         [
+            'key' => 'courses',
+            'label' => 'Course Management',
+            'items' => [
+                ['label' => 'Categories', 'href' => route('admin.course-categories.index'), 'icon' => 'categories', 'active' => request()->routeIs('admin.course-categories.*')],
+                ['label' => 'Courses', 'href' => route('admin.courses.index'), 'icon' => 'courses', 'active' => request()->routeIs('admin.courses.*')],
+                ['label' => 'Sections', 'href' => route('admin.course-sections.index'), 'icon' => 'sections', 'active' => request()->routeIs('admin.course-sections.*')],
+                ['label' => 'Lessons', 'href' => route('admin.lessons.index'), 'icon' => 'lessons', 'active' => request()->routeIs('admin.lessons.*')],
+                ['label' => 'Resources', 'href' => route('admin.lesson-resources.index'), 'icon' => 'resources', 'active' => request()->routeIs('admin.lesson-resources.*')],
+            ],
+        ],
+        [
+            'key' => 'commerce',
+            'label' => 'Commerce',
+            'items' => [
+                ['label' => 'Packages', 'href' => route('admin.packages.index'), 'icon' => 'packages', 'active' => request()->routeIs('admin.packages.*')],
+            ],
+        ],
+        [
             'key' => 'platform',
             'label' => 'Platform',
             'items' => [
-                ['label' => 'Courses', 'href' => route('courses.index'), 'icon' => 'courses', 'active' => request()->routeIs('courses.*')],
                 ['label' => 'Settings', 'href' => route('admin.settings.index'), 'icon' => 'settings', 'active' => request()->routeIs('admin.settings.*')],
                 ['label' => 'UI Kit', 'href' => route('ui.index'), 'icon' => 'ui', 'active' => request()->routeIs('ui.*')],
             ],
@@ -62,6 +79,11 @@
                   @case('roles') 🛡️ @break
                   @case('permissions') 🔐 @break
                   @case('courses') 📚 @break
+                  @case('categories') 🗂️ @break
+                  @case('sections') 📑 @break
+                  @case('lessons') 🎬 @break
+                  @case('resources') 📎 @break
+                  @case('packages') 📦 @break
                   @case('settings') ⚙️ @break
                   @case('ui') 🧩 @break
                 @endswitch

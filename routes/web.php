@@ -109,6 +109,9 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->prefix('admin
         Route::put('/settings/{group}', [SettingsController::class, 'update'])->name('settings.update');
         Route::post('/settings/backup/run', [SettingsController::class, 'runBackup'])->name('settings.backup.run');
     });
+
+    require __DIR__.'/admin/courses.php';
+    require __DIR__.'/admin/packages.php';
 });
 
 Route::redirect('/student', '/student/dashboard');

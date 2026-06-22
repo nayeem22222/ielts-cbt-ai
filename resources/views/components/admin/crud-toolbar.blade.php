@@ -38,6 +38,10 @@
             </x-ui.select>
         @endif
 
+        @isset($customFilters)
+            {{ $customFilters }}
+        @endisset
+
         @if ($definition)
             <x-ui.select name="sort" label="Sort by">
                 @foreach ($definition->sortable as $column)
