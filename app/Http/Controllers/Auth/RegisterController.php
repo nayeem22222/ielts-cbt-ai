@@ -8,13 +8,18 @@ use App\Enums\Auth\UserRole;
 use App\Enums\Auth\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Events\Auth\UserRegistered;
 use App\Models\User;
+use App\Services\DeviceTrackingService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 
 class RegisterController extends Controller
 {
+    public function __construct(private readonly DeviceTrackingService $devices)
+    {
+    }
     public function store(RegisterRequest $request): RedirectResponse
     {
         $user = User::query()->create([
@@ -31,9 +36,15 @@ class RegisterController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
-        $user->recordLogin($request->ip());
+        $this->devices->track($user, $request);
 
-        return redirect()->route('student.dashboard')
-            ->with('status', 'Your student account has been created.');
+        event(new UserRegistered(
+            user: $user,
+            ipAddress: $request->ip(),
+            userAgent: $request->userAgent(),
+        ));
+
+        return redirect()->route('verification.notice')
+            ->with('status', 'Your student account has been created. Please verify your email.');
     }
 }

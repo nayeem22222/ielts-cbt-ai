@@ -6,7 +6,10 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Events\Auth\UserLoggedIn;
+use App\Events\Auth\UserLoggedOut;
 use App\Models\User;
+use App\Services\DeviceTrackingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +17,9 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    public function __construct(private readonly DeviceTrackingService $devices)
+    {
+    }
     public function login(LoginRequest $request): RedirectResponse
     {
         $credentials = $request->only('email', 'password');
@@ -40,6 +46,13 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
         $user->recordLogin($request->ip());
+        $this->devices->track($user, $request);
+
+        event(new UserLoggedIn(
+            user: $user,
+            ipAddress: $request->ip(),
+            userAgent: $request->userAgent(),
+        ));
 
         return redirect()->intended($user->dashboardPath())
             ->with('status', 'Welcome back, '.$user->name.'.');
@@ -47,6 +60,16 @@ class AuthController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
+        $user = $request->user();
+
+        if ($user instanceof User) {
+            event(new UserLoggedOut(
+                user: $user,
+                ipAddress: $request->ip(),
+                userAgent: $request->userAgent(),
+            ));
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();

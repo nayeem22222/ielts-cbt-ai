@@ -8,7 +8,9 @@ use App\Enums\Auth\UserRole;
 use App\Enums\Auth\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
+use App\Http\Requests\Admin\SyncUserPermissionsRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Events\Auth\PasswordChanged;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -69,6 +71,7 @@ class UserController extends Controller
             'phone' => $request->string('phone')->toString() ?: null,
             'password' => $request->string('password')->toString(),
             'status' => $request->string('status')->toString(),
+            'email_verified_at' => $request->boolean('email_verified', true) ? now() : null,
         ]);
 
         $user->assignRole($request->string('role')->toString());
@@ -86,12 +89,14 @@ class UserController extends Controller
     {
         $this->authorize('update', $user);
 
-        $user->load('roles');
+        $user->load(['roles', 'directPermissions']);
 
         return view('pages.admin.users.edit', [
             'user' => $user,
             'roles' => $this->assignableRoles($user),
             'statuses' => UserStatus::cases(),
+            'permissions' => \App\Models\Permission::query()->orderBy('group')->orderBy('name')->get()->groupBy('group'),
+            'directPermissions' => $user->directPermissions->pluck('name')->all(),
         ]);
     }
 
@@ -102,10 +107,20 @@ class UserController extends Controller
             'email' => $request->string('email')->toString(),
             'phone' => $request->string('phone')->toString() ?: null,
             'status' => $request->string('status')->toString(),
+            'email_verified_at' => $request->boolean('email_verified')
+                ? ($user->email_verified_at ?? now())
+                : null,
         ]);
 
         if ($request->filled('password')) {
             $user->password = $request->string('password')->toString();
+
+            event(new PasswordChanged(
+                user: $user,
+                ipAddress: $request->ip(),
+                userAgent: $request->userAgent(),
+                metadata: ['source' => 'admin'],
+            ));
         }
 
         $user->save();
@@ -114,6 +129,37 @@ class UserController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('status', 'User updated successfully.');
+    }
+
+
+    public function verifyEmail(User $user): RedirectResponse
+    {
+        $this->authorize('update', $user);
+
+        if ($user->email_verified_at === null) {
+            $user->forceFill([
+                'email_verified_at' => now(),
+            ])->save();
+        }
+
+        return redirect()
+            ->back()
+            ->with('status', 'Email verified successfully.');
+    }
+
+    public function unverifyEmail(User $user): RedirectResponse
+    {
+        $this->authorize('update', $user);
+
+        if ($user->email_verified_at !== null) {
+            $user->forceFill([
+                'email_verified_at' => null,
+            ])->save();
+        }
+
+        return redirect()
+            ->back()
+            ->with('status', 'Email verification removed successfully.');
     }
 
     public function destroy(User $user): RedirectResponse
@@ -125,6 +171,17 @@ class UserController extends Controller
         return redirect()
             ->route('admin.users.index')
             ->with('status', 'User deleted successfully.');
+    }
+
+    public function syncPermissions(SyncUserPermissionsRequest $request, User $user): RedirectResponse
+    {
+        $this->authorize('assignPermissions', $user);
+
+        $user->syncDirectPermissions($request->input('permissions', []));
+
+        return redirect()
+            ->route('admin.users.edit', $user)
+            ->with('status', 'Direct permissions updated successfully.');
     }
 
     /**

@@ -15,6 +15,12 @@ use Tests\TestCase;
 
 uses(TestCase::class, Illuminate\Foundation\Testing\RefreshDatabase::class)->in('Feature');
 
+function seedRbac(): void
+{
+    test()->seed(\Database\Seeders\RoleSeeder::class);
+    test()->seed(\Database\Seeders\PermissionSeeder::class);
+}
+
 function createUserWithRole(\App\Enums\Auth\UserRole $role, array $attributes = []): \App\Models\User
 {
     $user = \App\Models\User::factory()->create($attributes);

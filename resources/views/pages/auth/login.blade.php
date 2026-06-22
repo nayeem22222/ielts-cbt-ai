@@ -16,7 +16,7 @@
             <input name="password" type="password" required placeholder="••••••••">
             @error('password')<small style="color:#b42318">{{ $message }}</small>@enderror
         </div>
-        <div class="auth-meta"><label><input type="checkbox" name="remember" @checked(old('remember'))> Remember me</label><a class="auth-link" href="/forgot-password">Forgot password?</a></div>
+        <div class="auth-meta"><label><input type="checkbox" name="remember" value="1" @checked(old('remember'))> Remember me</label><a class="auth-link" href="{{ route('password.request') }}">Forgot password?</a></div>
         <button class="btn-orange" type="submit" style="width:100%;justify-content:center">Login</button>
         <p style="margin-top:20px;text-align:center">New student? <a class="auth-link" href="/register">Create account</a></p>
     </form>

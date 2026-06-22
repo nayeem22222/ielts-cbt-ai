@@ -36,6 +36,7 @@ class UpdateUserRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:20'],
             'role' => ['required', 'string', Rule::in($assignableRoles)],
             'status' => ['required', 'string', Rule::in(UserStatus::values())],
+            'email_verified' => ['nullable', 'boolean'],
             'password' => ['nullable', 'string', 'confirmed', Password::min(8)],
         ];
     }

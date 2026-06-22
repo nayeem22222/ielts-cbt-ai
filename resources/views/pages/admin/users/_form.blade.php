@@ -25,6 +25,22 @@
     </x-ui.select>
 </div>
 
+<div class="mt-4 rounded-2xl border border-neutral-200 bg-white/70 p-4 dark:border-neutral-800 dark:bg-neutral-900/70">
+    <label class="flex items-start gap-3">
+        <input
+            type="checkbox"
+            name="email_verified"
+            value="1"
+            class="mt-1 rounded border-neutral-300 text-brand-600 focus:ring-brand-500"
+            @checked(old('email_verified', $user ? $user->hasVerifiedEmail() : true))
+        >
+        <span>
+            <span class="block font-semibold">Email verified</span>
+            <span class="block text-sm aa-muted">Admin can manually verify or unverify this account without changing the existing email verification flow.</span>
+        </span>
+    </label>
+</div>
+
 <div class="mt-4 grid gap-4 md:grid-cols-2">
     <x-ui.input name="password" type="password" label="{{ $user ? 'New password' : 'Password' }}" :required="! $user" placeholder="{{ $user ? 'Leave blank to keep current password' : 'Minimum 8 characters' }}" />
     <x-ui.input name="password_confirmation" type="password" label="Confirm password" :required="! $user" />

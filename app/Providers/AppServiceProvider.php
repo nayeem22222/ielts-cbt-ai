@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Enums\Auth\Permission as PermissionEnum;
+use App\Models\Role;
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -18,6 +22,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        Gate::policy(Role::class, \App\Policies\RolePolicy::class);
+        Gate::policy(\App\Models\Permission::class, \App\Policies\PermissionPolicy::class);
+
+        foreach (PermissionEnum::cases() as $permission) {
+            Gate::define($permission->value, fn (User $user): bool => $user->hasPermission($permission));
+        }
     }
 }

@@ -40,6 +40,7 @@
                     <th class="p-4">Phone</th>
                     <th class="p-4">Role</th>
                     <th class="p-4">Status</th>
+                    <th class="p-4">Email Verify</th>
                     <th class="p-4">Last Login</th>
                     <th class="p-4">Action</th>
                 </tr>
@@ -60,11 +61,31 @@
                         <td class="p-4">
                             <x-ui.badge :tone="$statusTone">{{ ucfirst($user->status) }}</x-ui.badge>
                         </td>
+                        <td class="p-4">
+                            @if ($user->hasVerifiedEmail())
+                                <x-ui.badge tone="green">Verified</x-ui.badge>
+                            @else
+                                <x-ui.badge tone="amber">Pending</x-ui.badge>
+                            @endif
+                        </td>
                         <td class="p-4 text-sm aa-muted">{{ $user->last_login_at?->diffForHumans() ?? 'Never' }}</td>
                         <td class="p-4">
                             <div class="flex flex-wrap gap-2">
                                 @can('update', $user)
                                     <x-ui.button href="{{ route('admin.users.edit', $user) }}" size="sm" variant="outline">Edit</x-ui.button>
+                                    @if (! $user->hasVerifiedEmail())
+                                        <form method="POST" action="{{ route('admin.users.email.verify', $user) }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <x-ui.button type="submit" size="sm" variant="secondary">Verify Email</x-ui.button>
+                                        </form>
+                                    @else
+                                        <form method="POST" action="{{ route('admin.users.email.unverify', $user) }}" onsubmit="return confirm('Remove email verification for this user?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <x-ui.button type="submit" size="sm" variant="outline">Unverify</x-ui.button>
+                                        </form>
+                                    @endif
                                 @endcan
                                 @can('delete', $user)
                                     <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Delete this user? This action can be restored from soft delete.')">
@@ -78,7 +99,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="p-8">
+                        <td colspan="8" class="p-8">
                             <x-ui.empty-state title="No users found">Try adjusting your search or filters.</x-ui.empty-state>
                         </td>
                     </tr>

@@ -8,10 +8,10 @@ use App\Models\User;
 use Database\Seeders\RoleSeeder;
 
 beforeEach(function (): void {
-    $this->seed(RoleSeeder::class);
+    seedRbac();
 });
 
-it('registers a student and redirects to student dashboard', function (): void {
+it('registers a student and redirects to email verification', function (): void {
     $response = $this->post(route('register.store'), [
         'name' => 'Student One',
         'email' => 'student@example.com',
@@ -19,7 +19,7 @@ it('registers a student and redirects to student dashboard', function (): void {
         'password_confirmation' => 'password123',
     ]);
 
-    $response->assertRedirect(route('student.dashboard'));
+    $response->assertRedirect(route('verification.notice'));
     $this->assertAuthenticated();
 
     $user = User::query()->where('email', 'student@example.com')->first();

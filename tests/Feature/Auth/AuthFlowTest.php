@@ -8,7 +8,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Support\Facades\Hash;
 
 beforeEach(function (): void {
-    $this->seed(RoleSeeder::class);
+    seedRbac();
 });
 
 describe('auth flow', function (): void {
@@ -20,7 +20,7 @@ describe('auth flow', function (): void {
             'password_confirmation' => 'password123',
         ]);
 
-        $response->assertRedirect(route('student.dashboard'));
+        $response->assertRedirect(route('verification.notice'));
         $this->assertAuthenticated();
 
         $user = User::query()->where('email', 'newstudent@example.com')->first();

@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 use App\Enums\Auth\UserRole;
 use App\Models\User;
-use Database\Seeders\RoleSeeder;
 
 beforeEach(function (): void {
-    $this->seed(RoleSeeder::class);
+    seedRbac();
 });
 
 it('allows super admin to manage users', function (): void {
