@@ -39,6 +39,11 @@ enum Permission: string
     case PackagesUpdate = 'packages.update';
     case PackagesDelete = 'packages.delete';
 
+    case EnrollmentsView = 'enrollments.view';
+    case EnrollmentsCreate = 'enrollments.create';
+    case EnrollmentsUpdate = 'enrollments.update';
+    case EnrollmentsDelete = 'enrollments.delete';
+
     public function label(): string
     {
         return match ($this) {
@@ -64,6 +69,10 @@ enum Permission: string
             self::PackagesCreate => 'Create packages',
             self::PackagesUpdate => 'Update packages',
             self::PackagesDelete => 'Delete packages',
+            self::EnrollmentsView => 'View enrollments',
+            self::EnrollmentsCreate => 'Create enrollments',
+            self::EnrollmentsUpdate => 'Update enrollments',
+            self::EnrollmentsDelete => 'Delete enrollments',
         };
     }
 
@@ -98,6 +107,11 @@ enum Permission: string
             self::PackagesCreate,
             self::PackagesUpdate,
             self::PackagesDelete => 'packages',
+
+            self::EnrollmentsView,
+            self::EnrollmentsCreate,
+            self::EnrollmentsUpdate,
+            self::EnrollmentsDelete => 'enrollments',
         };
     }
 
@@ -131,6 +145,10 @@ enum Permission: string
                 self::PackagesCreate,
                 self::PackagesUpdate,
                 self::PackagesDelete,
+                self::EnrollmentsView,
+                self::EnrollmentsCreate,
+                self::EnrollmentsUpdate,
+                self::EnrollmentsDelete,
             ],
             UserRole::SuperAdmin => self::cases(),
         };

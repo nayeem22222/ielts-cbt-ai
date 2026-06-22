@@ -13,6 +13,9 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\SessionController;
+use App\Http\Controllers\Student\CourseEnrollmentController;
+use App\Http\Controllers\Student\LessonProgressController;
+use App\Http\Controllers\Student\PackageEnrollmentController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\TeacherDashboardController;
 use Illuminate\Support\Facades\Route;
@@ -64,8 +67,18 @@ Route::view('/two-factor-challenge', 'pages.auth.two-factor')->name('two-factor.
 
 Route::view('/ui', 'pages.ui.index')->name('ui.index');
 
-Route::middleware(['auth', 'verified', 'role:student'])->group(function (): void {
-    Route::get('/student/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
+Route::middleware(['auth', 'verified', 'role:student'])->prefix('student')->name('student.')->group(function (): void {
+    Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/packages', [PackageEnrollmentController::class, 'index'])->name('packages.index');
+    Route::post('/packages/{package}/enroll', [PackageEnrollmentController::class, 'store'])->name('packages.enroll');
+
+    Route::get('/courses', [CourseEnrollmentController::class, 'index'])->name('courses.index');
+    Route::get('/courses/{course}', [CourseEnrollmentController::class, 'show'])
+        ->middleware('course.access')
+        ->name('courses.show');
+
+    Route::put('/lessons/{lesson}/progress', [LessonProgressController::class, 'update'])->name('lessons.progress.update');
 });
 
 Route::middleware(['auth', 'verified', 'role:teacher'])->group(function (): void {
@@ -112,6 +125,7 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->prefix('admin
 
     require __DIR__.'/admin/courses.php';
     require __DIR__.'/admin/packages.php';
+    require __DIR__.'/admin/enrollments.php';
 });
 
 Route::redirect('/student', '/student/dashboard');
@@ -121,7 +135,10 @@ Route::redirect('/dashboard', '/student/dashboard')->name('dashboard');
 
 Route::view('/courses', 'pages.courses.index')->name('courses.index');
 Route::view('/courses/show', 'pages.courses.show')->name('courses.show');
-Route::view('/exam/reading', 'pages.exams.reading')->name('exam.reading');
-Route::view('/exam/listening', 'pages.exams.listening')->name('exam.listening');
-Route::view('/exam/writing', 'pages.exams.writing')->name('exam.writing');
-Route::view('/exam/speaking', 'pages.exams.speaking')->name('exam.speaking');
+
+Route::middleware(['auth', 'verified', 'role:student'])->group(function (): void {
+    Route::view('/exam/reading', 'pages.exams.reading')->middleware('module:reading')->name('exam.reading');
+    Route::view('/exam/listening', 'pages.exams.listening')->middleware('module:listening')->name('exam.listening');
+    Route::view('/exam/writing', 'pages.exams.writing')->middleware('module:writing')->name('exam.writing');
+    Route::view('/exam/speaking', 'pages.exams.speaking')->middleware('module:speaking')->name('exam.speaking');
+});

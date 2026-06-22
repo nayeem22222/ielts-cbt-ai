@@ -38,7 +38,8 @@ it('renders sidebar navigation links', function (): void {
         ->assertSee('Access Management')
         ->assertSee(route('admin.users.index'), false)
         ->assertSee(route('admin.roles.index'), false)
-        ->assertSee(route('admin.permissions.index'), false);
+        ->assertSee(route('admin.permissions.index'), false)
+        ->assertSee(route('admin.enrollments.index'), false);
 });
 
 it('renders breadcrumbs on users page', function (): void {

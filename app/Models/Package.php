@@ -8,13 +8,17 @@ use App\Enums\Commerce\BillingInterval;
 use App\Enums\Commerce\IeltsModule;
 use App\Enums\Commerce\PackageDiscountType;
 use App\Enums\Commerce\PackageStatus;
+use Database\Factories\PackageFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Package extends Model
 {
+    use HasFactory;
     use SoftDeletes;
 
     protected $fillable = [
@@ -76,6 +80,11 @@ class Package extends Model
             ->withTimestamps();
     }
 
+    public function studentPackages(): HasMany
+    {
+        return $this->hasMany(StudentPackage::class);
+    }
+
     public function allowsModule(IeltsModule|string $module): bool
     {
         $value = $module instanceof IeltsModule ? $module->value : $module;
@@ -123,5 +132,10 @@ class Package extends Model
         }
 
         return $access;
+    }
+
+    protected static function newFactory(): PackageFactory
+    {
+        return PackageFactory::new();
     }
 }

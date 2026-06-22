@@ -32,6 +32,7 @@
             'label' => 'Commerce',
             'items' => [
                 ['label' => 'Packages', 'href' => route('admin.packages.index'), 'icon' => 'packages', 'active' => request()->routeIs('admin.packages.*')],
+                ['label' => 'Enrollments', 'href' => route('admin.enrollments.index'), 'icon' => 'enrollments', 'active' => request()->routeIs('admin.enrollments.*')],
             ],
         ],
         [
@@ -84,6 +85,7 @@
                   @case('lessons') 🎬 @break
                   @case('resources') 📎 @break
                   @case('packages') 📦 @break
+                  @case('enrollments') 🎓 @break
                   @case('settings') ⚙️ @break
                   @case('ui') 🧩 @break
                 @endswitch

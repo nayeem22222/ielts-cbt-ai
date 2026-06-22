@@ -9,6 +9,7 @@ use App\Enums\Course\ExamType;
 use App\Enums\Course\PublishStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -79,5 +80,17 @@ class Course extends Model
     public function resources(): HasMany
     {
         return $this->hasMany(LessonResource::class);
+    }
+
+    public function packages(): BelongsToMany
+    {
+        return $this->belongsToMany(Package::class)
+            ->withPivot(['sort_order', 'is_featured'])
+            ->withTimestamps();
+    }
+
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(CourseEnrollment::class);
     }
 }

@@ -33,6 +33,25 @@ function createUserWithRole(\App\Enums\Auth\UserRole $role, array $attributes = 
     return $user->fresh(['roles']);
 }
 
+function createDemoPackage(array $attributes = []): \App\Models\Package
+{
+    return \App\Models\Package::factory()->create($attributes);
+}
+
+function assignStudentPackage(
+    \App\Models\User $user,
+    \App\Models\Package $package,
+    array $attributes = [],
+): \App\Models\StudentPackage {
+    $enrollment = app(\App\Services\Enrollment\EnrollmentService::class)->enrollInPackage($user, $package);
+
+    if ($attributes !== []) {
+        $enrollment->update($attributes);
+    }
+
+    return $enrollment->fresh(['package']);
+}
+
 /*
 |--------------------------------------------------------------------------
 | Expectations

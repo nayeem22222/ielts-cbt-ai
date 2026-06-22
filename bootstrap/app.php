@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
             'permission' => \App\Http\Middleware\EnsureUserHasPermission::class,
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+            'module' => \App\Http\Middleware\EnsureModuleAccess::class,
+            'course.access' => \App\Http\Middleware\EnsureCourseAccess::class,
         ]);
 
         $middleware->redirectGuestsTo('/login');
