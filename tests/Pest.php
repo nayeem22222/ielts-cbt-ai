@@ -13,7 +13,19 @@ use Tests\TestCase;
 | you wish to use a feature from one of the built-in TestCase classes.
 */
 
-uses(TestCase::class)->in('Feature');
+uses(TestCase::class, Illuminate\Foundation\Testing\RefreshDatabase::class)->in('Feature');
+
+function createUserWithRole(\App\Enums\Auth\UserRole $role, array $attributes = []): \App\Models\User
+{
+    $user = \App\Models\User::factory()->create($attributes);
+    $user->assignRole($role);
+
+    if ($role === \App\Enums\Auth\UserRole::Student) {
+        $user->studentProfile()->create([]);
+    }
+
+    return $user->fresh(['roles']);
+}
 
 /*
 |--------------------------------------------------------------------------

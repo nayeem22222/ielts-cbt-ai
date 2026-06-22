@@ -1,0 +1,1 @@
+Default super admin for manual admin login: admin@example.com / password
