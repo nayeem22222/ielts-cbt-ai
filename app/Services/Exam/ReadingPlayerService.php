@@ -18,6 +18,7 @@ use App\Models\TestSection;
 use App\Models\User;
 use App\Services\Admin\Exam\ReadingTestBuilderService;
 use App\Services\Enrollment\PackageAccessService;
+use App\Services\Exam\Analytics\ReadingQuestionTimingService;
 use App\Services\Service;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -27,6 +28,7 @@ class ReadingPlayerService extends Service
     public function __construct(
         private readonly ReadingTestBuilderService $builder,
         private readonly PackageAccessService $access,
+        private readonly ReadingQuestionTimingService $timings,
     ) {
     }
 
@@ -206,6 +208,10 @@ class ReadingPlayerService extends Service
                 );
 
                 $savedAnswers[] = $studentAnswer->id;
+            }
+
+            if (isset($payload['question_timings']) && is_array($payload['question_timings'])) {
+                $this->timings->syncTimings($attempt, $payload['question_timings']);
             }
 
             AutosaveLog::query()->create([

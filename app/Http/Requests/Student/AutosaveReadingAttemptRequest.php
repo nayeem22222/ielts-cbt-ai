@@ -33,6 +33,10 @@ class AutosaveReadingAttemptRequest extends FormRequest
             'answers.*.is_flagged' => ['nullable', 'boolean'],
             'highlights' => ['nullable', 'array'],
             'notes' => ['nullable', 'array'],
+            'question_timings' => ['nullable', 'array'],
+            'question_timings.*.question_id' => ['required', 'integer', 'exists:questions,id'],
+            'question_timings.*.time_spent_seconds' => ['nullable', 'integer', 'min:0'],
+            'question_timings.*.visit_count' => ['nullable', 'integer', 'min:0'],
         ];
     }
 }

@@ -362,7 +362,9 @@ class ReadingTestBuilderService extends Service
             ['question_id' => $question->id, 'answer_key' => 'default'],
             [
                 'answer_type' => $answerJson !== null ? AnswerType::Json->value : AnswerType::Text->value,
-                'answer_value' => is_string($answerValue) ? $answerValue : null,
+                'answer_value' => is_string($answerValue) && $answerValue !== ''
+                    ? $answerValue
+                    : (is_array($answerJson) ? implode(', ', $answerJson) : ''),
                 'answer_json' => $answerJson,
             ]
         );

@@ -41,6 +41,7 @@
             'items' => [
                 ['label' => 'Reading Tests', 'href' => route('admin.reading-tests.index'), 'icon' => 'reading-tests', 'active' => request()->routeIs('admin.reading-tests.*')],
                 ['label' => 'Question Banks', 'href' => route('admin.question-banks.index'), 'icon' => 'question-banks', 'active' => request()->routeIs('admin.question-banks.*')],
+                ['label' => 'Reading Analytics', 'href' => route('admin.reading-analytics.index'), 'icon' => 'analytics', 'active' => request()->routeIs('admin.reading-analytics.*')],
             ],
         ],
         [
@@ -96,6 +97,7 @@
                   @case('enrollments') 🎓 @break
                   @case('reading-tests') 📖 @break
                   @case('question-banks') 🗃️ @break
+                  @case('analytics') 📊 @break
                   @case('settings') ⚙️ @break
                   @case('ui') 🧩 @break
                 @endswitch

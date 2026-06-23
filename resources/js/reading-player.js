@@ -19,6 +19,9 @@ export function readingPlayer(initialState) {
         highlights: {},
         notes: {},
         flagged: {},
+        questionTimings: {},
+        questionVisits: {},
+        timingInterval: null,
 
         init() {
             this.sections.forEach((section) => {
@@ -29,6 +32,8 @@ export function readingPlayer(initialState) {
             this.questions.forEach((question) => {
                 this.answers[question.id] = question.answer_text ?? '';
                 this.flagged[question.id] = question.is_flagged ?? false;
+                this.questionTimings[question.id] = 0;
+                this.questionVisits[question.id] = 0;
             });
 
             this.syncCountdownLabel();
@@ -45,6 +50,12 @@ export function readingPlayer(initialState) {
             }, 1000);
 
             window.setInterval(() => this.saveNow(), 15000);
+
+            this.timingInterval = window.setInterval(() => {
+                if (this.activeQuestionId) {
+                    this.questionTimings[this.activeQuestionId] = (this.questionTimings[this.activeQuestionId] ?? 0) + 1;
+                }
+            }, 1000);
         },
 
         get currentSection() {
@@ -89,6 +100,7 @@ export function readingPlayer(initialState) {
             }
 
             this.mobilePanel = 'questions';
+            this.questionVisits[questionId] = (this.questionVisits[questionId] ?? 0) + 1;
             this.queueAutosave();
         },
 
@@ -166,6 +178,11 @@ export function readingPlayer(initialState) {
                     question_id: question.id,
                     answer_text: this.answers[question.id] ?? '',
                     is_flagged: Boolean(this.flagged[question.id]),
+                })),
+                question_timings: this.questions.map((question) => ({
+                    question_id: question.id,
+                    time_spent_seconds: this.questionTimings[question.id] ?? 0,
+                    visit_count: this.questionVisits[question.id] ?? 0,
                 })),
             };
 

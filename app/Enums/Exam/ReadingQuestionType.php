@@ -69,4 +69,22 @@ enum ReadingQuestionType: string
             default => [],
         };
     }
+
+    public function allowsPartialMarks(): bool
+    {
+        return $this === self::MultipleChoiceMultiple;
+    }
+
+    public function isTextCompletion(): bool
+    {
+        return in_array($this, [
+            self::SentenceCompletion,
+            self::SummaryCompletion,
+            self::NoteCompletion,
+            self::TableCompletion,
+            self::FlowChartCompletion,
+            self::DiagramLabelCompletion,
+            self::ShortAnswer,
+        ], true);
+    }
 }

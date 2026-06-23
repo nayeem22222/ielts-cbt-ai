@@ -144,6 +144,9 @@ Route::middleware(['auth', 'verified', 'role:student'])->group(function (): void
     Route::put('/exam/reading/attempts/{attempt}/autosave', [\App\Http\Controllers\Student\ReadingPlayerController::class, 'autosave'])
         ->middleware('module:reading')
         ->name('exam.reading.autosave');
+    Route::post('/exam/reading/attempts/{attempt}/submit', [\App\Http\Controllers\Student\ReadingPlayerController::class, 'submit'])
+        ->middleware('module:reading')
+        ->name('exam.reading.submit');
     Route::view('/exam/listening', 'pages.exams.listening')->middleware('module:listening')->name('exam.listening');
     Route::view('/exam/writing', 'pages.exams.writing')->middleware('module:writing')->name('exam.writing');
     Route::view('/exam/speaking', 'pages.exams.speaking')->middleware('module:speaking')->name('exam.speaking');

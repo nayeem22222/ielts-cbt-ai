@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\QuestionBankController;
+use App\Http\Controllers\Admin\ReadingAnalyticsController;
 use App\Http\Controllers\Admin\ReadingTestBuilderController;
 use App\Http\Controllers\Admin\ReadingTestController;
 use Illuminate\Support\Facades\Route;
@@ -29,6 +30,11 @@ Route::middleware('permission:tests.view')->group(function (): void {
     Route::post('/reading-tests/{reading_test}/passages/{section}/questions', [ReadingTestBuilderController::class, 'storeQuestion'])->name('reading-tests.questions.store');
     Route::put('/reading-tests/{reading_test}/questions/{question}', [ReadingTestBuilderController::class, 'updateQuestion'])->name('reading-tests.questions.update');
     Route::delete('/reading-tests/{reading_test}/passages/{section}/questions/{question}', [ReadingTestBuilderController::class, 'destroyQuestion'])->name('reading-tests.questions.destroy');
+
+    Route::get('/reading-analytics', [ReadingAnalyticsController::class, 'index'])->name('reading-analytics.index');
+    Route::get('/reading-analytics/attempts/{reading_analytic}', [ReadingAnalyticsController::class, 'attempt'])->name('reading-analytics.attempt');
+    Route::get('/reading-analytics/{reading_test}/export', [ReadingAnalyticsController::class, 'export'])->name('reading-analytics.export');
+    Route::get('/reading-analytics/{reading_test}', [ReadingAnalyticsController::class, 'show'])->name('reading-analytics.show');
 });
 
 Route::middleware('permission:question_banks.view')->group(function (): void {

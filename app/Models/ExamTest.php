@@ -88,4 +88,9 @@ class ExamTest extends Model
     {
         return $this->hasMany(TestQuestion::class, 'test_id');
     }
+
+    public function readingAnalytics(): HasMany
+    {
+        return $this->hasMany(ReadingAnalytics::class, 'test_id');
+    }
 }

@@ -8,6 +8,7 @@ use App\Enums\Exam\TestAttemptStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class TestAttempt extends Model
@@ -82,6 +83,21 @@ class TestAttempt extends Model
     public function autosaveLogs(): HasMany
     {
         return $this->hasMany(AutosaveLog::class);
+    }
+
+    public function result(): HasOne
+    {
+        return $this->hasOne(Result::class, 'test_attempt_id');
+    }
+
+    public function readingAnalytics(): HasOne
+    {
+        return $this->hasOne(ReadingAnalytics::class, 'test_attempt_id');
+    }
+
+    public function questionTimings(): HasMany
+    {
+        return $this->hasMany(ReadingQuestionTiming::class, 'test_attempt_id');
     }
 
     public function getRouteKeyName(): string
