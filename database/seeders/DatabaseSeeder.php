@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             SuperAdminSeeder::class,
             DemoCoursePackageSeeder::class,
             DemoReadingTestSeeder::class,
+            ProQyzStyleReadingSeeder::class,
         ]);
     }
 }

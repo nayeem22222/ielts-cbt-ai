@@ -95,11 +95,11 @@ it('renders reading player with side-by-side layout and navigator', function ():
         ->get(route('exam.reading'))
         ->assertOk()
         ->assertSee('Urban Transport')
-        ->assertSee('Question Navigator')
         ->assertSee('Highlight')
-        ->assertSee('Notes')
+        ->assertSee('Notepad')
         ->assertSee('Submit Test')
-        ->assertSee('lg:grid-cols-[1.05fr_.95fr]', false);
+        ->assertSee('Part 1')
+        ->assertSee('lg:grid-cols-2', false);
 });
 
 it('starts a reading attempt when student opens the player', function (): void {

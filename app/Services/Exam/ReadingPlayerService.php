@@ -95,7 +95,7 @@ class ReadingPlayerService extends Service
         $metadata = $attempt->metadata ?? [];
 
         $sectionPayload = $sections->map(function (TestSection $section) use ($answers, $metadata): array {
-            $questions = $section->testQuestions->map(function (TestQuestion $pivot) use ($answers): array {
+            $questions = $section->testQuestions->map(function (TestQuestion $pivot) use ($answers, $section): array {
                 $question = $pivot->question;
                 $saved = $answers->get($question->id);
 
@@ -104,7 +104,9 @@ class ReadingPlayerService extends Service
                     'number' => $question->question_number,
                     'type' => $question->type->value,
                     'type_label' => $question->type->label(),
+                    'ui_pattern' => $question->type->uiPattern(),
                     'prompt' => $question->prompt,
+                    'section_id' => $section->id,
                     'options' => $question->options->map(fn ($option): array => [
                         'label' => $option->label,
                         'text' => $option->option_text,
@@ -118,12 +120,20 @@ class ReadingPlayerService extends Service
                 ];
             })->values()->all();
 
+            $numbers = collect($questions)->pluck('number')->filter()->values();
+            $questionFrom = $numbers->min();
+            $questionTo = $numbers->max();
+
             return [
                 'id' => $section->id,
+                'part_label' => 'Part '.$section->sort_order,
                 'title' => $section->title,
                 'instructions' => $section->instructions,
                 'stimulus_text' => $section->stimulus_text,
                 'sort_order' => $section->sort_order,
+                'question_from' => $questionFrom,
+                'question_to' => $questionTo,
+                'question_count' => count($questions),
                 'highlights' => $metadata['highlights'][(string) $section->id] ?? [],
                 'note' => $metadata['notes'][(string) $section->id] ?? '',
                 'questions' => $questions,

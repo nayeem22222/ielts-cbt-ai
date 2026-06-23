@@ -87,4 +87,21 @@ enum ReadingQuestionType: string
             self::ShortAnswer,
         ], true);
     }
+
+    /**
+     * Frontend input pattern for the reading player (ProQyz-style CBT).
+     */
+    public function uiPattern(): string
+    {
+        return match ($this) {
+            self::MultipleChoiceSingle => 'mcq_single',
+            self::MultipleChoiceMultiple => 'mcq_multiple',
+            self::TrueFalseNg, self::YesNoNg => 'binary_triple',
+            self::MatchingHeadings,
+            self::MatchingInformation,
+            self::MatchingFeatures,
+            self::MatchingSentenceEndings => 'letter_picker',
+            default => 'text_input',
+        };
+    }
 }
