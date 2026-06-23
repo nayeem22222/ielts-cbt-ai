@@ -6,6 +6,8 @@ export function readingPlayer(initialState) {
         questions: initialState.questions ?? [],
         attempt: initialState.attempt ?? {},
         autosaveUrl: initialState.autosave_url,
+        submitUrl: initialState.submit_url,
+        submitting: false,
         currentSectionId: initialState.attempt?.current_section_id ?? initialState.sections?.[0]?.id ?? null,
         activeQuestionId: initialState.attempt?.active_question_id ?? initialState.questions?.[0]?.id ?? null,
         highlightMode: false,
@@ -168,23 +170,7 @@ export function readingPlayer(initialState) {
 
             this.autosaveStatus = 'saving';
 
-            const payload = {
-                current_section_id: this.currentSectionId,
-                active_question_id: this.activeQuestionId,
-                time_remaining_seconds: this.countdownSeconds,
-                highlights: this.highlights,
-                notes: this.notes,
-                answers: this.questions.map((question) => ({
-                    question_id: question.id,
-                    answer_text: this.answers[question.id] ?? '',
-                    is_flagged: Boolean(this.flagged[question.id]),
-                })),
-                question_timings: this.questions.map((question) => ({
-                    question_id: question.id,
-                    time_spent_seconds: this.questionTimings[question.id] ?? 0,
-                    visit_count: this.questionVisits[question.id] ?? 0,
-                })),
-            };
+            const payload = this.buildAutosavePayload();
 
             try {
                 const response = await window.fetch(this.autosaveUrl, {
@@ -204,6 +190,77 @@ export function readingPlayer(initialState) {
                 this.autosaveStatus = 'saved';
             } catch (error) {
                 this.autosaveStatus = 'error';
+            }
+        },
+
+        confirmSubmit() {
+            if (this.submitting || !this.submitUrl) {
+                return;
+            }
+
+            if (!window.confirm('Submit your reading test? You will not be able to change your answers.')) {
+                return;
+            }
+
+            this.submitTest();
+        },
+
+        buildAutosavePayload() {
+            return {
+                current_section_id: this.currentSectionId,
+                active_question_id: this.activeQuestionId,
+                time_remaining_seconds: this.countdownSeconds,
+                highlights: this.highlights,
+                notes: this.notes,
+                answers: this.questions.map((question) => ({
+                    question_id: question.id,
+                    answer_text: this.answers[question.id] ?? '',
+                    is_flagged: Boolean(this.flagged[question.id]),
+                })),
+                question_timings: this.questions.map((question) => ({
+                    question_id: question.id,
+                    time_spent_seconds: this.questionTimings[question.id] ?? 0,
+                    visit_count: this.questionVisits[question.id] ?? 0,
+                })),
+            };
+        },
+
+        async submitTest() {
+            if (!this.submitUrl || this.submitting) {
+                return;
+            }
+
+            this.submitting = true;
+
+            try {
+                await this.saveNow();
+
+                const response = await window.fetch(this.submitUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                        Accept: 'application/json',
+                    },
+                    body: JSON.stringify(this.buildAutosavePayload()),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Submit failed');
+                }
+
+                const body = await response.json();
+                const redirectUrl = body?.data?.redirect_url;
+
+                if (redirectUrl) {
+                    window.location.href = redirectUrl;
+                    return;
+                }
+
+                throw new Error('Missing redirect URL');
+            } catch (error) {
+                this.submitting = false;
+                window.alert('Unable to submit your test. Please try again.');
             }
         },
     };

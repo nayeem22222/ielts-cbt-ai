@@ -66,4 +66,9 @@ class Result extends Model
     {
         return $this->hasOne(ResultStatistics::class);
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 }

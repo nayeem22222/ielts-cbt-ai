@@ -148,6 +148,7 @@ class ReadingPlayerService extends Service
             'sections' => $sectionPayload,
             'questions' => $allQuestions->all(),
             'autosave_url' => route('exam.reading.autosave', $attempt),
+            'submit_url' => route('exam.reading.submit', $attempt),
         ];
     }
 

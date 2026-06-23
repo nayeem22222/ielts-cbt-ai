@@ -15,6 +15,13 @@
                     }"
                     x-text="autosaveStatus === 'saved' ? 'Autosaved' : (autosaveStatus === 'error' ? 'Save failed' : 'Saving...')"
                 ></span>
+                <button
+                    type="button"
+                    @click="confirmSubmit()"
+                    class="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    :disabled="submitting"
+                    x-text="submitting ? 'Submitting...' : 'Submit Test'"
+                ></button>
             </div>
         </div>
 

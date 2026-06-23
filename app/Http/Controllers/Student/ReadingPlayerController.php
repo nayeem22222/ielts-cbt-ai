@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\AutosaveReadingAttemptRequest;
+use App\Http\Requests\Student\SubmitReadingAttemptRequest;
+use App\Models\Result;
 use App\Models\TestAttempt;
 use App\Services\Exam\ReadingPlayerService;
 use App\Services\Exam\Scoring\ReadingScoringEngine;
@@ -47,21 +49,48 @@ class ReadingPlayerController extends Controller
         return response()->json(['data' => $result]);
     }
 
-    public function submit(Request $request, TestAttempt $attempt): JsonResponse
+    public function submit(SubmitReadingAttemptRequest $request, TestAttempt $attempt): JsonResponse
     {
-        abort_unless($request->user()?->id === $attempt->user_id, 403);
+        if ($request->filled('answers') || $request->filled('question_timings')) {
+            $this->player->autosave($attempt, $request->only([
+                'current_section_id',
+                'active_question_id',
+                'time_remaining_seconds',
+                'answers',
+                'highlights',
+                'notes',
+                'question_timings',
+            ]));
+            $attempt->refresh();
+        }
 
         $result = $this->scoring->scoreAttempt($attempt);
 
         return response()->json([
             'data' => [
                 'result_uuid' => $result->uuid,
+                'redirect_url' => route('exam.reading.results', $result),
                 'overall_band' => (float) $result->overall_band,
                 'raw_score' => (float) $result->raw_score,
                 'max_score' => (float) $result->max_score,
-                'statistics' => $result->statistics,
-                'band_scores' => $result->bandScores,
             ],
+        ]);
+    }
+
+    public function results(Request $request, Result $result): View
+    {
+        abort_unless($request->user()?->id === $result->attempt->user_id, 403);
+
+        $result->load([
+            'questionScores' => fn ($query) => $query->orderBy('question_number'),
+            'statistics',
+            'bandScores',
+            'attempt.test',
+            'attempt.readingAnalytics',
+        ]);
+
+        return view('pages.exams.reading-results', [
+            'result' => $result,
         ]);
     }
 

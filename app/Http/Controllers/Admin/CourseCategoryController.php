@@ -41,7 +41,7 @@ class CourseCategoryController extends Controller
 
     protected function entityLabel(): string
     {
-        return 'Categories';
+        return 'Category';
     }
 
     protected function viewsNamespace(): string

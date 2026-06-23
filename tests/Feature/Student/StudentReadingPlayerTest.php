@@ -98,6 +98,7 @@ it('renders reading player with side-by-side layout and navigator', function ():
         ->assertSee('Question Navigator')
         ->assertSee('Highlight')
         ->assertSee('Notes')
+        ->assertSee('Submit Test')
         ->assertSee('lg:grid-cols-[1.05fr_.95fr]', false);
 });
 
