@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\AdminReadingCompletionQuestionController;
+use App\Http\Controllers\Admin\AdminReadingDiagramQuestionController;
 use App\Http\Controllers\Admin\AdminReadingMatchingQuestionController;
 use App\Http\Controllers\Admin\AdminReadingObjectiveQuestionController;
+use App\Http\Controllers\Admin\AdminReadingShortAnswerQuestionController;
 use App\Http\Controllers\Admin\QuestionBankController;
 use App\Http\Controllers\Admin\ReadingAnalyticsController;
 use App\Http\Controllers\Admin\ReadingPassageController;
@@ -69,6 +71,19 @@ Route::middleware('permission:tests.view')->group(function (): void {
         Route::post('/completion-questions/bulk-import', [AdminReadingCompletionQuestionController::class, 'bulkImport'])->name('reading-question-groups.completion-questions.bulk-import');
         Route::post('/completion-questions/reorder', [AdminReadingCompletionQuestionController::class, 'reorder'])->name('reading-question-groups.completion-questions.reorder');
         Route::post('/completion-questions/detect', [AdminReadingCompletionQuestionController::class, 'detect'])->name('reading-question-groups.completion-questions.detect');
+
+        Route::get('/diagram-questions', [AdminReadingDiagramQuestionController::class, 'index'])->name('reading-question-groups.diagram-questions.index');
+        Route::get('/diagram-questions/edit', [AdminReadingDiagramQuestionController::class, 'edit'])->name('reading-question-groups.diagram-questions.edit');
+        Route::get('/diagram-questions/preview', [AdminReadingDiagramQuestionController::class, 'preview'])->name('reading-question-groups.diagram-questions.preview');
+        Route::get('/diagram-questions/image', [AdminReadingDiagramQuestionController::class, 'showImage'])->name('reading-question-groups.diagram-questions.image');
+        Route::post('/diagram-questions/upload', [AdminReadingDiagramQuestionController::class, 'uploadDiagram'])->name('reading-question-groups.diagram-questions.upload');
+        Route::post('/diagram-questions/labels', [AdminReadingDiagramQuestionController::class, 'saveLabels'])->name('reading-question-groups.diagram-questions.labels');
+
+        Route::get('/short-answer-questions', [AdminReadingShortAnswerQuestionController::class, 'index'])->name('reading-question-groups.short-answer-questions.index');
+        Route::get('/short-answer-questions/edit', [AdminReadingShortAnswerQuestionController::class, 'edit'])->name('reading-question-groups.short-answer-questions.edit');
+        Route::get('/short-answer-questions/preview', [AdminReadingShortAnswerQuestionController::class, 'preview'])->name('reading-question-groups.short-answer-questions.preview');
+        Route::post('/short-answer-questions', [AdminReadingShortAnswerQuestionController::class, 'store'])->name('reading-question-groups.short-answer-questions.store');
+        Route::post('/short-answer-questions/reorder', [AdminReadingShortAnswerQuestionController::class, 'reorder'])->name('reading-question-groups.short-answer-questions.reorder');
     });
 
     Route::put('/reading-question-options/{option}', [AdminReadingMatchingQuestionController::class, 'updateOption'])->name('reading-question-options.update')->whereNumber('option');
@@ -86,6 +101,12 @@ Route::middleware('permission:tests.view')->group(function (): void {
     Route::put('/reading-completion-questions/{question}', [AdminReadingCompletionQuestionController::class, 'update'])->name('reading-completion-questions.update')->whereNumber('question');
     Route::put('/reading-completion-questions/{question}/answer', [AdminReadingCompletionQuestionController::class, 'updateAnswer'])->name('reading-completion-questions.answer')->whereNumber('question');
     Route::delete('/reading-completion-questions/{question}', [AdminReadingCompletionQuestionController::class, 'destroy'])->name('reading-completion-questions.destroy')->whereNumber('question');
+
+    Route::put('/reading-diagram-questions/{question}', [AdminReadingDiagramQuestionController::class, 'updateAnswer'])->name('reading-diagram-questions.update')->whereNumber('question');
+    Route::delete('/reading-diagram-questions/{question}', [AdminReadingDiagramQuestionController::class, 'deleteLabel'])->name('reading-diagram-questions.destroy')->whereNumber('question');
+
+    Route::put('/reading-short-answer-questions/{question}', [AdminReadingShortAnswerQuestionController::class, 'update'])->name('reading-short-answer-questions.update')->whereNumber('question');
+    Route::delete('/reading-short-answer-questions/{question}', [AdminReadingShortAnswerQuestionController::class, 'destroy'])->name('reading-short-answer-questions.destroy')->whereNumber('question');
 
     Route::get('/reading-analytics', [ReadingAnalyticsController::class, 'index'])->name('reading-analytics.index');
     Route::get('/reading-analytics/attempts/{reading_analytic}', [ReadingAnalyticsController::class, 'attempt'])->name('reading-analytics.attempt');

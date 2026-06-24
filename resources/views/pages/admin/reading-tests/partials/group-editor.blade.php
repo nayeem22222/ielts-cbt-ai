@@ -117,6 +117,10 @@
                 <x-ui.button href="{{ route('admin.reading-question-groups.objective-questions.index', $group) }}" variant="secondary">Manage Questions</x-ui.button>
             @elseif ($group->question_type?->isCompletionBuilderType())
                 <x-ui.button href="{{ route('admin.reading-question-groups.completion-questions.index', $group) }}" variant="secondary">Manage Questions</x-ui.button>
+            @elseif ($group->question_type?->isDiagramBuilderType())
+                <x-ui.button href="{{ route('admin.reading-question-groups.diagram-questions.index', $group) }}" variant="secondary">Manage Questions</x-ui.button>
+            @elseif ($group->question_type?->isShortAnswerBuilderType())
+                <x-ui.button href="{{ route('admin.reading-question-groups.short-answer-questions.index', $group) }}" variant="secondary">Manage Questions</x-ui.button>
             @endif
             <x-ui.button type="button" variant="outline" @click="groupDeleteOpen = true">Delete</x-ui.button>
         </div>

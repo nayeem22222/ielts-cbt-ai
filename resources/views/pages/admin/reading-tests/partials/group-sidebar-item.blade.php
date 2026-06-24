@@ -62,6 +62,18 @@
                         size="sm"
                         variant="outline"
                     >Questions</x-ui.button>
+                @elseif ($group->question_type?->isDiagramBuilderType())
+                    <x-ui.button
+                        href="{{ route('admin.reading-question-groups.diagram-questions.index', $group) }}"
+                        size="sm"
+                        variant="outline"
+                    >Questions</x-ui.button>
+                @elseif ($group->question_type?->isShortAnswerBuilderType())
+                    <x-ui.button
+                        href="{{ route('admin.reading-question-groups.short-answer-questions.index', $group) }}"
+                        size="sm"
+                        variant="outline"
+                    >Questions</x-ui.button>
                 @endif
 
                 <form method="POST" action="{{ route('admin.reading-tests.passages.groups.duplicate', [$test, $passage, $group]) }}">

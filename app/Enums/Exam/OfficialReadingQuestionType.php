@@ -173,4 +173,34 @@ enum OfficialReadingQuestionType: string
             default => 'unsupported',
         };
     }
+
+    /**
+     * @return list<self>
+     */
+    public static function diagramBuilderTypes(): array
+    {
+        return [
+            self::DiagramLabelCompletion,
+        ];
+    }
+
+    public function isDiagramBuilderType(): bool
+    {
+        return in_array($this, self::diagramBuilderTypes(), true);
+    }
+
+    /**
+     * @return list<self>
+     */
+    public static function shortAnswerBuilderTypes(): array
+    {
+        return [
+            self::ShortAnswer,
+        ];
+    }
+
+    public function isShortAnswerBuilderType(): bool
+    {
+        return in_array($this, self::shortAnswerBuilderTypes(), true);
+    }
 }
