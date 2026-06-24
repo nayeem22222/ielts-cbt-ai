@@ -8,9 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\AutosaveReadingAttemptRequest;
 use App\Http\Requests\Student\SubmitReadingAttemptRequest;
 use App\Models\ExamTest;
+use App\Models\ReadingTest;
 use App\Models\Result;
 use App\Models\TestAttempt;
+use App\Services\Exam\ReadingAnswerService;
 use App\Services\Exam\ReadingPlayerService;
+use App\Services\Exam\ReadingTestRendererService;
 use App\Services\Exam\Scoring\ReadingScoringEngine;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -22,28 +25,62 @@ class ReadingPlayerController extends Controller
     public function __construct(
         private readonly ReadingPlayerService $player,
         private readonly ReadingScoringEngine $scoring,
+        private readonly ReadingTestRendererService $renderer,
+        private readonly ReadingAnswerService $answers,
     ) {
     }
 
     public function index(Request $request): View|RedirectResponse
     {
-        $tests = $this->player->publishedTests();
+        $legacyTests = $this->player->publishedTests();
+        $volume5Tests = $this->renderer->publishedTests();
 
-        if ($tests->isEmpty()) {
+        if ($legacyTests->isEmpty() && $volume5Tests->isEmpty()) {
             return view('pages.exams.reading-empty');
         }
 
-        if ($tests->count() === 1 && ! $request->boolean('pick')) {
-            return redirect()->route('exam.reading.show', $tests->first());
+        if ($legacyTests->isEmpty()) {
+            if ($volume5Tests->count() === 1 && ! $request->boolean('pick')) {
+                return redirect()->route('exam.reading.show', $volume5Tests->first());
+            }
+
+            return redirect()->route('reading-tests.index');
+        }
+
+        if ($legacyTests->count() === 1 && $volume5Tests->isEmpty() && ! $request->boolean('pick')) {
+            return redirect()->route('exam.reading.show', $legacyTests->first());
         }
 
         return view('pages.exams.reading-index', [
-            'tests' => $tests,
+            'tests' => $legacyTests,
         ]);
     }
 
-    public function show(Request $request, ExamTest $examTest): View|RedirectResponse
+    public function show(Request $request, string $slug): View|RedirectResponse
     {
+        $readingTest = ReadingTest::query()->published()->where('slug', $slug)->first();
+
+        if ($readingTest !== null) {
+            $user = $request->user();
+            abort_unless($user !== null, 403);
+
+            $test = $this->renderer->loadForRenderer($readingTest);
+            $attempt = $this->answers->getOrCreateAttempt($user, $test);
+
+            $rendererState = array_merge(
+                $this->renderer->buildRendererState($test),
+                $this->answers->buildAttemptPayload($attempt, $test),
+            );
+
+            return view('pages.reading-tests.start', [
+                'test' => $test,
+                'attempt' => $attempt,
+                'rendererState' => $rendererState,
+                'renderer' => $this->renderer,
+            ]);
+        }
+
+        $examTest = ExamTest::query()->where('slug', $slug)->firstOrFail();
         $test = $this->player->findPlayableTest($examTest);
 
         if ($test === null) {

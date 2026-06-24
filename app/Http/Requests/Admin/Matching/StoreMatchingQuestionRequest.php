@@ -17,6 +17,9 @@ class StoreMatchingQuestionRequest extends MatchingQuestionRequest
             'paragraph_reference' => ['nullable', 'string', 'max:30'],
             'correct_answer' => ['nullable', 'string', 'max:50'],
             'explanation' => ['nullable', 'string', 'max:10000'],
+            'reference_paragraph' => ['nullable', 'string', 'max:30'],
+            'reference_start_offset' => ['nullable', 'integer', 'min:0'],
+            'reference_end_offset' => ['nullable', 'integer', 'min:0'],
             'sort_order' => ['nullable', 'integer', 'min:1'],
         ];
     }
@@ -32,6 +35,9 @@ class StoreMatchingQuestionRequest extends MatchingQuestionRequest
             'paragraph_reference' => $this->input('paragraph_reference'),
             'correct_answer' => $this->input('correct_answer'),
             'explanation' => $this->input('explanation'),
+            'reference_paragraph' => $this->input('reference_paragraph'),
+            'reference_start_offset' => $this->input('reference_start_offset'),
+            'reference_end_offset' => $this->input('reference_end_offset'),
             'sort_order' => $this->input('sort_order'),
         ];
     }

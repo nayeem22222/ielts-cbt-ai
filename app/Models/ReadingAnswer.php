@@ -16,6 +16,9 @@ class ReadingAnswer extends Model
         'answer_json',
         'flagged',
         'is_correct',
+        'marks_awarded',
+        'evaluated_at',
+        'evaluation_json',
         'answered_at',
         'state',
     ];
@@ -26,6 +29,9 @@ class ReadingAnswer extends Model
             'answer_json' => 'array',
             'flagged' => 'boolean',
             'is_correct' => 'boolean',
+            'marks_awarded' => 'decimal:2',
+            'evaluated_at' => 'datetime',
+            'evaluation_json' => 'array',
             'answered_at' => 'datetime',
             'state' => 'array',
         ];

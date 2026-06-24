@@ -19,6 +19,9 @@ class UpdateScopedMatchingQuestionRequest extends MatchingScopedRequest
             'paragraph_reference' => ['nullable', 'string', 'max:30'],
             'correct_answer' => ['nullable', 'string', 'max:50'],
             'explanation' => ['nullable', 'string', 'max:10000'],
+            'reference_paragraph' => ['nullable', 'string', 'max:30'],
+            'reference_start_offset' => ['nullable', 'integer', 'min:0'],
+            'reference_end_offset' => ['nullable', 'integer', 'min:0'],
             'sort_order' => ['nullable', 'integer', 'min:1'],
         ];
     }
@@ -48,6 +51,18 @@ class UpdateScopedMatchingQuestionRequest extends MatchingScopedRequest
 
         if ($this->has('explanation')) {
             $data['explanation'] = $this->input('explanation');
+        }
+
+        if ($this->has('reference_paragraph')) {
+            $data['reference_paragraph'] = $this->input('reference_paragraph');
+        }
+
+        if ($this->has('reference_start_offset')) {
+            $data['reference_start_offset'] = $this->input('reference_start_offset');
+        }
+
+        if ($this->has('reference_end_offset')) {
+            $data['reference_end_offset'] = $this->input('reference_end_offset');
         }
 
         if ($this->has('sort_order')) {

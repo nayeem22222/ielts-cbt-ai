@@ -1,7 +1,7 @@
-@props(['title' => 'IELTS Reading Test'])
+@props(['title' => 'IELTS Reading Test', 'scrollable' => false])
 
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['h-full' => ! $scrollable])>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,7 +19,11 @@
         }
     </style>
 </head>
-<body class="h-screen overflow-hidden bg-[#eef1f4] font-sans text-neutral-900 antialiased">
+<body @class([
+    'bg-[#eef1f4] font-sans text-neutral-900 antialiased',
+    'min-h-screen overflow-y-auto' => $scrollable,
+    'h-screen overflow-hidden' => ! $scrollable,
+])>
     {{ $slot }}
 </body>
 </html>

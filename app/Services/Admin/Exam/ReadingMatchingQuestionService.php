@@ -141,7 +141,10 @@ class ReadingMatchingQuestionService
             $question = $group->questions()->create([
                 'question_number' => $questionNumber,
                 'prompt' => (string) $data['prompt'],
-                'paragraph_reference' => $data['paragraph_reference'] ?? null,
+                'paragraph_reference' => $data['paragraph_reference'] ?? $data['reference_paragraph'] ?? null,
+                'reference_paragraph' => $data['reference_paragraph'] ?? $data['paragraph_reference'] ?? null,
+                'reference_start_offset' => $data['reference_start_offset'] ?? null,
+                'reference_end_offset' => $data['reference_end_offset'] ?? null,
                 'explanation' => $data['explanation'] ?? null,
                 'sort_order' => max(1, $sortOrder),
                 'marks' => 1,
@@ -183,6 +186,25 @@ class ReadingMatchingQuestionService
 
             if (array_key_exists('paragraph_reference', $data)) {
                 $question->paragraph_reference = $data['paragraph_reference'];
+            }
+
+            if (array_key_exists('reference_paragraph', $data)) {
+                $question->reference_paragraph = $data['reference_paragraph'];
+                if (! array_key_exists('paragraph_reference', $data)) {
+                    $question->paragraph_reference = $data['reference_paragraph'];
+                }
+            }
+
+            if (array_key_exists('reference_start_offset', $data)) {
+                $question->reference_start_offset = $data['reference_start_offset'] !== null && $data['reference_start_offset'] !== ''
+                    ? (int) $data['reference_start_offset']
+                    : null;
+            }
+
+            if (array_key_exists('reference_end_offset', $data)) {
+                $question->reference_end_offset = $data['reference_end_offset'] !== null && $data['reference_end_offset'] !== ''
+                    ? (int) $data['reference_end_offset']
+                    : null;
             }
 
             if (array_key_exists('explanation', $data)) {

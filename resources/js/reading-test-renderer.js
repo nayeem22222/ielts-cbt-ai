@@ -1,0 +1,324 @@
+import '../css/reading-test-renderer.css';
+import { createReadingTestAutosave } from './reading-test-autosave';
+import { createReadingTestTimer } from './reading-test-timer';
+import { createReadingTestReview } from './reading-test-review';
+import { createReadingTestHighlights } from './reading-test-highlights';
+import { createReadingTestNotes } from './reading-test-notes';
+import { createReadingTestTickets } from './reading-test-tickets';
+
+export function readingTestRenderer(initialState = {}) {
+    return {
+        testId: initialState.testId ?? null,
+        testTitle: initialState.testTitle ?? 'Reading Test',
+        examType: initialState.examType ?? '',
+        durationMinutes: initialState.durationMinutes ?? 60,
+        passages: initialState.passages ?? [],
+        questions: initialState.questions ?? [],
+        attemptId: initialState.attemptId ?? null,
+        attemptStatus: initialState.attemptStatus ?? 'in_progress',
+        isLocked: initialState.isLocked ?? false,
+        endpoints: initialState.endpoints ?? {},
+        savedAnswers: initialState.savedAnswers ?? {},
+        navigator: initialState.navigator ?? { questions: {}, parts: {} },
+        review: initialState.review ?? { summary: {}, parts: [], unanswered_numbers: [], flagged_numbers: [] },
+        timer: initialState.timer ?? {},
+        visitedQuestions: initialState.visitedQuestions ?? [],
+        highlights: initialState.highlights ?? [],
+        notes: initialState.notes ?? [],
+        saveWarning: null,
+        remainingSeconds: initialState.timer?.remaining_seconds ?? 0,
+        timerLabel: '00:00',
+        timerClassName: 'reading-test-timer',
+        reviewOpen: false,
+        submitModalOpen: false,
+        pauseOpen: false,
+        submitting: false,
+        autoSubmitting: false,
+        currentPassageId: initialState.initialPassageId ?? null,
+        currentQuestionNumber: initialState.initialQuestionNumber ?? null,
+        activeQuestionIndex: 0,
+        expandedPartId: initialState.initialPassageId ?? null,
+        mobilePanel: 'passage',
+        passageWidth: 50,
+        resizing: false,
+        autosave: null,
+        timerController: null,
+        reviewController: null,
+        highlightsController: null,
+        notesController: null,
+        ticketsController: null,
+        notesPanelOpen: false,
+        notesTab: 'all',
+        noteDraft: { id: null, title: '', content: '', question_id: null, passage_id: null, selected_text: null, start_offset: null, end_offset: null },
+        ticketModalOpen: false,
+        ticketIssueType: 'question_problem',
+        ticketMessage: '',
+        ticketSubmitting: false,
+        ticketSuccess: false,
+        ticketQuestionId: null,
+        ticketQuestionNumber: null,
+        ticketIssueTypes: [],
+
+        init() {
+            if (this.isLocked && this.endpoints?.result) {
+                window.location.href = this.endpoints.result;
+                return;
+            }
+
+            this.autosave = createReadingTestAutosave(this);
+            this.timerController = createReadingTestTimer(this);
+            this.reviewController = createReadingTestReview(this);
+            this.highlightsController = createReadingTestHighlights(this);
+            this.notesController = createReadingTestNotes(this);
+            this.ticketsController = createReadingTestTickets(this);
+
+            if (this.currentQuestionNumber) {
+                this.activeQuestionIndex = this.questions.findIndex(
+                    (q) => q.number === this.currentQuestionNumber,
+                );
+                if (this.activeQuestionIndex < 0) {
+                    this.activeQuestionIndex = 0;
+                }
+            }
+
+            this.syncPassageForQuestion();
+            this.$nextTick(() => {
+                this.autosave.restoreAnswers();
+                this.autosave.bindInputs();
+                this.highlightCurrentQuestion();
+                this.markVisitedForCurrentQuestion();
+                this.timerController.start();
+
+                if (this.isLocked) {
+                    this.timerController.lockInputs();
+                }
+
+                this.highlightsController.bind();
+                this.ticketsController.bind();
+            });
+        },
+
+        isDesktop() {
+            return window.innerWidth >= 1024;
+        },
+
+        expandPart(passageId) {
+            this.expandedPartId = passageId;
+            this.switchPart(passageId);
+        },
+
+        switchPart(passageId) {
+            this.currentPassageId = passageId;
+            const passage = this.passages.find((p) => p.id === passageId);
+            if (passage?.questions?.length) {
+                this.selectQuestion(passage.questions[0].number, false);
+            }
+        },
+
+        async markVisitedForCurrentQuestion() {
+            if (this.isLocked || !this.endpoints?.visited) {
+                return;
+            }
+
+            const question = this.questions[this.activeQuestionIndex];
+            if (!question) {
+                return;
+            }
+
+            try {
+                await fetch(this.endpoints.visited, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                    },
+                    body: JSON.stringify({ question_id: question.id }),
+                });
+            } catch {
+                // Best effort.
+            }
+        },
+
+        selectQuestion(number, scroll = true) {
+            const index = this.questions.findIndex((q) => q.number === number);
+            if (index < 0) {
+                return;
+            }
+
+            this.activeQuestionIndex = index;
+            this.currentQuestionNumber = number;
+
+            const question = this.questions[index];
+            if (question?.passage_id) {
+                this.currentPassageId = question.passage_id;
+                this.expandedPartId = question.passage_id;
+            }
+
+            this.$nextTick(() => this.highlightsController?.applyStoredHighlights(this.currentPassageId));
+
+            if (scroll) {
+                this.$nextTick(() => this.scrollToQuestion(number));
+            }
+
+            this.highlightCurrentQuestion();
+            this.autosave?.savePosition();
+            this.markVisitedForCurrentQuestion();
+        },
+
+        scrollToQuestion(number) {
+            const row = document.querySelector(`[data-question-number="${number}"]`);
+            if (row) {
+                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        },
+
+        highlightCurrentQuestion() {
+            document.querySelectorAll('.reading-test-question-row').forEach((el) => {
+                el.classList.remove('is-current');
+            });
+
+            if (!this.currentQuestionNumber) {
+                return;
+            }
+
+            const current = document.querySelector(
+                `.reading-test-question-row[data-question-number="${this.currentQuestionNumber}"]`,
+            );
+            current?.classList.add('is-current');
+        },
+
+        goPrevious() {
+            if (this.activeQuestionIndex <= 0) {
+                return;
+            }
+            this.selectQuestion(this.questions[this.activeQuestionIndex - 1].number);
+        },
+
+        goNext() {
+            if (this.activeQuestionIndex >= this.questions.length - 1) {
+                return;
+            }
+            this.selectQuestion(this.questions[this.activeQuestionIndex + 1].number);
+        },
+
+        syncPassageForQuestion() {
+            const question = this.questions[this.activeQuestionIndex];
+            if (question?.passage_id) {
+                this.currentPassageId = question.passage_id;
+                this.expandedPartId = question.passage_id;
+                this.currentQuestionNumber = question.number;
+            }
+        },
+
+        questionNavClass(number) {
+            const status = this.navigator?.questions?.[number]?.status ?? 'unanswered';
+            const classes = [`is-${status}`];
+
+            if (number === this.currentQuestionNumber) {
+                classes.push('is-current');
+            }
+
+            return classes.join(' ');
+        },
+
+        partAnsweredLabel(passage) {
+            return this.autosave?.partAnsweredLabel(passage) ?? '';
+        },
+
+        toggleFlag(questionId, questionNumber) {
+            if (this.isLocked) {
+                return;
+            }
+            this.autosave?.toggleFlag(questionId, questionNumber);
+        },
+
+        isFlagged(questionId) {
+            return Boolean(this.savedAnswers?.[questionId]?.flagged);
+        },
+
+        openReview() {
+            this.reviewController?.openReview();
+        },
+
+        closeReview() {
+            this.reviewController?.closeReview();
+        },
+
+        openSubmitModal() {
+            this.reviewController?.openSubmitModal();
+        },
+
+        closeSubmitModal() {
+            this.reviewController?.closeSubmitModal();
+        },
+
+        reviewUnanswered() {
+            this.reviewController?.reviewUnansweredFromPanel();
+        },
+
+        submitAnyway() {
+            this.reviewController?.submitAnyway();
+        },
+
+        selectFromReview(number) {
+            this.reviewController?.selectFromReview(number);
+        },
+
+        togglePause() {
+            this.reviewController?.pauseOverlay();
+        },
+
+        startResize(event) {
+            this.resizing = true;
+            const container = this.$refs.splitContainer;
+            const onMove = (moveEvent) => {
+                if (!this.resizing || !container) {
+                    return;
+                }
+                const rect = container.getBoundingClientRect();
+                const next = ((moveEvent.clientX - rect.left) / rect.width) * 100;
+                this.passageWidth = Math.min(70, Math.max(30, next));
+            };
+            const onUp = () => {
+                this.resizing = false;
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+            };
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+        },
+
+        openNotesPanel() {
+            this.notesController?.newNote();
+        },
+
+        closeNotesPanel() {
+            this.notesController?.closePanel();
+        },
+
+        filteredNotes() {
+            return this.notesController?.filteredNotes() ?? [];
+        },
+
+        saveNoteDraft() {
+            this.notesController?.scheduleSave();
+        },
+
+        editNote(note) {
+            this.notesController?.editNote(note);
+        },
+
+        deleteNote(noteId) {
+            this.notesController?.deleteNote(noteId);
+        },
+
+        closeTicketModal() {
+            this.ticketsController?.closeModal();
+        },
+
+        submitTicket() {
+            this.ticketsController?.submit();
+        },
+    };
+}

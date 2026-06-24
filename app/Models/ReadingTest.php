@@ -90,6 +90,11 @@ class ReadingTest extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', PublishStatus::Published->value);

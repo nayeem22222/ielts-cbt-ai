@@ -203,4 +203,26 @@ enum OfficialReadingQuestionType: string
     {
         return in_array($this, self::shortAnswerBuilderTypes(), true);
     }
+
+    public function studentRendererViewKey(): string
+    {
+        return match ($this) {
+            self::MatchingInformation => 'matching-information',
+            self::MatchingHeadings => 'matching-headings',
+            self::MatchingFeatures, self::Dropdown => 'matching-features',
+            self::MatchingPeople => 'matching-people',
+            self::MatchingSentenceEndings => 'matching-sentence-endings',
+            self::TrueFalseNotGiven => 'true-false-not-given',
+            self::YesNoNotGiven => 'yes-no-not-given',
+            self::MultipleChoiceSingle => 'mcq-single',
+            self::MultipleChoiceMultiple => 'mcq-multiple',
+            self::SummaryCompletion => 'summary-completion',
+            self::SentenceCompletion => 'sentence-completion',
+            self::NoteCompletion => 'note-completion',
+            self::TableCompletion => 'table-completion',
+            self::FlowChartCompletion => 'flowchart-completion',
+            self::DiagramLabelCompletion => 'diagram-label-completion',
+            self::ShortAnswer => 'short-answer',
+        };
+    }
 }

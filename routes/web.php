@@ -141,7 +141,7 @@ Route::middleware(['auth', 'verified', 'role:student'])->group(function (): void
     Route::get('/exam/reading', [\App\Http\Controllers\Student\ReadingPlayerController::class, 'index'])
         ->middleware('module:reading')
         ->name('exam.reading');
-    Route::get('/exam/reading/tests/{examTest:slug}', [\App\Http\Controllers\Student\ReadingPlayerController::class, 'show'])
+    Route::get('/exam/reading/tests/{slug}', [\App\Http\Controllers\Student\ReadingPlayerController::class, 'show'])
         ->middleware('module:reading')
         ->name('exam.reading.show');
     Route::put('/exam/reading/attempts/{attempt}/autosave', [\App\Http\Controllers\Student\ReadingPlayerController::class, 'autosave'])
@@ -153,6 +153,35 @@ Route::middleware(['auth', 'verified', 'role:student'])->group(function (): void
     Route::get('/exam/reading/results/{result}', [\App\Http\Controllers\Student\ReadingPlayerController::class, 'results'])
         ->middleware('module:reading')
         ->name('exam.reading.results');
+
+    Route::prefix('reading-attempts')->name('reading-attempts.')->middleware('module:reading')->group(function (): void {
+        Route::get('/{attempt}/timer', [\App\Http\Controllers\Student\ReadingTimerController::class, 'show'])->name('timer');
+        Route::get('/{attempt}/review', [\App\Http\Controllers\Student\ReadingReviewController::class, 'show'])->name('review');
+        Route::get('/{attempt}/submitted', [\App\Http\Controllers\Student\ReadingSubmitController::class, 'submitted'])->name('submitted');
+        Route::get('/{attempt}/result', [\App\Http\Controllers\Student\ReadingResultController::class, 'show'])->name('result');
+        Route::get('/{attempt}/result/review', [\App\Http\Controllers\Student\ReadingResultController::class, 'review'])->name('result.review');
+        Route::post('/{attempt}/answers', [\App\Http\Controllers\Student\ReadingAnswerController::class, 'store'])->name('answers.store');
+        Route::post('/{attempt}/answers/{question}/flag', [\App\Http\Controllers\Student\ReadingAnswerController::class, 'toggleFlag'])->name('answers.flag');
+        Route::post('/{attempt}/position', [\App\Http\Controllers\Student\ReadingAttemptController::class, 'savePosition'])->name('position');
+        Route::post('/{attempt}/visited', [\App\Http\Controllers\Student\ReadingAttemptController::class, 'markVisited'])->name('visited');
+        Route::post('/{attempt}/submit', [\App\Http\Controllers\Student\ReadingSubmitController::class, 'submit'])->name('submit');
+        Route::post('/{attempt}/auto-submit', [\App\Http\Controllers\Student\ReadingSubmitController::class, 'autoSubmit'])->name('auto-submit');
+        Route::get('/{attempt}/highlights', [\App\Http\Controllers\Student\ReadingHighlightController::class, 'index'])->name('highlights.index');
+        Route::post('/{attempt}/highlights', [\App\Http\Controllers\Student\ReadingHighlightController::class, 'store'])->name('highlights.store');
+        Route::delete('/{attempt}/highlights/{highlight}', [\App\Http\Controllers\Student\ReadingHighlightController::class, 'destroy'])->name('highlights.destroy');
+        Route::get('/{attempt}/notes', [\App\Http\Controllers\Student\ReadingNoteController::class, 'index'])->name('notes.index');
+        Route::post('/{attempt}/notes', [\App\Http\Controllers\Student\ReadingNoteController::class, 'store'])->name('notes.store');
+        Route::put('/{attempt}/notes/{note}', [\App\Http\Controllers\Student\ReadingNoteController::class, 'update'])->name('notes.update');
+        Route::delete('/{attempt}/notes/{note}', [\App\Http\Controllers\Student\ReadingNoteController::class, 'destroy'])->name('notes.destroy');
+        Route::post('/{attempt}/tickets', [\App\Http\Controllers\Student\ReadingQuestionTicketController::class, 'store'])->name('tickets.store');
+    });
+
+    Route::prefix('reading-tests')->name('reading-tests.')->middleware('module:reading')->group(function (): void {
+        Route::get('/', [\App\Http\Controllers\Student\ReadingTestRendererController::class, 'index'])->name('index');
+        Route::get('/groups/{group}/diagram-image', [\App\Http\Controllers\Student\ReadingTestDiagramController::class, 'showImage'])->name('groups.diagram-image');
+        Route::get('/{readingTest:slug}', [\App\Http\Controllers\Student\ReadingTestRendererController::class, 'show'])->name('show');
+        Route::get('/{readingTest:slug}/start', [\App\Http\Controllers\Student\ReadingTestRendererController::class, 'start'])->name('start');
+    });
     Route::view('/exam/listening', 'pages.exams.listening')->middleware('module:listening')->name('exam.listening');
     Route::view('/exam/writing', 'pages.exams.writing')->middleware('module:writing')->name('exam.writing');
     Route::view('/exam/speaking', 'pages.exams.speaking')->middleware('module:speaking')->name('exam.speaking');

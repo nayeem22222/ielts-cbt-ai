@@ -37,6 +37,11 @@ class ExamTest extends Model
         'created_by',
     ];
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     /**
      * @return array<string, string>
      */

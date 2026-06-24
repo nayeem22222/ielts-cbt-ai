@@ -19,6 +19,7 @@ class ReadingAttempt extends Model
         'status',
         'started_at',
         'submitted_at',
+        'evaluated_at',
         'remaining_seconds',
         'current_passage_id',
         'current_question_id',
@@ -35,6 +36,7 @@ class ReadingAttempt extends Model
             'status' => TestAttemptStatus::class,
             'started_at' => 'datetime',
             'submitted_at' => 'datetime',
+            'evaluated_at' => 'datetime',
             'remaining_seconds' => 'integer',
             'score' => 'decimal:2',
             'band' => 'decimal:1',
@@ -76,6 +78,21 @@ class ReadingAttempt extends Model
     public function answers(): HasMany
     {
         return $this->hasMany(ReadingAnswer::class, 'attempt_id');
+    }
+
+    public function highlights(): HasMany
+    {
+        return $this->hasMany(ReadingHighlight::class, 'attempt_id');
+    }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(ReadingNote::class, 'attempt_id');
+    }
+
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(ReadingQuestionTicket::class, 'attempt_id');
     }
 
     public function getRouteKeyName(): string

@@ -15,6 +15,9 @@ class ReadingQuestion extends Model
         'question_number',
         'prompt',
         'paragraph_reference',
+        'reference_start_offset',
+        'reference_end_offset',
+        'reference_paragraph',
         'explanation',
         'marks',
         'sort_order',
@@ -26,6 +29,8 @@ class ReadingQuestion extends Model
     {
         return [
             'question_number' => 'integer',
+            'reference_start_offset' => 'integer',
+            'reference_end_offset' => 'integer',
             'marks' => 'decimal:2',
             'sort_order' => 'integer',
             'metadata' => 'array',

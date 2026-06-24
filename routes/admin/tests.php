@@ -10,8 +10,10 @@ use App\Http\Controllers\Admin\AdminReadingShortAnswerQuestionController;
 use App\Http\Controllers\Admin\AdminReadingValidationController;
 use App\Http\Controllers\Admin\QuestionBankController;
 use App\Http\Controllers\Admin\ReadingAnalyticsController;
+use App\Http\Controllers\Admin\ReadingAttemptEvaluationController;
 use App\Http\Controllers\Admin\ReadingPassageController;
 use App\Http\Controllers\Admin\ReadingQuestionGroupController;
+use App\Http\Controllers\Admin\ReadingQuestionTicketController;
 use App\Http\Controllers\Admin\ReadingTestController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +38,10 @@ Route::middleware('permission:tests.view')->group(function (): void {
     Route::get('/reading-tests/{readingTest}/validation', [AdminReadingValidationController::class, 'show'])->name('reading-tests.validation');
     Route::post('/reading-tests/{readingTest}/validate', [AdminReadingValidationController::class, 'validate'])->name('reading-tests.validate');
     Route::get('/reading-tests/{readingTest}/preview-full', [AdminReadingValidationController::class, 'previewFull'])->name('reading-tests.preview-full');
+
+    Route::post('/reading-attempts/{attempt}/re-evaluate', [ReadingAttemptEvaluationController::class, 'reEvaluate'])
+        ->middleware('permission:tests.update')
+        ->name('reading-attempts.re-evaluate');
 
     Route::post('/reading-tests/{readingTest}/passages/reorder', [ReadingPassageController::class, 'reorder'])->name('reading-tests.passages.reorder');
     Route::post('/reading-tests/{readingTest}/passages', [ReadingPassageController::class, 'store'])->name('reading-tests.passages.store');
@@ -116,6 +122,17 @@ Route::middleware('permission:tests.view')->group(function (): void {
     Route::get('/reading-analytics/attempts/{reading_analytic}', [ReadingAnalyticsController::class, 'attempt'])->name('reading-analytics.attempt');
     Route::get('/reading-analytics/{reading_test}/export', [ReadingAnalyticsController::class, 'export'])->name('reading-analytics.export');
     Route::get('/reading-analytics/{reading_test}', [ReadingAnalyticsController::class, 'show'])->name('reading-analytics.show');
+
+    Route::get('/reading-tickets', [ReadingQuestionTicketController::class, 'index'])->name('reading-tickets.index');
+    Route::get('/reading-tickets/{readingTicket}', [ReadingQuestionTicketController::class, 'show'])->name('reading-tickets.show')->whereNumber('readingTicket');
+    Route::post('/reading-tickets/{readingTicket}/reply', [ReadingQuestionTicketController::class, 'reply'])
+        ->middleware('permission:tests.update')
+        ->name('reading-tickets.reply')
+        ->whereNumber('readingTicket');
+    Route::post('/reading-tickets/{readingTicket}/resolve', [ReadingQuestionTicketController::class, 'resolve'])
+        ->middleware('permission:tests.update')
+        ->name('reading-tickets.resolve')
+        ->whereNumber('readingTicket');
 });
 
 Route::middleware('permission:question_banks.view')->group(function (): void {
