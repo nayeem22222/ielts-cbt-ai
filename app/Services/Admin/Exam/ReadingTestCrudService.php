@@ -78,6 +78,14 @@ class ReadingTestCrudService extends AbstractCrudService
             $data['status'] = PublishStatus::Draft->value;
         }
 
+        if (($data['status'] ?? null) === PublishStatus::Published->value && empty($data['published_at'])) {
+            $data['published_at'] = now();
+        }
+
+        if (($data['status'] ?? null) === PublishStatus::Draft->value) {
+            $data['published_at'] = null;
+        }
+
         if (! isset($data['duration_seconds']) || $data['duration_seconds'] === '') {
             $data['duration_seconds'] = 3600;
         }
@@ -85,5 +93,14 @@ class ReadingTestCrudService extends AbstractCrudService
         $data['is_timed'] = (bool) ($data['is_timed'] ?? true);
 
         return $data;
+    }
+
+    protected function afterUpdate(Model $model, array $attributes): void
+    {
+        if (! $model instanceof ExamTest) {
+            return;
+        }
+
+        $this->builder->syncQuestionBankForTest($model);
     }
 }

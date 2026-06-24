@@ -138,9 +138,12 @@ Route::view('/courses', 'pages.courses.index')->name('courses.index');
 Route::view('/courses/show', 'pages.courses.show')->name('courses.show');
 
 Route::middleware(['auth', 'verified', 'role:student'])->group(function (): void {
-    Route::get('/exam/reading', [\App\Http\Controllers\Student\ReadingPlayerController::class, 'show'])
+    Route::get('/exam/reading', [\App\Http\Controllers\Student\ReadingPlayerController::class, 'index'])
         ->middleware('module:reading')
         ->name('exam.reading');
+    Route::get('/exam/reading/tests/{examTest:slug}', [\App\Http\Controllers\Student\ReadingPlayerController::class, 'show'])
+        ->middleware('module:reading')
+        ->name('exam.reading.show');
     Route::put('/exam/reading/attempts/{attempt}/autosave', [\App\Http\Controllers\Student\ReadingPlayerController::class, 'autosave'])
         ->middleware('module:reading')
         ->name('exam.reading.autosave');

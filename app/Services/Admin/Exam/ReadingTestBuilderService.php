@@ -74,6 +74,15 @@ class ReadingTestBuilderService extends Service
 
     public function questionBank(ExamTest $test): QuestionBank
     {
+        $linkedBankId = TestQuestion::query()
+            ->where('test_id', $test->id)
+            ->join('questions', 'questions.id', '=', 'test_question.question_id')
+            ->value('questions.question_bank_id');
+
+        if ($linkedBankId) {
+            return QuestionBank::query()->findOrFail($linkedBankId);
+        }
+
         return QuestionBank::query()->firstOrCreate(
             ['slug' => $test->slug.'-reading-bank'],
             [
@@ -84,6 +93,17 @@ class ReadingTestBuilderService extends Service
                 'created_by' => $test->created_by,
             ]
         );
+    }
+
+    public function syncQuestionBankForTest(ExamTest $test): void
+    {
+        $bank = $this->questionBank($test);
+
+        $bank->update([
+            'slug' => $test->slug.'-reading-bank',
+            'name' => $test->title.' Reading Bank',
+            'exam_type' => $test->exam_type?->value ?? ExamType::Academic->value,
+        ]);
     }
 
     /**
@@ -124,6 +144,8 @@ class ReadingTestBuilderService extends Service
         return DB::transaction(function () use ($test, $module, $section, $bank, $data, $question): Question {
             $type = ReadingQuestionType::from($data['type']);
 
+            $sortOrder = (int) ($data['sort_order'] ?? $data['question_number'] ?? 1);
+
             $questionAttributes = [
                 'question_bank_id' => $bank->id,
                 'module' => IeltsModule::Reading->value,
@@ -133,7 +155,7 @@ class ReadingTestBuilderService extends Service
                 'stimulus' => $this->normalizeStimulus($data['stimulus'] ?? null),
                 'difficulty' => $data['difficulty'] ?? 'medium',
                 'marks' => (float) ($data['marks'] ?? 1),
-                'sort_order' => (int) ($data['sort_order'] ?? 1),
+                'sort_order' => $sortOrder,
                 'status' => $data['status'] ?? PublishStatus::Draft->value,
                 'created_by' => auth()->id(),
             ];
@@ -157,7 +179,7 @@ class ReadingTestBuilderService extends Service
                 [
                     'test_id' => $test->id,
                     'test_module_id' => $module->id,
-                    'sort_order' => (int) ($data['sort_order'] ?? 1),
+                    'sort_order' => $sortOrder,
                     'marks' => (float) ($data['marks'] ?? 1),
                     'is_required' => true,
                 ]
@@ -176,7 +198,50 @@ class ReadingTestBuilderService extends Service
             ->where('question_id', $question->id)
             ->delete();
 
+        $stillLinked = TestQuestion::query()->where('question_id', $question->id)->exists();
+
+        if (! $stillLinked) {
+            $question->options()->delete();
+            $question->correctAnswer()?->delete();
+            $question->explanation()?->delete();
+            $question->tags()->delete();
+            $question->delete();
+        }
+
         $this->syncCounts($section->module->test, $section);
+    }
+
+    public function clearTestContent(ExamTest $test): void
+    {
+        $module = $this->readingModule($test);
+        $questionIds = TestQuestion::query()
+            ->where('test_id', $test->id)
+            ->pluck('question_id');
+
+        TestQuestion::query()->where('test_id', $test->id)->delete();
+        $module->sections()->each(fn (TestSection $section) => $section->delete());
+
+        foreach ($questionIds as $questionId) {
+            $stillLinked = TestQuestion::query()->where('question_id', $questionId)->exists();
+
+            if ($stillLinked) {
+                continue;
+            }
+
+            $question = Question::query()->find($questionId);
+
+            if ($question === null) {
+                continue;
+            }
+
+            $question->options()->delete();
+            $question->correctAnswer()?->delete();
+            $question->explanation()?->delete();
+            $question->tags()->delete();
+            $question->delete();
+        }
+
+        $this->syncCounts($test);
     }
 
     public function syncCounts(ExamTest $test, ?TestSection $section = null): void
@@ -262,12 +327,21 @@ class ReadingTestBuilderService extends Service
                     'exam_type' => $testData['exam_type'] ?? ExamType::Academic->value,
                     'duration_seconds' => (int) ($testData['duration_seconds'] ?? 3600),
                     'status' => $testData['status'] ?? PublishStatus::Draft->value,
+                    'published_at' => ($testData['status'] ?? null) === PublishStatus::Published->value
+                        ? now()
+                        : null,
                     'created_by' => $user->id,
                 ]
             );
 
             $this->bootstrapReadingTest($test);
             $module = $this->readingModule($test);
+
+            if ($test->wasRecentlyCreated === false) {
+                $this->clearTestContent($test);
+                $module = $this->readingModule($test);
+            }
+
             $bank = $this->questionBank($test);
 
             foreach ($payload['passages'] ?? [] as $passageData) {
@@ -315,17 +389,48 @@ class ReadingTestBuilderService extends Service
     {
         $question->options()->delete();
 
+        $options = array_values(array_filter($options, function (mixed $option): bool {
+            if (is_array($option)) {
+                return trim((string) ($option['option_text'] ?? $option['label'] ?? '')) !== '';
+            }
+
+            return trim((string) $option) !== '';
+        }));
+
         if ($options !== []) {
             foreach ($options as $index => $option) {
                 $label = is_array($option)
                     ? ($option['label'] ?? chr(65 + $index))
                     : chr(65 + $index);
-                $text = is_array($option) ? ($option['option_text'] ?? '') : (string) $option;
+                $text = is_array($option) ? ($option['option_text'] ?? $option['label'] ?? '') : (string) $option;
+
+                if ($text !== '' && ! is_array($option) && strlen((string) $option) === 1 && ctype_alpha((string) $option)) {
+                    $label = strtoupper((string) $option);
+                    $text = $label;
+                }
 
                 QuestionOption::query()->create([
                     'question_id' => $question->id,
                     'label' => $label,
                     'option_text' => $text,
+                    'sort_order' => $index + 1,
+                ]);
+            }
+
+            return;
+        }
+
+        if (in_array($type, [
+            ReadingQuestionType::MatchingInformation,
+            ReadingQuestionType::MatchingHeadings,
+            ReadingQuestionType::MatchingFeatures,
+            ReadingQuestionType::MatchingSentenceEndings,
+        ], true)) {
+            foreach (range('A', 'H') as $index => $letter) {
+                QuestionOption::query()->create([
+                    'question_id' => $question->id,
+                    'label' => $letter,
+                    'option_text' => $letter,
                     'sort_order' => $index + 1,
                 ]);
             }

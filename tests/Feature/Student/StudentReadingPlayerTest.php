@@ -87,26 +87,47 @@ function studentWithReadingAccess(): \App\Models\User
     return $student;
 }
 
+function readingPlayerUrl(ExamTest $test): string
+{
+    return route('exam.reading.show', $test);
+}
+
 it('renders reading player with side-by-side layout and navigator', function (): void {
-    createPublishedReadingTestForPlayer();
+    $test = createPublishedReadingTestForPlayer();
     $student = studentWithReadingAccess();
 
     $this->actingAs($student)
-        ->get(route('exam.reading'))
+        ->get(readingPlayerUrl($test))
         ->assertOk()
         ->assertSee('Urban Transport')
-        ->assertSee('Highlight')
+        ->assertSee('Review')
         ->assertSee('Notepad')
-        ->assertSee('Submit Test')
+        ->assertSee('Submit')
         ->assertSee('Part 1')
-        ->assertSee('lg:grid-cols-2', false);
+        ->assertSee('reading-pane', false);
+});
+
+it('persists timer via autosave and reload', function (): void {
+    $test = createPublishedReadingTestForPlayer();
+    $student = studentWithReadingAccess();
+
+    $this->actingAs($student)->get(readingPlayerUrl($test));
+
+    $attempt = TestAttempt::query()->where('user_id', $student->id)->firstOrFail();
+    $attempt->update(['time_remaining_seconds' => 2400]);
+
+    $this->actingAs($student)
+        ->get(readingPlayerUrl($test))
+        ->assertOk();
+
+    expect($attempt->fresh()->time_remaining_seconds)->toBe(2400);
 });
 
 it('starts a reading attempt when student opens the player', function (): void {
-    createPublishedReadingTestForPlayer();
+    $test = createPublishedReadingTestForPlayer();
     $student = studentWithReadingAccess();
 
-    $this->actingAs($student)->get(route('exam.reading'))->assertOk();
+    $this->actingAs($student)->get(readingPlayerUrl($test))->assertOk();
 
     expect(TestAttempt::query()->where('user_id', $student->id)->count())->toBe(1);
 
@@ -115,11 +136,11 @@ it('starts a reading attempt when student opens the player', function (): void {
 });
 
 it('resumes an in progress attempt instead of creating duplicates', function (): void {
-    createPublishedReadingTestForPlayer();
+    $test = createPublishedReadingTestForPlayer();
     $student = studentWithReadingAccess();
 
-    $this->actingAs($student)->get(route('exam.reading'));
-    $this->actingAs($student)->get(route('exam.reading'));
+    $this->actingAs($student)->get(readingPlayerUrl($test));
+    $this->actingAs($student)->get(readingPlayerUrl($test));
 
     expect(TestAttempt::query()->where('user_id', $student->id)->count())->toBe(1);
 });
@@ -128,7 +149,7 @@ it('autosaves answers flags notes and highlights', function (): void {
     $test = createPublishedReadingTestForPlayer();
     $student = studentWithReadingAccess();
 
-    $this->actingAs($student)->get(route('exam.reading'));
+    $this->actingAs($student)->get(readingPlayerUrl($test));
 
     $attempt = TestAttempt::query()->where('user_id', $student->id)->firstOrFail();
     $question = $test->testQuestions()->with('question')->firstOrFail()->question;
@@ -164,14 +185,15 @@ it('autosaves answers flags notes and highlights', function (): void {
     expect(AutosaveLog::query()->where('test_attempt_id', $attempt->id)->count())->toBe(1);
 });
 
-it('includes dark mode toggle and responsive mobile tabs', function (): void {
-    createPublishedReadingTestForPlayer();
+it('includes responsive mobile tabs for passage and questions', function (): void {
+    $test = createPublishedReadingTestForPlayer();
     $student = studentWithReadingAccess();
 
     $this->actingAs($student)
-        ->get(route('exam.reading'))
+        ->get(readingPlayerUrl($test))
         ->assertOk()
-        ->assertSee('Dark');
+        ->assertSee('Passage')
+        ->assertSee('Questions');
 });
 
 it('shows empty state when no published reading test exists', function (): void {
@@ -184,11 +206,11 @@ it('shows empty state when no published reading test exists', function (): void 
 });
 
 it('blocks autosave for attempts owned by another student', function (): void {
-    createPublishedReadingTestForPlayer();
+    $test = createPublishedReadingTestForPlayer();
     $owner = studentWithReadingAccess();
     $other = createUserWithRole(UserRole::Student, ['email_verified_at' => now()]);
 
-    $this->actingAs($owner)->get(route('exam.reading'));
+    $this->actingAs($owner)->get(readingPlayerUrl($test));
     $attempt = TestAttempt::query()->where('user_id', $owner->id)->firstOrFail();
 
     $this->actingAs($other)
@@ -199,7 +221,7 @@ it('blocks autosave for attempts owned by another student', function (): void {
 });
 
 it('still allows exam route check from enrollment system', function (): void {
-    createPublishedReadingTestForPlayer();
+    $test = createPublishedReadingTestForPlayer();
 
     $student = createUserWithRole(UserRole::Student, ['email_verified_at' => now()]);
     assignStudentPackage($student, createDemoPackage([
@@ -211,5 +233,81 @@ it('still allows exam route check from enrollment system', function (): void {
 
     $this->actingAs($student)
         ->get(route('exam.reading'))
-        ->assertOk();
+        ->assertRedirect(route('exam.reading.show', $test));
+});
+
+it('lists multiple published reading tests on the catalog', function (): void {
+    $admin = createUserWithRole(UserRole::SuperAdmin, ['email_verified_at' => now()]);
+
+    $testA = app(ReadingTestBuilderService::class)->importTest([
+        'test' => [
+            'title' => 'Reading Test Alpha',
+            'slug' => 'reading-test-alpha',
+            'exam_type' => ExamType::Academic->value,
+            'duration_seconds' => 3600,
+            'status' => PublishStatus::Published->value,
+        ],
+        'passages' => [[
+            'title' => 'Alpha Passage',
+            'sort_order' => 1,
+            'instructions' => 'Answer all questions.',
+            'stimulus_text' => 'Alpha content.',
+            'questions' => [[
+                'type' => ReadingQuestionType::TrueFalseNg->value,
+                'question_number' => 1,
+                'prompt' => 'Alpha statement.',
+                'correct_answer' => 'True',
+                'marks' => 1,
+                'sort_order' => 1,
+                'options' => [],
+            ]],
+        ]],
+    ], $admin);
+    $testA->update(['published_at' => now()]);
+
+    $testB = app(ReadingTestBuilderService::class)->importTest([
+        'test' => [
+            'title' => 'Reading Test Beta',
+            'slug' => 'reading-test-beta',
+            'exam_type' => ExamType::Academic->value,
+            'duration_seconds' => 3600,
+            'status' => PublishStatus::Published->value,
+        ],
+        'passages' => [[
+            'title' => 'Beta Passage',
+            'sort_order' => 1,
+            'instructions' => 'Answer all questions.',
+            'stimulus_text' => 'Beta content.',
+            'questions' => [[
+                'type' => ReadingQuestionType::TrueFalseNg->value,
+                'question_number' => 1,
+                'prompt' => 'Beta statement.',
+                'correct_answer' => 'True',
+                'marks' => 1,
+                'sort_order' => 1,
+                'options' => [],
+            ]],
+        ]],
+    ], $admin);
+    $testB->update(['published_at' => now()]);
+
+    $student = studentWithReadingAccess();
+
+    $this->actingAs($student)
+        ->get(route('exam.reading', ['pick' => 1]))
+        ->assertOk()
+        ->assertSee('Reading Test Alpha')
+        ->assertSee('Reading Test Beta');
+
+    $this->actingAs($student)
+        ->get(readingPlayerUrl($testA))
+        ->assertOk()
+        ->assertSee('Alpha Passage')
+        ->assertDontSee('Beta Passage');
+
+    $this->actingAs($student)
+        ->get(readingPlayerUrl($testB))
+        ->assertOk()
+        ->assertSee('Beta Passage')
+        ->assertDontSee('Alpha Passage');
 });

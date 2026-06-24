@@ -97,10 +97,11 @@ enum ReadingQuestionType: string
             self::MultipleChoiceSingle => 'mcq_single',
             self::MultipleChoiceMultiple => 'mcq_multiple',
             self::TrueFalseNg, self::YesNoNg => 'binary_triple',
-            self::MatchingHeadings,
             self::MatchingInformation,
+            self::MatchingHeadings,
             self::MatchingFeatures,
             self::MatchingSentenceEndings => 'letter_picker',
+            self::SummaryCompletion => 'summary_picker',
             default => 'text_input',
         };
     }

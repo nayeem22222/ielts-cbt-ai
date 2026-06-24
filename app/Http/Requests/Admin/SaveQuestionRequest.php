@@ -12,6 +12,17 @@ use Illuminate\Validation\Rule;
 
 class SaveQuestionRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $options = collect($this->input('options', []))
+            ->map(fn (mixed $option): ?string => is_string($option) ? trim($option) : null)
+            ->filter(fn (?string $option): bool => $option !== null && $option !== '')
+            ->values()
+            ->all();
+
+        $this->merge(['options' => $options]);
+    }
+
     public function authorize(): bool
     {
         $test = $this->route('reading_test');

@@ -115,7 +115,7 @@
     @endif
 
     <div class="flex flex-wrap gap-3">
-        <x-ui.button href="{{ route('exam.reading') }}">Take Another Attempt</x-ui.button>
+        <x-ui.button href="{{ route('exam.reading.show', $result->attempt->test) }}">Take Another Attempt</x-ui.button>
         <x-ui.button href="{{ route('student.dashboard') }}" variant="secondary">Back to Dashboard</x-ui.button>
     </div>
 </x-layouts.dashboard>

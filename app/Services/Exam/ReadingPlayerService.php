@@ -6,13 +6,14 @@ namespace App\Services\Exam;
 
 use App\Enums\Commerce\IeltsModule;
 use App\Enums\Course\PublishStatus;
+use App\Enums\Exam\ReadingQuestionType;
 use App\Enums\Exam\TestAttemptStatus;
 use App\Enums\Exam\TestType;
 use App\Models\AutosaveLog;
 use App\Models\ExamTest;
 use App\Models\StudentAnswer;
 use App\Models\TestAttempt;
-use App\Models\TestModule;
+use App\Models\Question;
 use App\Models\TestQuestion;
 use App\Models\TestSection;
 use App\Models\User;
@@ -32,14 +33,46 @@ class ReadingPlayerService extends Service
     ) {
     }
 
-    public function resolvePublishedTest(): ?ExamTest
+    public function resolvePublishedTest(?string $slug = null): ?ExamTest
+    {
+        $query = ExamTest::query()
+            ->where('type', TestType::ReadingTest)
+            ->where('status', PublishStatus::Published);
+
+        if ($slug !== null) {
+            return $query->where('slug', $slug)->first();
+        }
+
+        return $query
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->first();
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, ExamTest>
+     */
+    public function publishedTests()
     {
         return ExamTest::query()
             ->where('type', TestType::ReadingTest)
             ->where('status', PublishStatus::Published)
             ->orderByDesc('published_at')
             ->orderByDesc('id')
-            ->first();
+            ->get();
+    }
+
+    public function findPlayableTest(ExamTest $test): ?ExamTest
+    {
+        if ($test->type !== TestType::ReadingTest) {
+            return null;
+        }
+
+        if ($test->status !== PublishStatus::Published) {
+            return null;
+        }
+
+        return $test;
     }
 
     public function startOrResumeAttempt(User $user, ExamTest $test): TestAttempt
@@ -95,7 +128,10 @@ class ReadingPlayerService extends Service
         $metadata = $attempt->metadata ?? [];
 
         $sectionPayload = $sections->map(function (TestSection $section) use ($answers, $metadata): array {
-            $questions = $section->testQuestions->map(function (TestQuestion $pivot) use ($answers, $section): array {
+            $questions = $section->testQuestions
+                ->sortBy(fn (TestQuestion $pivot): int => (int) $pivot->question->question_number)
+                ->values()
+                ->map(function (TestQuestion $pivot) use ($answers, $section): array {
                 $question = $pivot->question;
                 $saved = $answers->get($question->id);
 
@@ -104,8 +140,8 @@ class ReadingPlayerService extends Service
                     'number' => $question->question_number,
                     'type' => $question->type->value,
                     'type_label' => $question->type->label(),
-                    'ui_pattern' => $question->type->uiPattern(),
-                    'prompt' => $question->prompt,
+                    'ui_pattern' => $this->resolveUiPattern($question),
+                    'prompt' => strip_tags((string) $question->prompt),
                     'section_id' => $section->id,
                     'options' => $question->options->map(fn ($option): array => [
                         'label' => $option->label,
@@ -140,7 +176,10 @@ class ReadingPlayerService extends Service
             ];
         })->values()->all();
 
-        $allQuestions = collect($sectionPayload)->flatMap(fn (array $section): array => $section['questions'])->values();
+        $allQuestions = collect($sectionPayload)
+            ->flatMap(fn (array $section): array => $section['questions'])
+            ->sortBy('number')
+            ->values();
 
         return [
             'attempt' => [
@@ -152,6 +191,7 @@ class ReadingPlayerService extends Service
             ],
             'test' => [
                 'id' => $attempt->test->id,
+                'slug' => $attempt->test->slug,
                 'title' => $attempt->test->title,
                 'duration_seconds' => $attempt->test->duration_seconds ?: 3600,
             ],
@@ -241,5 +281,14 @@ class ReadingPlayerService extends Service
                 'answers_saved' => count($savedAnswers),
             ];
         });
+    }
+
+    private function resolveUiPattern(Question $question): string
+    {
+        if ($question->type === ReadingQuestionType::SummaryCompletion && $question->options->isEmpty()) {
+            return 'text_input';
+        }
+
+        return $question->type->uiPattern();
     }
 }

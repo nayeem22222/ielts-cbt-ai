@@ -28,7 +28,7 @@ class StoreReadingTestRequest extends CourseSlugRequest
     {
         return [
             'title' => ['required', 'string', 'max:200'],
-            'slug' => ['required', 'string', 'max:200', 'unique:tests,slug'],
+            'slug' => ['required', 'string', 'max:200', Rule::unique('tests', 'slug')->whereNull('deleted_at')],
             'description' => ['nullable', 'string', 'max:5000'],
             'exam_type' => ['required', 'string', Rule::in(ExamType::values())],
             'duration_seconds' => ['nullable', 'integer', 'min:60', 'max:86400'],

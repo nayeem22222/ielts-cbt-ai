@@ -188,10 +188,10 @@ it('completes admin course package reading test and student enrollment flow', fu
     expect(CourseEnrollment::query()->where('user_id', $student->id)->where('course_id', $course->id)->exists())->toBeTrue();
 
     $this->actingAs($student)
-        ->get(route('exam.reading'))
+        ->get(route('exam.reading.show', $readingTest))
         ->assertOk()
         ->assertSee('Full Flow Reading Test')
-        ->assertSee('Submit Test');
+        ->assertSee('Submit');
 
     $attempt = TestAttempt::query()->where('user_id', $student->id)->firstOrFail();
     expect($attempt->status)->toBe(TestAttemptStatus::InProgress);
@@ -252,7 +252,7 @@ it('submits reading test from player with redirect to results page', function ()
         'is_active' => true,
     ]));
 
-    $this->actingAs($student)->get(route('exam.reading'))->assertOk()->assertSee('Submit Test');
+    $this->actingAs($student)->get(route('exam.reading.show', $test))->assertOk()->assertSee('Submit');
 
     $attempt = TestAttempt::query()->where('user_id', $student->id)->firstOrFail();
     $question = Question::query()->where('question_number', 1)->firstOrFail();
@@ -296,7 +296,7 @@ it('blocks students from viewing another students reading results', function ():
         'is_active' => true,
     ]));
 
-    $this->actingAs($owner)->get(route('exam.reading'));
+    $this->actingAs($owner)->get(route('exam.reading.show', $test));
     $attempt = TestAttempt::query()->where('user_id', $owner->id)->firstOrFail();
     $question = Question::query()->firstOrFail();
 

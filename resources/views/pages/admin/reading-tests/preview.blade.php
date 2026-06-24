@@ -5,6 +5,9 @@
             <p class="text-sm aa-muted">{{ $test->exam_type?->label() }} · {{ $test->total_questions ?? 0 }} questions</p>
         </div>
         <div class="flex gap-2">
+            @if ($test->status === \App\Enums\Course\PublishStatus::Published)
+                <x-ui.button href="{{ route('exam.reading.show', $test) }}" target="_blank">Open Player</x-ui.button>
+            @endif
             <x-ui.button href="{{ route('admin.reading-tests.builder', $test) }}" variant="outline">Back to Builder</x-ui.button>
             <x-ui.button href="{{ route('admin.reading-tests.export-json', $test) }}" variant="outline">Export JSON</x-ui.button>
         </div>

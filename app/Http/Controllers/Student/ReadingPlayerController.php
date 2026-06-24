@@ -7,12 +7,14 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\AutosaveReadingAttemptRequest;
 use App\Http\Requests\Student\SubmitReadingAttemptRequest;
+use App\Models\ExamTest;
 use App\Models\Result;
 use App\Models\TestAttempt;
 use App\Services\Exam\ReadingPlayerService;
 use App\Services\Exam\Scoring\ReadingScoringEngine;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class ReadingPlayerController extends Controller
@@ -23,12 +25,29 @@ class ReadingPlayerController extends Controller
     ) {
     }
 
-    public function show(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
-        $test = $this->player->resolvePublishedTest();
+        $tests = $this->player->publishedTests();
+
+        if ($tests->isEmpty()) {
+            return view('pages.exams.reading-empty');
+        }
+
+        if ($tests->count() === 1 && ! $request->boolean('pick')) {
+            return redirect()->route('exam.reading.show', $tests->first());
+        }
+
+        return view('pages.exams.reading-index', [
+            'tests' => $tests,
+        ]);
+    }
+
+    public function show(Request $request, ExamTest $examTest): View|RedirectResponse
+    {
+        $test = $this->player->findPlayableTest($examTest);
 
         if ($test === null) {
-            return view('pages.exams.reading-empty');
+            abort(404);
         }
 
         $attempt = $this->player->startOrResumeAttempt($request->user(), $test);

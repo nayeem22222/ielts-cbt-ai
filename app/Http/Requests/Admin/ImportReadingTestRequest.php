@@ -11,7 +11,10 @@ class ImportReadingTestRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('create', ExamTest::class) ?? false;
+        $test = $this->route('reading_test');
+
+        return $test instanceof ExamTest
+            && ($this->user()?->can('update', $test) ?? false);
     }
 
     /**

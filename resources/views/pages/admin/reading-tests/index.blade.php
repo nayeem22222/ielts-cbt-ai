@@ -47,6 +47,9 @@
                         <td class="p-4"><x-ui.badge tone="blue">{{ $record->status?->label() ?? 'Draft' }}</x-ui.badge></td>
                         <td class="p-4">
                             <div class="flex flex-wrap gap-2">
+                                @if ($record->status === \App\Enums\Course\PublishStatus::Published)
+                                    <x-ui.button href="{{ route('exam.reading.show', $record) }}" size="sm" variant="outline">Start</x-ui.button>
+                                @endif
                                 @can('update', $record)
                                     <x-ui.button href="{{ route('admin.reading-tests.builder', $record) }}" size="sm">Builder</x-ui.button>
                                     <x-ui.button href="{{ route('admin.reading-tests.preview', $record) }}" size="sm" variant="outline">Preview</x-ui.button>

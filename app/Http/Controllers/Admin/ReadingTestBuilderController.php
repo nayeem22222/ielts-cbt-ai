@@ -180,6 +180,8 @@ class ReadingTestBuilderController extends Controller
             'title' => $readingTest->title,
         ]);
 
+        $this->builder->clearTestContent($readingTest);
+
         foreach ($payload['passages'] ?? [] as $passageData) {
             $module = $this->builder->readingModule($readingTest);
             $section = $this->builder->savePassage($module, $passageData);

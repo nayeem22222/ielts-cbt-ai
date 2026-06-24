@@ -30,7 +30,7 @@
                 <x-ui.input name="title" label="Passage Title" required />
                 <x-ui.input name="sort_order" type="number" label="Sort Order" value="{{ $sections->count() + 1 }}" />
                 <x-ui.textarea name="instructions" label="Instructions" rows="2"></x-ui.textarea>
-                <x-ui.rich-editor name="stimulus_text" label="Passage Text" />
+                <x-ui.textarea name="stimulus_text" label="Passage Text" rows="12" required></x-ui.textarea>
                 <x-ui.button type="submit">Add Passage</x-ui.button>
             </form>
         </x-ui.card>
@@ -48,7 +48,7 @@
                         <x-ui.input name="title" label="Title" :value="$section->title" required />
                         <x-ui.input name="sort_order" type="number" label="Sort Order" :value="$section->sort_order" />
                         <x-ui.textarea name="instructions" label="Instructions" rows="2">{{ $section->instructions }}</x-ui.textarea>
-                        <x-ui.rich-editor name="stimulus_text" label="Passage Text" :value="$section->stimulus_text" />
+                        <x-ui.textarea name="stimulus_text" label="Passage Text" rows="12" required>{{ $section->stimulus_text }}</x-ui.textarea>
                         <x-ui.button type="submit" variant="outline">Update Passage</x-ui.button>
                     </form>
 
