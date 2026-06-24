@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\AdminReadingCompletionQuestionController;
 use App\Http\Controllers\Admin\AdminReadingMatchingQuestionController;
 use App\Http\Controllers\Admin\AdminReadingObjectiveQuestionController;
 use App\Http\Controllers\Admin\QuestionBankController;
@@ -57,6 +58,13 @@ Route::middleware('permission:tests.view')->group(function (): void {
         Route::post('/objective-questions', [AdminReadingObjectiveQuestionController::class, 'store'])->name('reading-question-groups.objective-questions.store');
         Route::post('/objective-questions/bulk-import', [AdminReadingObjectiveQuestionController::class, 'bulkImport'])->name('reading-question-groups.objective-questions.bulk-import');
         Route::post('/objective-questions/reorder', [AdminReadingObjectiveQuestionController::class, 'reorder'])->name('reading-question-groups.objective-questions.reorder');
+
+        Route::get('/completion-questions', [AdminReadingCompletionQuestionController::class, 'index'])->name('reading-question-groups.completion-questions.index');
+        Route::post('/completion-questions/template', [AdminReadingCompletionQuestionController::class, 'saveTemplate'])->name('reading-question-groups.completion-questions.template');
+        Route::post('/completion-questions', [AdminReadingCompletionQuestionController::class, 'storeSentence'])->name('reading-question-groups.completion-questions.store');
+        Route::post('/completion-questions/bulk-import', [AdminReadingCompletionQuestionController::class, 'bulkImport'])->name('reading-question-groups.completion-questions.bulk-import');
+        Route::post('/completion-questions/reorder', [AdminReadingCompletionQuestionController::class, 'reorder'])->name('reading-question-groups.completion-questions.reorder');
+        Route::post('/completion-questions/detect', [AdminReadingCompletionQuestionController::class, 'detect'])->name('reading-question-groups.completion-questions.detect');
     });
 
     Route::put('/reading-question-options/{option}', [AdminReadingMatchingQuestionController::class, 'updateOption'])->name('reading-question-options.update')->whereNumber('option');
@@ -70,6 +78,9 @@ Route::middleware('permission:tests.view')->group(function (): void {
     Route::post('/reading-objective-questions/{question}/options', [AdminReadingObjectiveQuestionController::class, 'storeOption'])->name('reading-objective-questions.options.store')->whereNumber('question');
     Route::put('/reading-objective-options/{option}', [AdminReadingObjectiveQuestionController::class, 'updateOption'])->name('reading-objective-options.update')->whereNumber('option');
     Route::delete('/reading-objective-options/{option}', [AdminReadingObjectiveQuestionController::class, 'deleteOption'])->name('reading-objective-options.destroy')->whereNumber('option');
+
+    Route::put('/reading-completion-questions/{question}', [AdminReadingCompletionQuestionController::class, 'update'])->name('reading-completion-questions.update')->whereNumber('question');
+    Route::delete('/reading-completion-questions/{question}', [AdminReadingCompletionQuestionController::class, 'destroy'])->name('reading-completion-questions.destroy')->whereNumber('question');
 
     Route::get('/reading-analytics', [ReadingAnalyticsController::class, 'index'])->name('reading-analytics.index');
     Route::get('/reading-analytics/attempts/{reading_analytic}', [ReadingAnalyticsController::class, 'attempt'])->name('reading-analytics.attempt');

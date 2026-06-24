@@ -131,4 +131,45 @@ enum OfficialReadingQuestionType: string
             default => 'unsupported',
         };
     }
+
+    /**
+     * @return list<self>
+     */
+    public static function completionBuilderTypes(): array
+    {
+        return [
+            self::SummaryCompletion,
+            self::SentenceCompletion,
+            self::NoteCompletion,
+            self::TableCompletion,
+            self::FlowChartCompletion,
+        ];
+    }
+
+    public function isCompletionBuilderType(): bool
+    {
+        return in_array($this, self::completionBuilderTypes(), true);
+    }
+
+    public function usesCompletionTemplate(): bool
+    {
+        return in_array($this, [
+            self::SummaryCompletion,
+            self::NoteCompletion,
+            self::TableCompletion,
+            self::FlowChartCompletion,
+        ], true);
+    }
+
+    public function completionBuilderViewKey(): string
+    {
+        return match ($this) {
+            self::SummaryCompletion => 'summary',
+            self::SentenceCompletion => 'sentence',
+            self::NoteCompletion => 'note',
+            self::TableCompletion => 'table',
+            self::FlowChartCompletion => 'flowchart',
+            default => 'unsupported',
+        };
+    }
 }

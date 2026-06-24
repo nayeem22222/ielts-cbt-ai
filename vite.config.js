@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/reading-passage-builder.js', 'resources/js/reading-matching-builder.js', 'resources/js/reading-objective-builder.js'],
+            input: ['resources/css/app.css', 'resources/js/app.js', 'resources/js/reading-passage-builder.js', 'resources/js/reading-matching-builder.js', 'resources/js/reading-objective-builder.js', 'resources/js/reading-completion-builder.js'],
             refresh: true,
         }),
         tailwindcss(),

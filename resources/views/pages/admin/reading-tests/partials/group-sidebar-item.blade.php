@@ -56,6 +56,12 @@
                         size="sm"
                         variant="outline"
                     >Questions</x-ui.button>
+                @elseif ($group->question_type?->isCompletionBuilderType())
+                    <x-ui.button
+                        href="{{ route('admin.reading-question-groups.completion-questions.index', $group) }}"
+                        size="sm"
+                        variant="outline"
+                    >Questions</x-ui.button>
                 @endif
 
                 <form method="POST" action="{{ route('admin.reading-tests.passages.groups.duplicate', [$test, $passage, $group]) }}">
