@@ -113,6 +113,8 @@
             <x-ui.button type="submit">Save Question Group</x-ui.button>
             @if ($group->question_type?->isMatchingBuilderType())
                 <x-ui.button href="{{ route('admin.reading-question-groups.questions.index', $group) }}" variant="secondary">Manage Questions</x-ui.button>
+            @elseif ($group->question_type?->isObjectiveBuilderType())
+                <x-ui.button href="{{ route('admin.reading-question-groups.objective-questions.index', $group) }}" variant="secondary">Manage Questions</x-ui.button>
             @endif
             <x-ui.button type="button" variant="outline" @click="groupDeleteOpen = true">Delete</x-ui.button>
         </div>

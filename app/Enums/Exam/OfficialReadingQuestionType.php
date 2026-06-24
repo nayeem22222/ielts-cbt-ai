@@ -80,4 +80,55 @@ enum OfficialReadingQuestionType: string
     {
         return $this === self::MatchingHeadings;
     }
+
+    /**
+     * @return list<self>
+     */
+    public static function objectiveBuilderTypes(): array
+    {
+        return [
+            self::TrueFalseNotGiven,
+            self::YesNoNotGiven,
+            self::MultipleChoiceSingle,
+            self::MultipleChoiceMultiple,
+        ];
+    }
+
+    public function isObjectiveBuilderType(): bool
+    {
+        return in_array($this, self::objectiveBuilderTypes(), true);
+    }
+
+    public function usesPerQuestionOptions(): bool
+    {
+        return in_array($this, [self::MultipleChoiceSingle, self::MultipleChoiceMultiple], true);
+    }
+
+    public function allowsMultipleCorrectAnswers(): bool
+    {
+        return $this === self::MultipleChoiceMultiple;
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    public function objectiveAnswerChoices(): ?array
+    {
+        return match ($this) {
+            self::TrueFalseNotGiven => ['TRUE', 'FALSE', 'NOT_GIVEN'],
+            self::YesNoNotGiven => ['YES', 'NO', 'NOT_GIVEN'],
+            default => null,
+        };
+    }
+
+    public function objectiveBuilderViewKey(): string
+    {
+        return match ($this) {
+            self::TrueFalseNotGiven => 'true-false',
+            self::YesNoNotGiven => 'yes-no',
+            self::MultipleChoiceSingle => 'mcq-single',
+            self::MultipleChoiceMultiple => 'mcq-multiple',
+            default => 'unsupported',
+        };
+    }
 }
