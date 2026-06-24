@@ -6,14 +6,11 @@ use App\Enums\Auth\UserRole;
 use App\Enums\Course\ExamType;
 use App\Enums\Course\PublishStatus;
 use App\Enums\Exam\ReadingQuestionType;
-use App\Enums\Exam\TestType;
 use App\Models\ExamTest;
 use App\Models\Question;
 use App\Models\QuestionBank;
-use App\Models\TestModule;
-use App\Models\TestSection;
+use App\Models\ReadingTest;
 use App\Services\Admin\Exam\ReadingTestBuilderService;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function (): void {
@@ -32,7 +29,7 @@ it('allows admin to view reading tests index', function (): void {
         ->assertSee('Reading Test Directory');
 });
 
-it('creates reading test and bootstraps module and question bank', function (): void {
+it('creates reading test settings without bootstrapping legacy builder data', function (): void {
     $admin = createUserWithRole(UserRole::SuperAdmin, [
         'email' => 'reading-tests-create@example.com',
         'email_verified_at' => now(),
@@ -41,60 +38,75 @@ it('creates reading test and bootstraps module and question bank', function (): 
     $this->actingAs($admin)->post(route('admin.reading-tests.store'), [
         'title' => 'Academic Reading Mock 1',
         'slug' => 'academic-reading-mock-1',
-        'description' => 'Full reading practice test',
         'exam_type' => ExamType::Academic->value,
-        'duration_seconds' => 3600,
-        'is_timed' => true,
+        'duration_minutes' => 60,
+        'instructions' => 'Full reading practice test',
         'status' => PublishStatus::Draft->value,
     ])->assertRedirect();
 
-    $test = ExamTest::query()->where('slug', 'academic-reading-mock-1')->first();
+    $test = ReadingTest::query()->where('slug', 'academic-reading-mock-1')->first();
 
     expect($test)->not->toBeNull();
-    expect($test->type)->toBe(TestType::ReadingTest);
-    expect(TestModule::query()->where('test_id', $test->id)->where('module', 'reading')->exists())->toBeTrue();
-    expect(QuestionBank::query()->where('slug', 'academic-reading-mock-1-reading-bank')->exists())->toBeTrue();
+    expect($test->duration_minutes)->toBe(60);
+    expect($test->created_by)->toBe($admin->id);
+    expect(ExamTest::query()->where('slug', 'academic-reading-mock-1')->exists())->toBeFalse();
 });
 
-it('saves passages and questions in the builder', function (): void {
+it('duplicates reading test content tree as draft', function (): void {
     $admin = createUserWithRole(UserRole::SuperAdmin, [
         'email' => 'reading-builder@example.com',
         'email_verified_at' => now(),
     ]);
 
-    $test = app(ReadingTestBuilderService::class)->importTest([
-        'test' => [
-            'title' => 'Builder Test',
-            'slug' => 'builder-test',
-            'exam_type' => ExamType::Academic->value,
-            'duration_seconds' => 3600,
-            'status' => PublishStatus::Draft->value,
-        ],
-        'passages' => [],
-    ], $admin);
+    $test = ReadingTest::query()->create([
+        'title' => 'Builder Test',
+        'slug' => 'builder-test',
+        'exam_type' => ExamType::Academic,
+        'duration_minutes' => 60,
+        'status' => PublishStatus::Published,
+        'published_at' => now(),
+        'created_by' => $admin->id,
+        'updated_by' => $admin->id,
+    ]);
 
-    $this->actingAs($admin)->post(route('admin.reading-tests.passages.store', $test), [
+    $passage = $test->passages()->create([
         'title' => 'Passage 1',
+        'part_number' => 1,
+        'instruction' => 'Answer questions 1-3.',
+        'content_text' => 'Climate change affects ecosystems worldwide.',
         'sort_order' => 1,
-        'instructions' => 'Answer questions 1-3.',
-        'stimulus_text' => 'Climate change affects ecosystems worldwide.',
-        'status' => PublishStatus::Draft->value,
-    ])->assertRedirect();
+    ]);
 
-    $section = TestSection::query()->where('title', 'Passage 1')->firstOrFail();
+    $group = $passage->groups()->create([
+        'title' => 'Questions 1-1',
+        'instruction' => 'Do the following statements agree?',
+        'question_type' => 'true_false_not_given',
+        'start_question' => 1,
+        'end_question' => 1,
+        'sort_order' => 1,
+    ]);
 
-    $this->actingAs($admin)->post(route('admin.reading-tests.questions.store', [$test, $section]), [
-        'type' => ReadingQuestionType::TrueFalseNg->value,
+    $question = $group->questions()->create([
         'question_number' => 1,
         'prompt' => 'The passage mentions reversible climate effects.',
-        'correct_answer' => 'False',
         'marks' => 1,
         'sort_order' => 1,
-    ])->assertRedirect();
+    ]);
+    $question->options()->create(['option_key' => 'T', 'option_label' => 'True', 'sort_order' => 1]);
+    $question->correctAnswers()->create(['answer' => 'False']);
 
-    $test->refresh();
-    expect($test->total_questions)->toBe(1);
-    expect($section->fresh()->question_count)->toBe(1);
+    $this->actingAs($admin)
+        ->post(route('admin.reading-tests.duplicate', $test))
+        ->assertRedirect();
+
+    $copy = ReadingTest::query()->where('slug', 'copy-of-builder-test')->firstOrFail();
+
+    expect($copy->title)->toBe('Copy of Builder Test');
+    expect($copy->status)->toBe(PublishStatus::Draft);
+    expect($copy->published_at)->toBeNull();
+    expect($copy->passages()->count())->toBe(1);
+    expect($copy->questionGroups()->count())->toBe(1);
+    expect($copy->questions_count)->toBe(1);
 });
 
 it('supports all fifteen official reading question types', function (): void {
@@ -138,54 +150,26 @@ it('supports all fifteen official reading question types', function (): void {
     expect(ReadingQuestionType::cases())->toHaveCount(15);
 });
 
-it('exports and imports reading test json', function (): void {
+it('exports reading tests csv from admin list', function (): void {
     $admin = createUserWithRole(UserRole::SuperAdmin, [
         'email' => 'reading-import-export@example.com',
         'email_verified_at' => now(),
     ]);
 
-    $builder = app(ReadingTestBuilderService::class);
-    $test = $builder->importTest([
-        'test' => [
-            'title' => 'Export Test',
-            'slug' => 'export-test',
-            'exam_type' => ExamType::Academic->value,
-        ],
-        'passages' => [[
-            'title' => 'Passage 1',
-            'sort_order' => 1,
-            'stimulus_text' => 'Export passage text.',
-            'questions' => [[
-                'type' => ReadingQuestionType::ShortAnswer->value,
-                'question_number' => 1,
-                'prompt' => 'What is the main topic?',
-                'correct_answer' => 'climate',
-                'marks' => 1,
-                'sort_order' => 1,
-                'options' => [],
-            ]],
-        ]],
-    ], $admin);
-
-    $payload = $builder->exportTest($test);
-
-    expect($payload['version'])->toBe(1);
-    expect($payload['passages'])->toHaveCount(1);
-    expect($payload['passages'][0]['questions'])->toHaveCount(1);
+    ReadingTest::query()->create([
+        'title' => 'Export Test',
+        'slug' => 'export-test',
+        'exam_type' => ExamType::Academic,
+        'duration_minutes' => 60,
+        'status' => PublishStatus::Draft,
+        'created_by' => $admin->id,
+    ]);
 
     $response = $this->actingAs($admin)
-        ->get(route('admin.reading-tests.export-json', $test));
+        ->get(route('admin.reading-tests.export'));
 
     $response->assertOk();
-    expect($response->headers->get('content-disposition'))->toContain('export-test-reading-test.json');
-
-    $json = UploadedFile::fake()->createWithContent('import.json', json_encode($payload));
-
-    $this->actingAs($admin)
-        ->post(route('admin.reading-tests.import-json', $test), ['file' => $json])
-        ->assertRedirect(route('admin.reading-tests.builder', $test));
-
-    expect($test->fresh()->total_questions)->toBeGreaterThanOrEqual(1);
+    expect($response->streamedContent())->toContain('Export Test');
 });
 
 it('shows reading test preview to admin', function (): void {
@@ -194,34 +178,21 @@ it('shows reading test preview to admin', function (): void {
         'email_verified_at' => now(),
     ]);
 
-    $test = app(ReadingTestBuilderService::class)->importTest([
-        'test' => [
-            'title' => 'Preview Test',
-            'slug' => 'preview-test',
-            'exam_type' => ExamType::Academic->value,
-        ],
-        'passages' => [[
-            'title' => 'Urban Farming',
-            'sort_order' => 1,
-            'stimulus_text' => 'Urban farming is growing rapidly.',
-            'questions' => [[
-                'type' => ReadingQuestionType::MultipleChoiceSingle->value,
-                'question_number' => 1,
-                'prompt' => 'What is urban farming?',
-                'options' => ['A city garden', 'A rural farm', 'A factory'],
-                'correct_answer' => 'A city garden',
-                'marks' => 1,
-                'sort_order' => 1,
-            ]],
-        ]],
-    ], $admin);
+    $test = ReadingTest::query()->create([
+        'title' => 'Preview Test',
+        'slug' => 'preview-test',
+        'exam_type' => ExamType::Academic,
+        'duration_minutes' => 60,
+        'status' => PublishStatus::Draft,
+        'created_by' => $admin->id,
+    ]);
 
     $this->actingAs($admin)
         ->get(route('admin.reading-tests.preview', $test))
         ->assertOk()
-        ->assertSee('Candidate Preview')
-        ->assertSee('Urban Farming')
-        ->assertSee('Multiple Choice (Single Answer)');
+        ->assertSee('Admin Preview')
+        ->assertSee('Preview Test')
+        ->assertSee('preview-test');
 });
 
 it('manages question banks with csv import support', function (): void {
@@ -261,6 +232,8 @@ it('denies reading test builder access without permission', function (): void {
 });
 
 it('opens builder after creating a reading test', function (): void {
+    $this->withoutVite();
+
     $admin = createUserWithRole(UserRole::SuperAdmin, [
         'email' => 'reading-builder-ui@example.com',
         'email_verified_at' => now(),
@@ -270,18 +243,18 @@ it('opens builder after creating a reading test', function (): void {
         'title' => 'Builder UI Test',
         'slug' => 'builder-ui-test',
         'exam_type' => ExamType::Academic->value,
-        'duration_seconds' => 3600,
-        'is_timed' => true,
+        'duration_minutes' => 60,
         'status' => PublishStatus::Draft->value,
     ]);
 
-    $test = ExamTest::query()->where('slug', 'builder-ui-test')->firstOrFail();
+    $test = ReadingTest::query()->where('slug', 'builder-ui-test')->firstOrFail();
 
     $this->actingAs($admin)
         ->get(route('admin.reading-tests.builder', $test))
         ->assertOk()
         ->assertSee('Reading Test Builder')
-        ->assertSee('Add Passage');
+        ->assertSee('Add Passage')
+        ->assertSee('Builder UI Test');
 });
 
 it('registers tests and question bank permissions', function (): void {

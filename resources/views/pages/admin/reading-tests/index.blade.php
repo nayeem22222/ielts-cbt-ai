@@ -2,15 +2,24 @@
     <div class="mb-6 flex justify-between gap-4">
         <div>
             <h2 class="text-xl font-bold text-neutral-900 dark:text-white">Reading Tests</h2>
-            <p class="text-sm aa-muted">Create and manage IELTS reading tests with passages and official question types.</p>
+            <p class="text-sm aa-muted">Create and manage IELTS Academic and General Reading tests.</p>
         </div>
-        @can('create', \App\Models\ExamTest::class)
+        @can('create', \App\Models\ReadingTest::class)
             <x-ui.button href="{{ route($routePrefix.'.create') }}">Add Reading Test</x-ui.button>
         @endcan
     </div>
 
     <x-ui.card title="Reading Test Directory">
-        <x-admin.crud-toolbar :route-prefix="$routePrefix" :filters="$filters" :sort="$sort" :direction="$direction" :definition="$definition" :statuses="$statuses" show-status-filter>
+        <x-admin.crud-toolbar
+            :route-prefix="$routePrefix"
+            :filters="$filters"
+            :sort="$sort"
+            :direction="$direction"
+            :definition="$definition"
+            :statuses="$statuses"
+            :bulk-actions="['delete' => 'Delete selected', 'publish' => 'Publish selected', 'unpublish' => 'Unpublish selected', 'archive' => 'Archive selected']"
+            show-status-filter
+        >
             <x-slot:customFilters>
                 <x-ui.select name="exam_type" label="Exam">
                     <option value="">All types</option>
@@ -25,11 +34,18 @@
             <thead>
                 <tr class="text-left text-xs uppercase aa-muted">
                     <th class="p-4"><input type="checkbox" data-crud-select-all></th>
+                    <th class="p-4">ID</th>
                     <th class="p-4">Title</th>
+                    <th class="p-4">Slug</th>
                     <th class="p-4">Exam</th>
+                    <th class="p-4">Passages</th>
+                    <th class="p-4">Groups</th>
                     <th class="p-4">Questions</th>
                     <th class="p-4">Duration</th>
                     <th class="p-4">Status</th>
+                    <th class="p-4">Published</th>
+                    <th class="p-4">Created By</th>
+                    <th class="p-4">Updated</th>
                     <th class="p-4">Actions</th>
                 </tr>
             </thead>
@@ -37,23 +53,38 @@
                 @forelse ($records as $record)
                     <tr>
                         <td class="p-4"><input type="checkbox" data-crud-row-checkbox value="{{ $record->id }}"></td>
+                        <td class="p-4 text-sm aa-muted">{{ $record->id }}</td>
                         <td class="p-4">
                             <div class="font-medium text-neutral-900 dark:text-white">{{ $record->title }}</div>
-                            <div class="text-xs aa-muted">{{ $record->slug }}</div>
                         </td>
+                        <td class="p-4 text-xs aa-muted">{{ $record->slug }}</td>
                         <td class="p-4">{{ $record->exam_type?->label() ?? '—' }}</td>
-                        <td class="p-4">{{ $record->total_questions ?? 0 }}</td>
-                        <td class="p-4">{{ $record->duration_seconds ? gmdate('H:i:s', $record->duration_seconds) : '—' }}</td>
-                        <td class="p-4"><x-ui.badge tone="blue">{{ $record->status?->label() ?? 'Draft' }}</x-ui.badge></td>
+                        <td class="p-4">{{ $record->passages_count }}</td>
+                        <td class="p-4">{{ $record->question_groups_count }}</td>
+                        <td class="p-4">{{ $record->questions_count }}</td>
+                        <td class="p-4">{{ $record->duration_minutes }} min</td>
+                        <td class="p-4">
+                            <x-ui.badge :tone="$record->status === \App\Enums\Course\PublishStatus::Published ? 'green' : ($record->status === \App\Enums\Course\PublishStatus::Archived ? 'neutral' : 'amber')">
+                                {{ $record->status?->label() ?? 'Draft' }}
+                            </x-ui.badge>
+                        </td>
+                        <td class="p-4 text-sm aa-muted">{{ $record->published_at?->format('Y-m-d H:i') ?? '—' }}</td>
+                        <td class="p-4 text-sm">{{ $record->creator?->name ?? '—' }}</td>
+                        <td class="p-4 text-sm aa-muted">{{ $record->updated_at?->diffForHumans() }}</td>
                         <td class="p-4">
                             <div class="flex flex-wrap gap-2">
-                                @if ($record->status === \App\Enums\Course\PublishStatus::Published)
-                                    <x-ui.button href="{{ route('exam.reading.show', $record) }}" size="sm" variant="outline">Start</x-ui.button>
-                                @endif
                                 @can('update', $record)
                                     <x-ui.button href="{{ route('admin.reading-tests.builder', $record) }}" size="sm">Builder</x-ui.button>
                                     <x-ui.button href="{{ route('admin.reading-tests.preview', $record) }}" size="sm" variant="outline">Preview</x-ui.button>
                                     <x-ui.button href="{{ route($routePrefix.'.edit', $record) }}" size="sm" variant="outline">Edit</x-ui.button>
+                                    @if ($record->status === \App\Enums\Course\PublishStatus::Published)
+                                        <form method="POST" action="{{ route('admin.reading-tests.unpublish', $record) }}">@csrf<x-ui.button type="submit" size="sm" variant="outline">Unpublish</x-ui.button></form>
+                                    @else
+                                        <form method="POST" action="{{ route('admin.reading-tests.publish', $record) }}">@csrf<x-ui.button type="submit" size="sm" variant="outline">Publish</x-ui.button></form>
+                                    @endif
+                                @endcan
+                                @can('create', \App\Models\ReadingTest::class)
+                                    <form method="POST" action="{{ route('admin.reading-tests.duplicate', $record) }}">@csrf<x-ui.button type="submit" size="sm" variant="outline">Duplicate</x-ui.button></form>
                                 @endcan
                                 @can('delete', $record)
                                     <form method="POST" action="{{ route($routePrefix.'.destroy', $record) }}" onsubmit="return confirm('Delete this reading test?')">
@@ -65,7 +96,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="p-8"><x-ui.empty-state title="No reading tests">Create a reading test to start building passages and questions.</x-ui.empty-state></td></tr>
+                    <tr><td colspan="14" class="p-8"><x-ui.empty-state title="No reading tests">Create a reading test to start managing IELTS Reading content.</x-ui.empty-state></td></tr>
                 @endforelse
             </tbody>
         </x-ui.table>

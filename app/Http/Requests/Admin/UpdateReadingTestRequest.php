@@ -6,16 +6,16 @@ namespace App\Http\Requests\Admin;
 
 use App\Enums\Course\ExamType;
 use App\Enums\Course\PublishStatus;
-use App\Models\ExamTest;
+use App\Models\ReadingTest;
 use Illuminate\Validation\Rule;
 
 class UpdateReadingTestRequest extends CourseSlugRequest
 {
     public function authorize(): bool
     {
-        $test = $this->route('reading_test');
+        $test = $this->route('readingTest');
 
-        return $test instanceof ExamTest
+        return $test instanceof ReadingTest
             && ($this->user()?->can('update', $test) ?? false);
     }
 
@@ -29,16 +29,17 @@ class UpdateReadingTestRequest extends CourseSlugRequest
      */
     public function rules(): array
     {
-        /** @var ExamTest $test */
-        $test = $this->route('reading_test');
+        /** @var ReadingTest $test */
+        $test = $this->route('readingTest');
 
         return [
-            'title' => ['required', 'string', 'max:200'],
-            'slug' => ['required', 'string', 'max:200', Rule::unique('tests', 'slug')->ignore($test->id)->whereNull('deleted_at')],
-            'description' => ['nullable', 'string', 'max:5000'],
+            'title' => ['required', 'string', 'max:255'],
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique('reading_tests', 'slug')->ignore($test->id)],
             'exam_type' => ['required', 'string', Rule::in(ExamType::values())],
-            'duration_seconds' => ['nullable', 'integer', 'min:60', 'max:86400'],
-            'is_timed' => ['nullable', 'boolean'],
+            'duration_minutes' => ['required', 'integer', 'min:1', 'max:240'],
+            'instructions' => ['nullable', 'string'],
+            'meta_description' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
             'status' => ['required', 'string', Rule::in(PublishStatus::values())],
             'published_at' => ['nullable', 'date'],
         ];

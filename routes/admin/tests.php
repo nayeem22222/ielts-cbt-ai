@@ -4,32 +4,45 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Admin\QuestionBankController;
 use App\Http\Controllers\Admin\ReadingAnalyticsController;
-use App\Http\Controllers\Admin\ReadingTestBuilderController;
+use App\Http\Controllers\Admin\ReadingPassageController;
+use App\Http\Controllers\Admin\ReadingQuestionGroupController;
 use App\Http\Controllers\Admin\ReadingTestController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('permission:tests.view')->group(function (): void {
     Route::get('/reading-tests/trash', [ReadingTestController::class, 'trash'])->name('reading-tests.trash');
-    Route::get('/reading-tests/export', [ReadingTestController::class, 'export'])->name('reading-tests.export');
+    Route::get('/reading-tests/export/csv', [ReadingTestController::class, 'export'])->name('reading-tests.export');
     Route::post('/reading-tests/bulk', [ReadingTestController::class, 'bulk'])->name('reading-tests.bulk');
     Route::get('/reading-tests', [ReadingTestController::class, 'index'])->name('reading-tests.index');
     Route::get('/reading-tests/create', [ReadingTestController::class, 'create'])->name('reading-tests.create');
     Route::post('/reading-tests', [ReadingTestController::class, 'store'])->name('reading-tests.store');
-    Route::get('/reading-tests/{reading_test}/edit', [ReadingTestController::class, 'edit'])->name('reading-tests.edit');
-    Route::put('/reading-tests/{reading_test}', [ReadingTestController::class, 'update'])->name('reading-tests.update');
-    Route::delete('/reading-tests/{reading_test}', [ReadingTestController::class, 'destroy'])->name('reading-tests.destroy');
-    Route::put('/reading-tests/{id}/restore', [ReadingTestController::class, 'restore'])->name('reading-tests.restore')->whereNumber('id');
-    Route::delete('/reading-tests/{id}/force', [ReadingTestController::class, 'forceDestroy'])->name('reading-tests.force-destroy')->whereNumber('id');
+    Route::get('/reading-tests/{readingTest}/edit', [ReadingTestController::class, 'edit'])->name('reading-tests.edit');
+    Route::put('/reading-tests/{readingTest}', [ReadingTestController::class, 'update'])->name('reading-tests.update');
+    Route::delete('/reading-tests/{readingTest}', [ReadingTestController::class, 'destroy'])->name('reading-tests.destroy');
+    Route::post('/reading-tests/{readingTest}/publish', [ReadingTestController::class, 'publish'])->name('reading-tests.publish');
+    Route::post('/reading-tests/{readingTest}/unpublish', [ReadingTestController::class, 'unpublish'])->name('reading-tests.unpublish');
+    Route::post('/reading-tests/{readingTest}/duplicate', [ReadingTestController::class, 'duplicate'])->name('reading-tests.duplicate');
+    Route::post('/reading-tests/{id}/restore', [ReadingTestController::class, 'restore'])->name('reading-tests.restore')->whereNumber('id');
+    Route::delete('/reading-tests/{id}/force-delete', [ReadingTestController::class, 'forceDestroy'])->name('reading-tests.force-delete')->whereNumber('id');
 
-    Route::get('/reading-tests/{reading_test}/builder', [ReadingTestBuilderController::class, 'builder'])->name('reading-tests.builder');
-    Route::get('/reading-tests/{reading_test}/preview', [ReadingTestBuilderController::class, 'preview'])->name('reading-tests.preview');
-    Route::get('/reading-tests/{reading_test}/export-json', [ReadingTestBuilderController::class, 'exportJson'])->name('reading-tests.export-json');
-    Route::post('/reading-tests/{reading_test}/import-json', [ReadingTestBuilderController::class, 'importJson'])->name('reading-tests.import-json');
-    Route::post('/reading-tests/{reading_test}/passages', [ReadingTestBuilderController::class, 'storePassage'])->name('reading-tests.passages.store');
-    Route::put('/reading-tests/{reading_test}/passages/{section}', [ReadingTestBuilderController::class, 'updatePassage'])->name('reading-tests.passages.update');
-    Route::post('/reading-tests/{reading_test}/passages/{section}/questions', [ReadingTestBuilderController::class, 'storeQuestion'])->name('reading-tests.questions.store');
-    Route::put('/reading-tests/{reading_test}/questions/{question}', [ReadingTestBuilderController::class, 'updateQuestion'])->name('reading-tests.questions.update');
-    Route::delete('/reading-tests/{reading_test}/passages/{section}/questions/{question}', [ReadingTestBuilderController::class, 'destroyQuestion'])->name('reading-tests.questions.destroy');
+    Route::get('/reading-tests/{readingTest}/builder', [ReadingTestController::class, 'builder'])->name('reading-tests.builder');
+    Route::get('/reading-tests/{readingTest}/preview', [ReadingTestController::class, 'preview'])->name('reading-tests.preview');
+
+    Route::post('/reading-tests/{readingTest}/passages/reorder', [ReadingPassageController::class, 'reorder'])->name('reading-tests.passages.reorder');
+    Route::post('/reading-tests/{readingTest}/passages', [ReadingPassageController::class, 'store'])->name('reading-tests.passages.store');
+    Route::put('/reading-tests/{readingTest}/passages/{passage}', [ReadingPassageController::class, 'update'])->name('reading-tests.passages.update');
+    Route::delete('/reading-tests/{readingTest}/passages/{passage}', [ReadingPassageController::class, 'destroy'])->name('reading-tests.passages.destroy');
+    Route::post('/reading-tests/{readingTest}/passages/{passage}/duplicate', [ReadingPassageController::class, 'duplicate'])->name('reading-tests.passages.duplicate');
+    Route::post('/reading-tests/{readingTest}/passages/{passage}/move-up', [ReadingPassageController::class, 'moveUp'])->name('reading-tests.passages.move-up');
+    Route::post('/reading-tests/{readingTest}/passages/{passage}/move-down', [ReadingPassageController::class, 'moveDown'])->name('reading-tests.passages.move-down');
+
+    Route::post('/reading-tests/{readingTest}/passages/{passage}/groups/reorder', [ReadingQuestionGroupController::class, 'reorder'])->name('reading-tests.passages.groups.reorder');
+    Route::post('/reading-tests/{readingTest}/passages/{passage}/groups', [ReadingQuestionGroupController::class, 'store'])->name('reading-tests.passages.groups.store');
+    Route::put('/reading-tests/{readingTest}/passages/{passage}/groups/{group}', [ReadingQuestionGroupController::class, 'update'])->name('reading-tests.passages.groups.update');
+    Route::delete('/reading-tests/{readingTest}/passages/{passage}/groups/{group}', [ReadingQuestionGroupController::class, 'destroy'])->name('reading-tests.passages.groups.destroy');
+    Route::post('/reading-tests/{readingTest}/passages/{passage}/groups/{group}/duplicate', [ReadingQuestionGroupController::class, 'duplicate'])->name('reading-tests.passages.groups.duplicate');
+    Route::post('/reading-tests/{readingTest}/passages/{passage}/groups/{group}/move-up', [ReadingQuestionGroupController::class, 'moveUp'])->name('reading-tests.passages.groups.move-up');
+    Route::post('/reading-tests/{readingTest}/passages/{passage}/groups/{group}/move-down', [ReadingQuestionGroupController::class, 'moveDown'])->name('reading-tests.passages.groups.move-down');
 
     Route::get('/reading-analytics', [ReadingAnalyticsController::class, 'index'])->name('reading-analytics.index');
     Route::get('/reading-analytics/attempts/{reading_analytic}', [ReadingAnalyticsController::class, 'attempt'])->name('reading-analytics.attempt');

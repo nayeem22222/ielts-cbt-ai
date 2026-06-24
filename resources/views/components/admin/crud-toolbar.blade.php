@@ -9,6 +9,7 @@
     'showRoleFilter' => false,
     'showStatusFilter' => false,
     'trashed' => false,
+    'bulkActions' => null,
 ])
 
 @php
@@ -78,6 +79,10 @@
             @if ($trashed)
                 <option value="restore">Restore selected</option>
                 <option value="force_delete">Permanently delete</option>
+            @elseif (is_array($bulkActions))
+                @foreach ($bulkActions as $value => $label)
+                    <option value="{{ $value }}">{{ $label }}</option>
+                @endforeach
             @else
                 <option value="delete">Delete selected</option>
             @endif

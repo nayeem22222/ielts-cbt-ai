@@ -13,6 +13,7 @@ use App\Models\Lesson;
 use App\Models\LessonResource;
 use App\Models\Package;
 use App\Models\QuestionBank;
+use App\Models\ReadingTest;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
@@ -41,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(LessonResource::class, $coursePolicy);
         Gate::policy(Package::class, \App\Policies\PackagePolicy::class);
         Gate::policy(ExamTest::class, \App\Policies\ExamPolicy::class);
+        Gate::policy(ReadingTest::class, \App\Policies\ExamPolicy::class);
         Gate::policy(QuestionBank::class, \App\Policies\QuestionBankPolicy::class);
 
         foreach (PermissionEnum::cases() as $permission) {

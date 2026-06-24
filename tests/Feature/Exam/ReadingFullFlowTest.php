@@ -25,7 +25,6 @@ use App\Models\StudentPackage;
 use App\Models\TestAttempt;
 use App\Models\User;
 use App\Services\Admin\Exam\ReadingTestBuilderService;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 
 beforeEach(function (): void {
@@ -129,41 +128,18 @@ it('completes admin course package reading test and student enrollment flow', fu
     $package = Package::query()->where('slug', 'reading-flow-package')->firstOrFail();
     expect($package->courses()->where('courses.id', $course->id)->exists())->toBeTrue();
 
-    $this->actingAs($admin)->post(route('admin.reading-tests.store'), [
-        'title' => 'Full Flow Reading Test',
-        'slug' => 'full-flow-reading-test',
-        'description' => 'Three passages and forty questions',
-        'exam_type' => ExamType::Academic->value,
-        'duration_seconds' => 3600,
-        'is_timed' => true,
-        'status' => PublishStatus::Draft->value,
-    ])->assertRedirect();
-
-    $readingTest = ExamTest::query()->where('slug', 'full-flow-reading-test')->firstOrFail();
-
-    $importPayload = fortyQuestionReadingImportPayload($readingTest->slug);
-    $jsonFile = UploadedFile::fake()->createWithContent(
-        'reading-import.json',
-        json_encode($importPayload, JSON_THROW_ON_ERROR)
+    $readingTest = app(ReadingTestBuilderService::class)->importTest(
+        fortyQuestionReadingImportPayload('full-flow-reading-test'),
+        $admin
     );
-
-    $this->actingAs($admin)->post(route('admin.reading-tests.import-json', $readingTest), [
-        'file' => $jsonFile,
-    ])->assertRedirect(route('admin.reading-tests.builder', $readingTest));
 
     expect($readingTest->testQuestions()->count())->toBe(40);
     expect($readingTest->sections()->count())->toBe(3);
 
-    $this->actingAs($admin)->put(route('admin.reading-tests.update', $readingTest), [
-        'title' => 'Full Flow Reading Test',
-        'slug' => 'full-flow-reading-test',
-        'description' => 'Three passages and forty questions',
-        'exam_type' => ExamType::Academic->value,
-        'duration_seconds' => 3600,
-        'is_timed' => true,
+    $readingTest->update([
         'status' => PublishStatus::Published->value,
-        'published_at' => now()->toDateString(),
-    ])->assertRedirect(route('admin.reading-tests.index'));
+        'published_at' => now(),
+    ]);
 
     expect($readingTest->fresh()->status)->toBe(PublishStatus::Published);
 

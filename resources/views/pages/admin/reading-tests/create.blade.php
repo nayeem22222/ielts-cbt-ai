@@ -2,7 +2,7 @@
     <x-ui.card>
         <form method="POST" action="{{ route('admin.reading-tests.store') }}">
             @csrf
-            @include('pages.admin.reading-tests._form', array_merge(compact('statuses', 'examTypes'), ['submitLabel' => 'Create & Open Builder']))
+            @include('pages.admin.reading-tests._form', array_merge(compact('statuses', 'examTypes', 'readingTest'), ['submitLabel' => 'Create Reading Test']))
         </form>
     </x-ui.card>
 </x-layouts.admin>
