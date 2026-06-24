@@ -33,10 +33,24 @@
             <h2 class="text-2xl font-bold text-neutral-900 dark:text-white">{{ $test->title }}</h2>
         </div>
         <div class="flex flex-wrap gap-2">
+            <x-ui.button href="{{ route('admin.reading-tests.preview-full', $test) }}" variant="outline">Full Preview</x-ui.button>
             <x-ui.button href="{{ route('admin.reading-tests.preview', $test) }}" variant="outline">Test Preview</x-ui.button>
             <x-ui.button href="{{ route('admin.reading-tests.edit', $test) }}" variant="outline">Test Settings</x-ui.button>
         </div>
     </div>
+
+    @if (session('status'))
+        <x-ui.alert tone="green" class="mb-4">{{ session('status') }}</x-ui.alert>
+    @endif
+
+    @if (session('error'))
+        <x-ui.alert tone="red" class="mb-4">{{ session('error') }}</x-ui.alert>
+    @endif
+
+    @include('pages.admin.reading-tests.partials.validation-panel', [
+        'result' => $validationResult,
+        'test' => $test,
+    ])
 
     <div
         class="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]"

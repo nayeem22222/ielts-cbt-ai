@@ -19,10 +19,12 @@ use App\Models\ReadingTest;
 use App\Services\Admin\Exam\ReadingPassageBuilderService;
 use App\Services\Admin\Exam\ReadingQuestionGroupBuilderService;
 use App\Services\Admin\Exam\ReadingTestCrudService;
+use App\Services\Admin\Exam\ReadingTestValidationService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReadingTestController extends Controller
@@ -31,6 +33,7 @@ class ReadingTestController extends Controller
         private readonly ReadingTestCrudService $tests,
         private readonly ReadingPassageBuilderService $passages,
         private readonly ReadingQuestionGroupBuilderService $questionGroups,
+        private readonly ReadingTestValidationService $validation,
     ) {
     }
 
@@ -128,7 +131,16 @@ class ReadingTestController extends Controller
     public function publish(ReadingTest $readingTest): RedirectResponse
     {
         $this->authorize('update', $readingTest);
-        $this->tests->publish($readingTest);
+
+        $result = $this->validation->validatePublishReady($readingTest);
+
+        if (! $result['is_valid']) {
+            return back()
+                ->with('error', 'This reading test cannot be published until validation errors are resolved.')
+                ->with('validation_result', $result);
+        }
+
+        DB::transaction(fn () => $this->tests->publish($readingTest));
 
         return back()->with('status', 'Reading test published.');
     }
@@ -184,7 +196,7 @@ class ReadingTestController extends Controller
             'delete' => DB::transaction(fn () => $this->tests->bulkDelete($ids)),
             'restore' => DB::transaction(fn () => $this->tests->bulkRestore($ids)),
             'force_delete' => DB::transaction(fn () => $this->bulkForceDelete($ids)),
-            'publish' => $this->tests->bulkPublish($ids),
+            'publish' => $this->bulkPublishValidated($ids),
             'unpublish' => $this->tests->bulkUnpublish($ids),
             'archive' => $this->tests->bulkArchive($ids),
             default => 0,
@@ -226,6 +238,7 @@ class ReadingTestController extends Controller
             'instructionDefaults' => $instructionDefaults,
             'requestedGroupId' => $selectedGroup?->id ?? $selectedGroupId,
             'activePanel' => $selectedGroup ? 'group' : ($selectedPassage ? 'passage' : 'none'),
+            'validationResult' => $this->validation->validatePublishReady($readingTest),
         ]);
     }
 
@@ -280,6 +293,33 @@ class ReadingTestController extends Controller
             $test = $this->tests->findOrFail($id, true);
             $this->authorize('delete', $test);
             $count += (int) $this->tests->forceDelete($test);
+        }
+
+        return $count;
+    }
+
+    /**
+     * @param  list<int>  $ids
+     */
+    private function bulkPublishValidated(array $ids): int
+    {
+        $count = 0;
+
+        foreach ($ids as $id) {
+            /** @var ReadingTest $test */
+            $test = $this->tests->findOrFail($id);
+            $this->authorize('update', $test);
+
+            $result = $this->validation->validatePublishReady($test);
+
+            if (! $result['is_valid']) {
+                throw ValidationException::withMessages([
+                    'publish' => "Reading test \"{$test->title}\" failed validation and was not published.",
+                ]);
+            }
+
+            DB::transaction(fn () => $this->tests->publish($test));
+            $count++;
         }
 
         return $count;

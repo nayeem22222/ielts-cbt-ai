@@ -111,13 +111,15 @@ class ReadingTestCrudService extends AbstractCrudService
 
     public function publish(ReadingTest $test): ReadingTest
     {
-        $test->forceFill([
-            'status' => PublishStatus::Published,
-            'published_at' => $test->published_at ?? now(),
-            'updated_by' => auth()->id(),
-        ])->save();
+        return DB::transaction(function () use ($test): ReadingTest {
+            $test->forceFill([
+                'status' => PublishStatus::Published,
+                'published_at' => $test->published_at ?? now(),
+                'updated_by' => auth()->id(),
+            ])->save();
 
-        return $test->refresh();
+            return $test->refresh();
+        });
     }
 
     public function unpublish(ReadingTest $test): ReadingTest

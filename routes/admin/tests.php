@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AdminReadingDiagramQuestionController;
 use App\Http\Controllers\Admin\AdminReadingMatchingQuestionController;
 use App\Http\Controllers\Admin\AdminReadingObjectiveQuestionController;
 use App\Http\Controllers\Admin\AdminReadingShortAnswerQuestionController;
+use App\Http\Controllers\Admin\AdminReadingValidationController;
 use App\Http\Controllers\Admin\QuestionBankController;
 use App\Http\Controllers\Admin\ReadingAnalyticsController;
 use App\Http\Controllers\Admin\ReadingPassageController;
@@ -32,6 +33,9 @@ Route::middleware('permission:tests.view')->group(function (): void {
 
     Route::get('/reading-tests/{readingTest}/builder', [ReadingTestController::class, 'builder'])->name('reading-tests.builder');
     Route::get('/reading-tests/{readingTest}/preview', [ReadingTestController::class, 'preview'])->name('reading-tests.preview');
+    Route::get('/reading-tests/{readingTest}/validation', [AdminReadingValidationController::class, 'show'])->name('reading-tests.validation');
+    Route::post('/reading-tests/{readingTest}/validate', [AdminReadingValidationController::class, 'validate'])->name('reading-tests.validate');
+    Route::get('/reading-tests/{readingTest}/preview-full', [AdminReadingValidationController::class, 'previewFull'])->name('reading-tests.preview-full');
 
     Route::post('/reading-tests/{readingTest}/passages/reorder', [ReadingPassageController::class, 'reorder'])->name('reading-tests.passages.reorder');
     Route::post('/reading-tests/{readingTest}/passages', [ReadingPassageController::class, 'store'])->name('reading-tests.passages.store');
