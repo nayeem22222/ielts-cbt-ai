@@ -16,8 +16,16 @@
             @foreach ($questions as $question)
                 <tr class="reading-test-question-row" data-question-number="{{ $question->question_number }}">
                     <td>
-                        <span class="font-semibold">{{ $question->question_number }}.</span>
-                        {{ $question->prompt }}
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <span class="font-semibold">{{ $question->question_number }}.</span>
+                                {{ $question->prompt }}
+                            </div>
+                            <div class="flex shrink-0 items-center gap-1">
+                                <x-reading-test.flag-button :question="$question" />
+                                <x-reading-test.report-question-button :question="$question" />
+                            </div>
+                        </div>
                     </td>
                     @foreach ($choices as $choice)
                         <td class="text-center">

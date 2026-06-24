@@ -317,6 +317,10 @@ export function readingTestRenderer(initialState = {}) {
             this.ticketsController?.closeModal();
         },
 
+        openTicketModal(questionId, questionNumber) {
+            this.ticketsController?.openModal(questionId, questionNumber);
+        },
+
         submitTicket() {
             this.ticketsController?.submit();
         },

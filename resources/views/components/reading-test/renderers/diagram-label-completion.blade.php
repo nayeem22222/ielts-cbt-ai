@@ -33,4 +33,12 @@
     @else
         <p class="text-sm text-neutral-500">Diagram image is not available.</p>
     @endif
+
+    @if ($questions->isNotEmpty())
+        <div class="flex flex-wrap gap-2">
+            @foreach ($questions as $question)
+                <x-reading-test.report-question-button :question="$question" :show-number="true" />
+            @endforeach
+        </div>
+    @endif
 </div>

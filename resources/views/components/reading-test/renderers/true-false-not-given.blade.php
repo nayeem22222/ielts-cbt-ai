@@ -19,7 +19,10 @@
                         <div class="flex items-start gap-2">
                             <span class="font-semibold">{{ $question->question_number }}.</span>
                             <span class="flex-1">{{ $question->prompt }}</span>
-                            <x-reading-test.flag-button :question="$question" />
+                            <div class="flex shrink-0 items-center gap-1">
+                                <x-reading-test.flag-button :question="$question" />
+                                <x-reading-test.report-question-button :question="$question" />
+                            </div>
                         </div>
                     </td>
                     @foreach ($choices as $choice)

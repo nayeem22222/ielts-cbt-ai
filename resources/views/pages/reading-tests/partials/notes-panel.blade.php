@@ -20,14 +20,14 @@
         <div class="space-y-3 border-b border-neutral-200 p-4">
             <input
                 type="text"
-                class="reading-test-input w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                class="reading-test-notes-input w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
                 placeholder="Title (optional)"
                 x-model="noteDraft.title"
                 @input="saveNoteDraft()"
             />
             <textarea
                 rows="5"
-                class="reading-test-input w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                class="reading-test-notes-input w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
                 placeholder="Write your note..."
                 x-model="noteDraft.content"
                 @input="saveNoteDraft()"

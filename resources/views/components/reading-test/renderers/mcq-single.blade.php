@@ -1,7 +1,13 @@
 <div class="reading-test-mcq space-y-5">
     @foreach ($questions as $question)
         <div class="reading-test-question-row rounded-lg border border-neutral-200 bg-neutral-50 p-4" data-question-number="{{ $question->question_number }}">
-            <p class="text-sm font-semibold text-brand-700">Question {{ $question->question_number }}</p>
+            <div class="flex items-start justify-between gap-2">
+                <p class="text-sm font-semibold text-brand-700">Question {{ $question->question_number }}</p>
+                <div class="flex items-center gap-1">
+                    <x-reading-test.flag-button :question="$question" />
+                    <x-reading-test.report-question-button :question="$question" />
+                </div>
+            </div>
             <p class="mt-2 text-sm">{{ $question->prompt }}</p>
             <div class="mt-3 space-y-2">
                 @foreach ($question->options as $option)

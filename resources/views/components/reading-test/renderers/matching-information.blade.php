@@ -7,6 +7,7 @@
                 @foreach ($options as $option)
                     <th class="w-14 text-center">{{ $option->option_key }}</th>
                 @endforeach
+                <th class="w-32 text-center">Report</th>
             </tr>
         </thead>
         <tbody>
@@ -31,6 +32,9 @@
                             />
                         </td>
                     @endforeach
+                    <td class="text-center align-middle">
+                        <x-reading-test.report-question-button :question="$question" />
+                    </td>
                 </tr>
             @endforeach
         </tbody>

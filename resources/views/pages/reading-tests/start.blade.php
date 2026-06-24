@@ -8,9 +8,11 @@
         <div
             x-show="saveWarning"
             x-cloak
-            class="reading-test-save-warning shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-sm font-medium text-amber-800"
-            x-text="saveWarning"
-        ></div>
+            class="reading-test-save-warning shrink-0 flex items-center justify-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-sm font-medium text-amber-800"
+        >
+            <span x-text="saveWarning"></span>
+            <button type="button" class="rounded px-2 py-0.5 text-xs font-semibold text-amber-900 hover:bg-amber-100" @click="saveWarning = null">Dismiss</button>
+        </div>
 
         <div
             x-show="isLocked"

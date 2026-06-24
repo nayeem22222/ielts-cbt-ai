@@ -20,6 +20,7 @@
                             <option value="{{ $option->option_key }}">{{ $option->option_key }}</option>
                         @endforeach
                     </select>
+                    <x-reading-test.report-question-button :question="$question" />
                 </li>
             @endforeach
         </ul>

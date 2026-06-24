@@ -67,6 +67,10 @@ export function createReadingTestAutosave(component) {
     };
 
     const collectPayload = (input) => {
+        if (!input.dataset.questionId || !input.dataset.questionType || !input.dataset.groupId) {
+            return null;
+        }
+
         const questionId = Number(input.dataset.questionId);
         const groupId = Number(input.dataset.groupId);
         const passageId = Number(input.dataset.passageId);
@@ -181,6 +185,10 @@ export function createReadingTestAutosave(component) {
         }
 
         const payload = collectPayload(input);
+        if (payload === null) {
+            return;
+        }
+
         const key = payload.question_id;
 
         if (debounceTimers.has(key)) {
@@ -205,7 +213,9 @@ export function createReadingTestAutosave(component) {
     };
 
     const bindInputs = (root = document) => {
-        const inputs = root.querySelectorAll('.reading-test-input');
+        const inputs = root.querySelectorAll(
+            '.reading-test-input[data-question-id][data-question-type][data-group-id]',
+        );
 
         inputs.forEach((input) => {
             if (input.dataset.autosaveBound === '1') {

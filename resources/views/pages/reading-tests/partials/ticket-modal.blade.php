@@ -7,7 +7,7 @@
         <div class="mt-4 space-y-4">
             <div>
                 <label class="text-sm font-semibold text-neutral-700">Issue Type</label>
-                <select x-model="ticketIssueType" class="reading-test-input mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm">
+                <select x-model="ticketIssueType" class="reading-test-ticket-input mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm">
                     <template x-for="type in ticketIssueTypes" :key="type.value">
                         <option :value="type.value" x-text="type.label"></option>
                     </template>
@@ -18,7 +18,7 @@
                 <textarea
                     rows="4"
                     x-model="ticketMessage"
-                    class="reading-test-input mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
+                    class="reading-test-ticket-input mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm"
                     placeholder="Describe the issue..."
                 ></textarea>
             </div>

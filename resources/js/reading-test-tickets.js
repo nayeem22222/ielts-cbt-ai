@@ -21,33 +21,6 @@ export function createReadingTestTickets(renderer) {
     renderer.ticketSuccess = false;
     renderer.ticketIssueTypes = READING_TICKET_ISSUE_TYPES;
 
-    const injectReportButtons = () => {
-        document.querySelectorAll('.reading-test-question-row').forEach((row) => {
-            if (row.querySelector('.reading-report-question-btn')) {
-                return;
-            }
-
-            const questionId = row.querySelector('[data-question-id]')?.dataset?.questionId;
-            const questionNumber = row.dataset.questionNumber;
-            if (!questionId) {
-                return;
-            }
-
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'reading-report-question-btn';
-            button.textContent = 'Report Question';
-            button.addEventListener('click', () => openModal(Number(questionId), Number(questionNumber)));
-
-            const heading = row.querySelector('.reading-test-question-heading');
-            if (heading) {
-                heading.appendChild(button);
-            } else {
-                row.querySelector('p.text-sm.font-semibold')?.append(' ', button);
-            }
-        });
-    };
-
     const openModal = (questionId, questionNumber) => {
         renderer.ticketModalOpen = true;
         renderer.ticketQuestionId = questionId;
@@ -93,7 +66,7 @@ export function createReadingTestTickets(renderer) {
     };
 
     const bind = () => {
-        renderer.$nextTick?.(() => injectReportButtons());
+        // Report buttons are rendered in Blade via <x-reading-test.report-question-button>.
     };
 
     return {
@@ -101,6 +74,5 @@ export function createReadingTestTickets(renderer) {
         closeModal,
         submit,
         bind,
-        injectReportButtons,
     };
 }
