@@ -2,7 +2,7 @@
     <x-ui.card title="Table Builder" subtitle="Each cell can be text or a blank placeholder">
         <form
             method="POST"
-            action="{{ route('admin.reading-question-groups.completion-questions.template', $group) }}"
+            action="{{ route('admin.reading-question-groups.completion-questions.table', $group) }}"
             class="space-y-4"
             @submit="syncTableBeforeSubmit($event)"
         >
@@ -26,7 +26,9 @@
 
             <div class="flex flex-wrap gap-2">
                 <x-ui.button type="button" size="sm" variant="outline" @click="addTableRow()">Add Row</x-ui.button>
+                <x-ui.button type="button" size="sm" variant="outline" @click="deleteTableRow(tableData.rows.length - 1)">Delete Row</x-ui.button>
                 <x-ui.button type="button" size="sm" variant="outline" @click="addTableColumn()">Add Column</x-ui.button>
+                <x-ui.button type="button" size="sm" variant="outline" @click="deleteTableColumn()">Delete Column</x-ui.button>
             </div>
 
             <div class="overflow-x-auto rounded-xl border border-neutral-200 dark:border-neutral-700">
@@ -60,7 +62,7 @@
                 </table>
             </div>
 
-            <p class="text-xs aa-muted">Detected blanks: <span class="font-semibold" x-text="detectedPlaceholders.join(', ') || '—'"></span></p>
+            <p class="text-xs aa-muted">Live placeholders: <span class="font-semibold" x-text="detectedPlaceholders.map((item) => item.question_number).join(', ') || '—'"></span></p>
 
             @if ($errors->any())
                 <x-ui.alert tone="red">

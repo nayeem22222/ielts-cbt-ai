@@ -17,6 +17,10 @@ use Illuminate\Validation\ValidationException;
 
 class ReadingCompletionQuestionService
 {
+    public function __construct(private readonly ReadingCompletionTemplateService $template)
+    {
+    }
+
     public function loadGroupForBuilder(ReadingQuestionGroup $group): ReadingQuestionGroup
     {
         return $group->load([
@@ -79,21 +83,12 @@ class ReadingCompletionQuestionService
             $templateHtml = (string) ($data['template_html'] ?? '');
             $confirmRemove = (bool) ($data['confirm_remove'] ?? false);
 
-            CompletionPlaceholderParser::validateTemplate($templateHtml, $group);
+            $sync = $this->template->syncQuestions($group, $templateHtml);
 
-            $detectedNumbers = CompletionPlaceholderParser::extractNumbers($templateHtml);
-            $existingNumbers = $group->questions()
-                ->where('question_number', '>', 0)
-                ->pluck('question_number')
-                ->map(fn ($value) => (int) $value)
-                ->all();
-
-            $toRemove = array_values(array_diff($existingNumbers, $detectedNumbers));
-
-            if ($toRemove !== [] && ! $confirmRemove) {
+            if ($sync['removed_candidates'] !== [] && ! $confirmRemove) {
                 throw ValidationException::withMessages([
                     'confirm_remove' => 'Removing placeholders will delete linked questions: '
-                        .implode(', ', $toRemove).'. Confirm to continue.',
+                        .implode(', ', $sync['removed_candidates']).'. Confirm to continue.',
                 ]);
             }
 
@@ -112,14 +107,8 @@ class ReadingCompletionQuestionService
 
             $group->forceFill(['settings' => $settings])->save();
 
-            foreach ($detectedNumbers as $index => $number) {
-                if (! $group->questions()->where('question_number', $number)->exists()) {
-                    $this->createGeneratedQuestion($group, $number, $index + 1);
-                }
-            }
-
-            if ($toRemove !== [] && $confirmRemove) {
-                $group->questions()->whereIn('question_number', $toRemove)->delete();
+            if ($sync['removed_candidates'] !== [] && $confirmRemove) {
+                $this->template->purgeRemovedQuestions($group, $sync['removed_candidates']);
             }
 
             return $this->loadGroupForBuilder($group->refresh());
@@ -127,13 +116,106 @@ class ReadingCompletionQuestionService
     }
 
     /**
+     * @param  array<string, mixed>  $data
+     */
+    public function saveTable(ReadingQuestionGroup $group, array $data): ReadingQuestionGroup
+    {
+        $this->assertCompletionGroup($group);
+
+        if ($group->question_type !== OfficialReadingQuestionType::TableCompletion) {
+            throw ValidationException::withMessages([
+                'question_type' => 'Table save is only available for table completion groups.',
+            ]);
+        }
+
+        $tableData = $data['table_data'] ?? [];
+        $data['template_html'] = $this->compileTableHtml(is_array($tableData) ? $tableData : []);
+
+        return $this->saveTemplate($group, $data);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function saveFlowChart(ReadingQuestionGroup $group, array $data): ReadingQuestionGroup
+    {
+        $this->assertCompletionGroup($group);
+
+        if ($group->question_type !== OfficialReadingQuestionType::FlowChartCompletion) {
+            throw ValidationException::withMessages([
+                'question_type' => 'Flow chart save is only available for flow chart completion groups.',
+            ]);
+        }
+
+        $flowSteps = $data['flow_steps'] ?? [];
+        $data['template_html'] = $this->compileFlowHtml(is_array($flowSteps) ? $flowSteps : []);
+
+        return $this->saveTemplate($group, $data);
+    }
+
+    /**
+     * @return array{
+     *     placeholders: list<array<string, mixed>>,
+     *     numbers: list<int>,
+     *     count: int,
+     *     removed_candidates: list<int>,
+     *     valid: bool,
+     *     error: ?string
+     * }
+     */
+    public function liveDetectPreview(ReadingQuestionGroup $group, string $content): array
+    {
+        $this->assertCompletionGroup($group);
+
+        try {
+            $placeholders = $this->template->parseTemplate($content);
+            $this->template->validatePlaceholders($group, $placeholders);
+            $valid = true;
+            $error = null;
+        } catch (ValidationException $exception) {
+            $placeholders = $this->safeParsePlaceholders($content);
+            $valid = false;
+            $error = collect($exception->errors())->flatten()->first();
+        }
+
+        $numbers = array_map(
+            fn (array $placeholder): int => (int) $placeholder['question_number'],
+            $placeholders,
+        );
+
+        return [
+            'placeholders' => $placeholders,
+            'numbers' => $numbers,
+            'count' => count($numbers),
+            'removed_candidates' => $this->template->detectRemovedQuestions($group, $numbers),
+            'valid' => $valid,
+            'error' => $error,
+        ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function safeParsePlaceholders(string $content): array
+    {
+        try {
+            return $this->template->parseTemplate($content);
+        } catch (ValidationException) {
+            return [];
+        }
+    }
+
+    /**
      * @param  array{
      *     question_number: int,
-     *     prompt: string,
+     *     prompt?: string,
+     *     sentence_before?: ?string,
+     *     sentence_after?: ?string,
      *     correct_answer: string,
      *     alternative_answers?: list<string>|null,
      *     explanation?: ?string,
      *     difficulty?: ?string,
+     *     case_sensitive?: bool,
      *     sort_order?: ?int
      * }  $data
      */
@@ -151,7 +233,7 @@ class ReadingCompletionQuestionService
             /** @var ReadingQuestion $question */
             $question = $group->questions()->create([
                 'question_number' => $questionNumber,
-                'prompt' => (string) $data['prompt'],
+                'prompt' => $this->buildSentencePrompt($data),
                 'explanation' => $data['explanation'] ?? null,
                 'difficulty' => $data['difficulty'] ?? 'medium',
                 'sort_order' => max(1, $sortOrder),
@@ -181,8 +263,8 @@ class ReadingCompletionQuestionService
                     $question->question_number = $questionNumber;
                 }
 
-                if (isset($data['prompt'])) {
-                    $question->prompt = (string) $data['prompt'];
+                if (isset($data['prompt']) || isset($data['sentence_before']) || isset($data['sentence_after'])) {
+                    $question->prompt = $this->buildSentencePrompt($data, $question->prompt);
                 }
             }
 
@@ -199,7 +281,9 @@ class ReadingCompletionQuestionService
             if (
                 array_key_exists('correct_answer', $data)
                 || array_key_exists('alternative_answers', $data)
+                || array_key_exists('case_sensitive', $data)
             ) {
+                $this->assertPublishedAnswerPresent($group, $data);
                 $this->syncCorrectAnswers($question, $data);
             }
 
@@ -295,6 +379,11 @@ class ReadingCompletionQuestionService
         return CompletionPlaceholderParser::extractNumbers($content);
     }
 
+    public function templateEngine(): ReadingCompletionTemplateService
+    {
+        return $this->template;
+    }
+
     public function compileTableHtml(array $tableData): string
     {
         $rows = $tableData['rows'] ?? [];
@@ -369,30 +458,39 @@ class ReadingCompletionQuestionService
         return $html.'</div>';
     }
 
-    private function createGeneratedQuestion(ReadingQuestionGroup $group, int $questionNumber, int $sortOrder): ReadingQuestion
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function buildSentencePrompt(array $data, ?string $fallback = null): string
     {
-        $this->assertQuestionNumberIsValid($group, $questionNumber);
+        if (isset($data['sentence_before']) || isset($data['sentence_after'])) {
+            $before = trim((string) ($data['sentence_before'] ?? ''));
+            $after = trim((string) ($data['sentence_after'] ?? ''));
 
-        /** @var ReadingQuestion $question */
-        $question = $group->questions()->create([
-            'question_number' => $questionNumber,
-            'prompt' => '',
-            'sort_order' => max(1, $sortOrder),
-            'marks' => 1,
-            'difficulty' => 'medium',
-            'metadata' => [
-                'auto_generated' => true,
-                'placeholder' => $questionNumber,
-            ],
-        ]);
+            return trim($before.' _________ '.$after);
+        }
 
-        $question->correctAnswers()->create([
-            'answer' => '',
-            'answer_json' => null,
-            'matching_key' => null,
-        ]);
+        if (isset($data['prompt']) && trim((string) $data['prompt']) !== '') {
+            return (string) $data['prompt'];
+        }
 
-        return $question;
+        return (string) ($fallback ?? '');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function assertPublishedAnswerPresent(ReadingQuestionGroup $group, array $data): void
+    {
+        if ($group->status?->value !== 'published') {
+            return;
+        }
+
+        if (trim((string) ($data['correct_answer'] ?? '')) === '') {
+            throw ValidationException::withMessages([
+                'correct_answer' => 'Correct answer is required for published completion groups.',
+            ]);
+        }
     }
 
     /**
@@ -400,26 +498,14 @@ class ReadingCompletionQuestionService
      */
     private function syncCorrectAnswers(ReadingQuestion $question, array $data): void
     {
-        $primary = trim((string) ($data['correct_answer'] ?? ''));
+        $wordLimit = (string) ($data['word_limit'] ?? ReadingCompletionAnswerRule::OneWordOnly->value);
 
-        if ($primary === '') {
-            throw ValidationException::withMessages([
-                'correct_answer' => 'Correct answer is required.',
-            ]);
-        }
-
-        $alternatives = array_values(array_unique(array_filter(array_map(
-            fn ($value) => trim((string) $value),
-            $data['alternative_answers'] ?? [],
-        ), fn (string $value): bool => $value !== '' && $value !== $primary)));
-
-        $allAnswers = array_values(array_unique(array_merge([$primary], $alternatives)));
-
-        $question->correctAnswers()->delete();
-        $question->correctAnswers()->create([
-            'answer' => $primary,
-            'answer_json' => $allAnswers,
-            'matching_key' => null,
+        $this->template->syncCorrectAnswers($question, [
+            'correct_answer' => $data['correct_answer'] ?? null,
+            'alternative_answers' => $data['alternative_answers'] ?? [],
+            'case_sensitive' => (bool) ($data['case_sensitive'] ?? false),
+            'word_limit' => $wordLimit,
+            'regex' => $data['regex'] ?? null,
         ]);
     }
 

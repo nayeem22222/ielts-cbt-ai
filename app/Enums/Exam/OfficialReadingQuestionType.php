@@ -155,6 +155,7 @@ enum OfficialReadingQuestionType: string
     {
         return in_array($this, [
             self::SummaryCompletion,
+            self::SentenceCompletion,
             self::NoteCompletion,
             self::TableCompletion,
             self::FlowChartCompletion,

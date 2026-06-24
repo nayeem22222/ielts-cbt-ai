@@ -100,7 +100,8 @@ it('detects blanks saves and refreshes summary questions', function (): void {
 
     $correct = $question->fresh()->correctAnswers()->first();
     expect($correct?->answer)->toBe('industrial revolution');
-    expect($correct?->answer_json)->toBe(['industrial revolution', 'Industrial Revolution']);
+    expect($correct?->answer_json['answers'])->toBe(['industrial revolution', 'Industrial Revolution']);
+    expect($correct?->answer_json['case_sensitive'])->toBeFalse();
 
     $this->get(route('admin.reading-question-groups.completion-questions.index', $group))
         ->assertOk()
@@ -182,7 +183,7 @@ it('blocks duplicate placeholders in template validation', function (): void {
     $this->post(route('admin.reading-question-groups.completion-questions.template', $group), [
         'answer_rule' => ReadingCompletionAnswerRule::OneWordOnly->value,
         'template_html' => '<p>{{27}} and again {{27}}</p>',
-    ])->assertSessionHasErrors('template_html');
+    ])->assertSessionHasErrors('template');
 });
 
 it('blocks duplicate question numbers in sentence completion', function (): void {
@@ -205,6 +206,15 @@ it('parses placeholder numbers from both formats', function (): void {
     $numbers = CompletionPlaceholderParser::extractNumbers('Start {{40}} then [Blank:41] end.');
 
     expect($numbers)->toBe([40, 41]);
+});
+
+it('parses spaced and labeled placeholders through parser facade', function (): void {
+    $parsed = CompletionPlaceholderParser::parse('Reason {{ 29:cause }} and [blank:30]');
+
+    expect($parsed)->toHaveCount(2)
+        ->and($parsed[0]['question_number'])->toBe(29)
+        ->and($parsed[0]['label'])->toBe('cause')
+        ->and($parsed[1]['question_number'])->toBe(30);
 });
 
 it('bulk imports sentence completion rows', function (): void {
@@ -239,4 +249,81 @@ it('requires confirmation before removing linked questions from template', funct
     ])->assertRedirect()->assertSessionHasNoErrors();
 
     expect(ReadingQuestion::query()->where('group_id', $group->id)->count())->toBe(1);
+});
+
+it('renders completion preview route with answer rule', function (): void {
+    [, , $group] = createCompletionBuilderContext(OfficialReadingQuestionType::SummaryCompletion);
+
+    $this->get(route('admin.reading-question-groups.completion-questions.preview', $group))
+        ->assertOk()
+        ->assertSee('Admin Preview')
+        ->assertSee('Answer Rule');
+});
+
+it('saves summary with three placeholders and persists after refresh', function (): void {
+    [, , $group] = createCompletionBuilderContext(OfficialReadingQuestionType::SummaryCompletion, 27, 29);
+
+    $this->post(route('admin.reading-question-groups.completion-questions.template', $group), [
+        'answer_rule' => ReadingCompletionAnswerRule::OneWordOnly->value,
+        'template_html' => '<p>{{27}} {{28}} {{29}}</p>',
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect(ReadingQuestion::query()->where('group_id', $group->id)->count())->toBe(3);
+
+    $this->get(route('admin.reading-question-groups.completion-questions.edit', $group))
+        ->assertOk()
+        ->assertSee('Question 27')
+        ->assertSee('Question 28')
+        ->assertSee('Question 29');
+});
+
+it('saves table via dedicated table route', function (): void {
+    [, , $group] = createCompletionBuilderContext(OfficialReadingQuestionType::TableCompletion, 36, 37);
+
+    $this->post(route('admin.reading-question-groups.completion-questions.table', $group), [
+        'answer_rule' => ReadingCompletionAnswerRule::OneWordOnly->value,
+        'template_html' => '<table><tr><td>France</td><td>{{36}}</td></tr></table>',
+        'table_data' => [
+            'rows' => [
+                ['cells' => [['content' => 'France'], ['content' => '', 'is_blank' => true, 'blank_number' => 36]]],
+                ['cells' => [['content' => 'Japan'], ['content' => '', 'is_blank' => true, 'blank_number' => 37]]],
+            ],
+        ],
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $this->get(route('admin.reading-question-groups.completion-questions.edit', $group))
+        ->assertOk()
+        ->assertSee('Table Builder');
+
+    expect(ReadingQuestion::query()->where('group_id', $group->id)->count())->toBe(2);
+});
+
+it('returns live detect json from template engine', function (): void {
+    [, , $group] = createCompletionBuilderContext(OfficialReadingQuestionType::NoteCompletion, 33, 35);
+
+    $this->postJson(route('admin.reading-question-groups.completion-questions.detect', $group), [
+        'content' => '<ul><li>Topic {{33}}</li><li>Detail {{34}}</li></ul>',
+    ])->assertOk()
+        ->assertJsonPath('count', 2)
+        ->assertJsonPath('valid', true);
+});
+
+it('updates answer via dedicated answer route with case sensitivity', function (): void {
+    [, , $group] = createCompletionBuilderContext(OfficialReadingQuestionType::SummaryCompletion);
+
+    $this->post(route('admin.reading-question-groups.completion-questions.template', $group), [
+        'answer_rule' => ReadingCompletionAnswerRule::OneWordOnly->value,
+        'template_html' => '<p>{{27}}</p>',
+    ]);
+
+    $question = ReadingQuestion::query()->where('group_id', $group->id)->firstOrFail();
+
+    $this->put(route('admin.reading-completion-questions.answer', $question), [
+        'correct_answer' => 'Paris',
+        'alternative_answers' => ['paris'],
+        'case_sensitive' => true,
+    ])->assertRedirect()->assertSessionHasNoErrors();
+
+    $answer = $question->fresh()->correctAnswers()->first();
+    expect($answer?->answer_json['case_sensitive'])->toBeTrue();
 });

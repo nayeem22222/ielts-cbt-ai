@@ -19,18 +19,6 @@ import 'tinymce/skins/content/default/content.min.css';
 
 window.Sortable = Sortable;
 
-const PLACEHOLDER_REGEX = /\{\{(\d+)\}\}|\[blank:(\d+)\]/gi;
-
-function extractPlaceholders(content) {
-    const numbers = new Set();
-
-    for (const match of content.matchAll(PLACEHOLDER_REGEX)) {
-        numbers.add(Number(match[1] ?? match[2]));
-    }
-
-    return [...numbers].sort((a, b) => a - b);
-}
-
 function compileTableHtml(tableData) {
     const rows = tableData?.rows ?? [];
 
@@ -135,9 +123,14 @@ window.readingCompletionBuilder = (config = {}) => ({
     tableData: config.tableData?.rows?.length ? config.tableData : defaultTableData(),
     flowSteps: config.flowSteps?.length ? config.flowSteps : defaultFlowSteps(),
     detectedPlaceholders: [],
+    removedCandidates: [],
+    liveDetectError: null,
+    liveDetectedCount: Number(config.detectedCount ?? 0),
+    existingQuestionNumbers: config.existingQuestionNumbers ?? [],
     answerRule: config.answerRule ?? 'one_word_only',
     customAnswerRule: config.customAnswerRule ?? '',
     nextPlaceholderNumber: Number(config.groupStart ?? 1),
+    detectTimer: null,
 
     init() {
         this.refreshDetected();
@@ -156,21 +149,24 @@ window.readingCompletionBuilder = (config = {}) => ({
     },
 
     initEditor() {
-        const textarea = document.getElementById('completion_template_html');
+        const textarea = document.getElementById('completion_template_html')
+            ?? document.getElementById('completion_sentence_template_html');
 
         if (!textarea) {
             return;
         }
 
         const self = this;
+        const isNote = this.type === 'note_completion';
 
         tinymce.init({
             target: textarea,
             height: 420,
             menubar: 'edit view',
             plugins: 'advlist autolink lists link table searchreplace wordcount fullscreen',
-            toolbar:
-                'undo redo | styles | bold italic underline | bullist numlist table | removeformat | searchreplace | fullscreen',
+            toolbar: isNote
+                ? 'undo redo | styles | bold italic underline | bullist numlist | table | removeformat | searchreplace | fullscreen'
+                : 'undo redo | styles | bold italic underline | bullist numlist table | removeformat | searchreplace | fullscreen',
             branding: false,
             promotion: false,
             license_key: 'gpl',
@@ -225,14 +221,48 @@ window.readingCompletionBuilder = (config = {}) => ({
         });
     },
 
-    refreshDetected() {
-        this.detectedPlaceholders = extractPlaceholders(this.templateHtml ?? '');
-        const max = this.detectedPlaceholders.at(-1) ?? this.groupStart - 1;
-        this.nextPlaceholderNumber = Math.min(Math.max(max + 1, this.groupStart), this.groupEnd);
+    async refreshDetected() {
+        clearTimeout(this.detectTimer);
+
+        this.detectTimer = setTimeout(async () => {
+            if (!this.detectUrl || !this.templateHtml) {
+                this.detectedPlaceholders = [];
+                this.removedCandidates = [];
+                this.liveDetectError = null;
+                this.liveDetectedCount = 0;
+
+                return;
+            }
+
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
+            const response = await fetch(this.detectUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN': token,
+                },
+                body: JSON.stringify({ content: this.templateHtml }),
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            this.detectedPlaceholders = data.placeholders ?? [];
+            this.removedCandidates = data.removed_candidates ?? [];
+            this.liveDetectError = data.valid ? null : (data.error ?? 'Invalid placeholders.');
+            this.liveDetectedCount = data.count ?? 0;
+
+            const numbers = this.detectedPlaceholders.map((item) => Number(item.question_number));
+            const max = numbers.at(-1) ?? this.groupStart - 1;
+            this.nextPlaceholderNumber = Math.min(Math.max(max + 1, this.groupStart), this.groupEnd);
+        }, 250);
     },
 
     insertPlaceholder() {
-        const editor = tinymce.get('completion_template_html');
+        const editor = tinymce.get('completion_template_html') ?? tinymce.get('completion_sentence_template_html');
         const token = `{{${this.nextPlaceholderNumber}}}`;
 
         if (editor) {
@@ -245,8 +275,8 @@ window.readingCompletionBuilder = (config = {}) => ({
         this.refreshDetected();
     },
 
-    syncEditorBeforeSubmit(event) {
-        const editor = tinymce.get('completion_template_html');
+    syncEditorBeforeSubmit() {
+        const editor = tinymce.get('completion_template_html') ?? tinymce.get('completion_sentence_template_html');
 
         if (editor) {
             editor.save();
@@ -279,6 +309,15 @@ window.readingCompletionBuilder = (config = {}) => ({
         this.syncTableBeforeSubmit();
     },
 
+    deleteTableRow(rowIndex) {
+        if (this.tableData.rows.length <= 1) {
+            return;
+        }
+
+        this.tableData.rows.splice(rowIndex, 1);
+        this.syncTableBeforeSubmit();
+    },
+
     addTableColumn() {
         this.tableData.rows.forEach((row) => {
             row.cells.push({
@@ -288,6 +327,17 @@ window.readingCompletionBuilder = (config = {}) => ({
                 colspan: 1,
                 rowspan: 1,
             });
+        });
+        this.syncTableBeforeSubmit();
+    },
+
+    deleteTableColumn() {
+        if ((this.tableData.rows[0]?.cells?.length ?? 0) <= 1) {
+            return;
+        }
+
+        this.tableData.rows.forEach((row) => {
+            row.cells.pop();
         });
         this.syncTableBeforeSubmit();
     },
@@ -326,6 +376,18 @@ window.readingCompletionBuilder = (config = {}) => ({
 
     removeFlowStep(index) {
         this.flowSteps.splice(index, 1);
+        this.syncFlowBeforeSubmit();
+    },
+
+    moveFlowStep(index, direction) {
+        const target = index + direction;
+
+        if (target < 0 || target >= this.flowSteps.length) {
+            return;
+        }
+
+        const [step] = this.flowSteps.splice(index, 1);
+        this.flowSteps.splice(target, 0, step);
         this.syncFlowBeforeSubmit();
     },
 

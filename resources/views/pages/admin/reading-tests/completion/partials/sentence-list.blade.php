@@ -13,10 +13,11 @@
             @php
                 $correct = $question->correctAnswers->first();
                 $primaryAnswer = $correct?->answer ?? '';
-                $alternatives = collect($correct?->answer_json ?? [])->filter(fn ($value) => strcasecmp((string) $value, (string) $primaryAnswer) !== 0)->values();
+                $alternatives = \App\Support\Reading\CompletionAnswerPayload::alternatives($correct);
+                $caseSensitive = \App\Support\Reading\CompletionAnswerPayload::caseSensitive($correct);
             @endphp
             <div data-question-item data-question-id="{{ $question->id }}" class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
-                <form method="POST" action="{{ route('admin.reading-completion-questions.update', $question) }}" class="space-y-3">
+                <form method="POST" action="{{ route('admin.reading-completion-questions.answer', $question) }}" class="space-y-3">
                     @csrf
                     @method('PUT')
                     <div class="grid gap-3 md:grid-cols-2">
@@ -28,9 +29,14 @@
                         </x-ui.select>
                         <x-ui.textarea name="prompt" label="Sentence" class="md:col-span-2" rows="2" required>{{ $question->prompt }}</x-ui.textarea>
                         <x-ui.input name="correct_answer" label="Correct Answer" :value="$primaryAnswer" required />
-                        <div>
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="hidden" name="case_sensitive" value="0">
+                            <input type="checkbox" name="case_sensitive" value="1" @checked($caseSensitive)>
+                            <span>Case sensitive</span>
+                        </label>
+                        <div class="md:col-span-2">
                             <label class="block text-sm font-medium">Alternative Answers</label>
-                            <div class="mt-2 space-y-2" x-data="{ alts: @js($alternatives->all()) }">
+                            <div class="mt-2 space-y-2" x-data="{ alts: @js($alternatives) }">
                                 <template x-for="(alt, index) in alts" :key="index">
                                     <div class="flex gap-2">
                                         <input type="text" :name="'alternative_answers['+index+']'" x-model="alts[index]" class="w-full rounded-lg border border-neutral-300 px-2 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900">

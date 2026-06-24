@@ -30,7 +30,7 @@
                     rows="14"
                     class="mt-1 w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm font-mono dark:border-neutral-700 dark:bg-neutral-900"
                 >{{ old('template_html', $settings['template_html']) }}</textarea>
-                <p class="mt-2 text-xs aa-muted">Detected blanks: <span class="font-semibold" x-text="detectedPlaceholders.join(', ') || '—'"></span></p>
+                <p class="mt-2 text-xs aa-muted">Live placeholders: <span class="font-semibold" x-text="detectedPlaceholders.map((item) => item.question_number).join(', ') || '—'"></span></p>
             </div>
 
             @if ($errors->any())

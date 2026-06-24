@@ -2,7 +2,7 @@
     <x-ui.card title="Flow Chart Builder" subtitle="Create steps with optional blank placeholders">
         <form
             method="POST"
-            action="{{ route('admin.reading-question-groups.completion-questions.template', $group) }}"
+            action="{{ route('admin.reading-question-groups.completion-questions.flow-chart', $group) }}"
             class="space-y-4"
             @submit="syncFlowBeforeSubmit($event)"
         >
@@ -28,9 +28,13 @@
                 <template x-for="(step, index) in flowSteps" :key="'step-'+index">
                     <div>
                         <div class="rounded-xl border border-neutral-300 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
-                            <div class="mb-2 flex items-center justify-between">
+                            <div class="mb-2 flex items-center justify-between gap-2">
                                 <p class="text-sm font-semibold" x-text="'Step ' + (index + 1)"></p>
-                                <button type="button" class="text-xs text-red-600" @click="removeFlowStep(index)">Remove</button>
+                                <div class="flex gap-2">
+                                    <button type="button" class="text-xs underline" @click="moveFlowStep(index, -1)" x-show="index > 0">↑</button>
+                                    <button type="button" class="text-xs underline" @click="moveFlowStep(index, 1)" x-show="index < flowSteps.length - 1">↓</button>
+                                    <button type="button" class="text-xs text-red-600" @click="removeFlowStep(index)">Remove</button>
+                                </div>
                             </div>
                             <label class="mb-2 flex items-center gap-2 text-xs">
                                 <input type="checkbox" x-model="step.is_blank" @change="onFlowBlankToggle(step)">
@@ -50,7 +54,7 @@
 
             <x-ui.button type="button" size="sm" variant="outline" @click="addFlowStep()">Add Step</x-ui.button>
 
-            <p class="text-xs aa-muted">Detected blanks: <span class="font-semibold" x-text="detectedPlaceholders.join(', ') || '—'"></span></p>
+            <p class="text-xs aa-muted">Live placeholders: <span class="font-semibold" x-text="detectedPlaceholders.map((item) => item.question_number).join(', ') || '—'"></span></p>
 
             @if ($errors->any())
                 <x-ui.alert tone="red">

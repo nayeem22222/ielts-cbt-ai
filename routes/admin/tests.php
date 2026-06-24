@@ -60,7 +60,11 @@ Route::middleware('permission:tests.view')->group(function (): void {
         Route::post('/objective-questions/reorder', [AdminReadingObjectiveQuestionController::class, 'reorder'])->name('reading-question-groups.objective-questions.reorder');
 
         Route::get('/completion-questions', [AdminReadingCompletionQuestionController::class, 'index'])->name('reading-question-groups.completion-questions.index');
+        Route::get('/completion-questions/edit', [AdminReadingCompletionQuestionController::class, 'edit'])->name('reading-question-groups.completion-questions.edit');
+        Route::get('/completion-questions/preview', [AdminReadingCompletionQuestionController::class, 'preview'])->name('reading-question-groups.completion-questions.preview');
         Route::post('/completion-questions/template', [AdminReadingCompletionQuestionController::class, 'saveTemplate'])->name('reading-question-groups.completion-questions.template');
+        Route::post('/completion-questions/table', [AdminReadingCompletionQuestionController::class, 'saveTable'])->name('reading-question-groups.completion-questions.table');
+        Route::post('/completion-questions/flow-chart', [AdminReadingCompletionQuestionController::class, 'saveFlowChart'])->name('reading-question-groups.completion-questions.flow-chart');
         Route::post('/completion-questions', [AdminReadingCompletionQuestionController::class, 'storeSentence'])->name('reading-question-groups.completion-questions.store');
         Route::post('/completion-questions/bulk-import', [AdminReadingCompletionQuestionController::class, 'bulkImport'])->name('reading-question-groups.completion-questions.bulk-import');
         Route::post('/completion-questions/reorder', [AdminReadingCompletionQuestionController::class, 'reorder'])->name('reading-question-groups.completion-questions.reorder');
@@ -80,6 +84,7 @@ Route::middleware('permission:tests.view')->group(function (): void {
     Route::delete('/reading-objective-options/{option}', [AdminReadingObjectiveQuestionController::class, 'deleteOption'])->name('reading-objective-options.destroy')->whereNumber('option');
 
     Route::put('/reading-completion-questions/{question}', [AdminReadingCompletionQuestionController::class, 'update'])->name('reading-completion-questions.update')->whereNumber('question');
+    Route::put('/reading-completion-questions/{question}/answer', [AdminReadingCompletionQuestionController::class, 'updateAnswer'])->name('reading-completion-questions.answer')->whereNumber('question');
     Route::delete('/reading-completion-questions/{question}', [AdminReadingCompletionQuestionController::class, 'destroy'])->name('reading-completion-questions.destroy')->whereNumber('question');
 
     Route::get('/reading-analytics', [ReadingAnalyticsController::class, 'index'])->name('reading-analytics.index');

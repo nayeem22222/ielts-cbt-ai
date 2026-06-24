@@ -13,15 +13,24 @@
             @php
                 $correct = $question->correctAnswers->first();
                 $primaryAnswer = $correct?->answer ?? '';
-                $alternatives = collect($correct?->answer_json ?? [])->filter(fn ($value) => strcasecmp((string) $value, (string) $primaryAnswer) !== 0)->values();
+                $alternatives = \App\Support\Reading\CompletionAnswerPayload::alternatives($correct);
+                $caseSensitive = \App\Support\Reading\CompletionAnswerPayload::caseSensitive($correct);
+                $label = $question->metadata['placeholder_label'] ?? null;
             @endphp
             <div data-question-item data-question-id="{{ $question->id }}" class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
-                <form method="POST" action="{{ route('admin.reading-completion-questions.update', $question) }}" class="space-y-3">
+                <form method="POST" action="{{ route('admin.reading-completion-questions.answer', $question) }}" class="space-y-3">
                     @csrf
                     @method('PUT')
 
                     <div class="flex items-center justify-between gap-2">
-                        <p class="text-sm font-bold text-brand-700">Question {{ $question->question_number }}</p>
+                        <div>
+                            <p class="text-sm font-bold text-brand-700">Question {{ $question->question_number }}</p>
+                            @if ($label)
+                                <p class="text-xs aa-muted">Label: {{ $label }}</p>
+                            @elseif ($question->prompt)
+                                <p class="text-xs aa-muted">{{ Str::limit($question->prompt, 80) }}</p>
+                            @endif
+                        </div>
                         <x-ui.button type="button" size="sm" variant="outline" data-question-drag-handle>↕ Reorder</x-ui.button>
                     </div>
 
@@ -34,9 +43,15 @@
                         </x-ui.select>
                     </div>
 
+                    <label class="flex items-center gap-2 text-sm">
+                        <input type="hidden" name="case_sensitive" value="0">
+                        <input type="checkbox" name="case_sensitive" value="1" @checked($caseSensitive)>
+                        <span>Case sensitive matching</span>
+                    </label>
+
                     <div>
                         <label class="block text-sm font-medium">Alternative Answers</label>
-                        <div class="mt-2 space-y-2" x-data="{ alts: @js($alternatives->all()) }">
+                        <div class="mt-2 space-y-2" x-data="{ alts: @js($alternatives) }">
                             <template x-for="(alt, index) in alts" :key="index">
                                 <div class="flex gap-2">
                                     <input type="text" :name="'alternative_answers['+index+']'" x-model="alts[index]" class="w-full rounded-lg border border-neutral-300 px-2 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900">
@@ -49,7 +64,7 @@
 
                     <x-ui.textarea name="explanation" label="Explanation (optional)" rows="2">{{ $question->explanation }}</x-ui.textarea>
 
-                    <x-ui.button type="submit" size="sm">Save Question</x-ui.button>
+                    <x-ui.button type="submit" size="sm">Save Answer</x-ui.button>
                 </form>
 
                 <form method="POST" action="{{ route('admin.reading-completion-questions.destroy', $question) }}" class="mt-2" onsubmit="return confirm('Delete question {{ $question->question_number }}?')">
