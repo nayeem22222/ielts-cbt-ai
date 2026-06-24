@@ -144,6 +144,7 @@ class ReadingTestCrudService extends AbstractCrudService
     {
         return DB::transaction(function () use ($test, $userId): ReadingTest {
             $test->load([
+                'passages.groups.groupOptions',
                 'passages.groups.questions.options',
                 'passages.groups.questions.correctAnswers',
             ]);
@@ -190,6 +191,14 @@ class ReadingTestCrudService extends AbstractCrudService
                         'status',
                         'settings',
                     ]));
+
+                    foreach ($group->groupOptions as $option) {
+                        $groupCopy->groupOptions()->create($option->only([
+                            'option_key',
+                            'option_label',
+                            'sort_order',
+                        ]));
+                    }
 
                     foreach ($group->questions as $question) {
                         /** @var ReadingQuestion $questionCopy */

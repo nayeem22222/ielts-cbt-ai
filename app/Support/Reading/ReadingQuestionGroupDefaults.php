@@ -25,6 +25,7 @@ final class ReadingQuestionGroupDefaults
             OfficialReadingQuestionType::MatchingFeatures => "Reading Passage {$passageNumber} has a list of features. Which feature matches each statement?",
             OfficialReadingQuestionType::MatchingSentenceEndings => 'Complete each sentence with the correct ending, A–H, below.',
             OfficialReadingQuestionType::MatchingPeople => "Reading Passage {$passageNumber} has a number of statements. Which person makes each statement?",
+            OfficialReadingQuestionType::Dropdown => 'Choose the correct answer from the dropdown list.',
             OfficialReadingQuestionType::TrueFalseNotGiven => 'Do the following statements agree with the information in the passage?',
             OfficialReadingQuestionType::YesNoNotGiven => "Do the following statements agree with the views of the writer in Reading Passage {$passageNumber}?",
             OfficialReadingQuestionType::SummaryCompletion => 'Complete the summary below. Choose ONE WORD ONLY from the passage for each answer.',

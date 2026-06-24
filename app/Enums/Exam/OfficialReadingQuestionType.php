@@ -15,6 +15,7 @@ enum OfficialReadingQuestionType: string
     case MatchingFeatures = 'matching_features';
     case MatchingSentenceEndings = 'matching_sentence_endings';
     case MatchingPeople = 'matching_people';
+    case Dropdown = 'dropdown';
     case TrueFalseNotGiven = 'true_false_not_given';
     case YesNoNotGiven = 'yes_no_not_given';
     case MultipleChoiceSingle = 'multiple_choice_single';
@@ -35,6 +36,7 @@ enum OfficialReadingQuestionType: string
             self::MatchingFeatures => 'Matching Features',
             self::MatchingSentenceEndings => 'Matching Sentence Endings',
             self::MatchingPeople => 'Matching People',
+            self::Dropdown => 'Dropdown',
             self::TrueFalseNotGiven => 'True / False / Not Given',
             self::YesNoNotGiven => 'Yes / No / Not Given',
             self::MultipleChoiceSingle => 'Multiple Choice Single',
@@ -47,5 +49,35 @@ enum OfficialReadingQuestionType: string
             self::TableCompletion => 'Table Completion',
             self::NoteCompletion => 'Note Completion',
         };
+    }
+
+    /**
+     * @return list<self>
+     */
+    public static function matchingBuilderTypes(): array
+    {
+        return [
+            self::MatchingInformation,
+            self::MatchingHeadings,
+            self::MatchingFeatures,
+            self::MatchingPeople,
+            self::MatchingSentenceEndings,
+            self::Dropdown,
+        ];
+    }
+
+    public function isMatchingBuilderType(): bool
+    {
+        return in_array($this, self::matchingBuilderTypes(), true);
+    }
+
+    public function usesRomanOptionKeys(): bool
+    {
+        return $this === self::MatchingHeadings;
+    }
+
+    public function requiresParagraphReference(): bool
+    {
+        return $this === self::MatchingHeadings;
     }
 }

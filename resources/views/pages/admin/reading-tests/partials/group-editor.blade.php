@@ -111,6 +111,9 @@
 
         <div class="flex flex-wrap gap-2">
             <x-ui.button type="submit">Save Question Group</x-ui.button>
+            @if ($group->question_type?->isMatchingBuilderType())
+                <x-ui.button href="{{ route('admin.reading-question-groups.questions.index', $group) }}" variant="secondary">Manage Questions</x-ui.button>
+            @endif
             <x-ui.button type="button" variant="outline" @click="groupDeleteOpen = true">Delete</x-ui.button>
         </div>
     </form>

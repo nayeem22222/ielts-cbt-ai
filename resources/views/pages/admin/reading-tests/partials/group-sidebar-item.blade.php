@@ -44,6 +44,14 @@
                     :variant="$selected ? 'primary' : 'outline'"
                 >Edit</x-ui.button>
 
+                @if ($group->question_type?->isMatchingBuilderType())
+                    <x-ui.button
+                        href="{{ route('admin.reading-question-groups.questions.index', $group) }}"
+                        size="sm"
+                        variant="outline"
+                    >Questions</x-ui.button>
+                @endif
+
                 <form method="POST" action="{{ route('admin.reading-tests.passages.groups.duplicate', [$test, $passage, $group]) }}">
                     @csrf
                     <x-ui.button type="submit" size="sm" variant="outline">Duplicate</x-ui.button>

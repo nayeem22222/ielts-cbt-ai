@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ReadingQuestionOption extends Model
 {
     protected $fillable = [
+        'group_id',
         'question_id',
         'option_key',
         'option_label',
@@ -26,5 +27,10 @@ class ReadingQuestionOption extends Model
     public function question(): BelongsTo
     {
         return $this->belongsTo(ReadingQuestion::class, 'question_id');
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(ReadingQuestionGroup::class, 'group_id');
     }
 }

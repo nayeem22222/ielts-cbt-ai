@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\AdminReadingMatchingQuestionController;
 use App\Http\Controllers\Admin\QuestionBankController;
 use App\Http\Controllers\Admin\ReadingAnalyticsController;
 use App\Http\Controllers\Admin\ReadingPassageController;
@@ -43,6 +44,19 @@ Route::middleware('permission:tests.view')->group(function (): void {
     Route::post('/reading-tests/{readingTest}/passages/{passage}/groups/{group}/duplicate', [ReadingQuestionGroupController::class, 'duplicate'])->name('reading-tests.passages.groups.duplicate');
     Route::post('/reading-tests/{readingTest}/passages/{passage}/groups/{group}/move-up', [ReadingQuestionGroupController::class, 'moveUp'])->name('reading-tests.passages.groups.move-up');
     Route::post('/reading-tests/{readingTest}/passages/{passage}/groups/{group}/move-down', [ReadingQuestionGroupController::class, 'moveDown'])->name('reading-tests.passages.groups.move-down');
+
+    Route::prefix('reading-question-groups/{group}')->whereNumber('group')->group(function (): void {
+        Route::get('/questions', [AdminReadingMatchingQuestionController::class, 'index'])->name('reading-question-groups.questions.index');
+        Route::post('/matching/options', [AdminReadingMatchingQuestionController::class, 'storeOption'])->name('reading-question-groups.matching.options.store');
+        Route::post('/matching/questions', [AdminReadingMatchingQuestionController::class, 'storeQuestion'])->name('reading-question-groups.matching.questions.store');
+        Route::post('/matching/bulk-import', [AdminReadingMatchingQuestionController::class, 'bulkImport'])->name('reading-question-groups.matching.bulk-import');
+        Route::post('/matching/reorder', [AdminReadingMatchingQuestionController::class, 'reorder'])->name('reading-question-groups.matching.reorder');
+    });
+
+    Route::put('/reading-question-options/{option}', [AdminReadingMatchingQuestionController::class, 'updateOption'])->name('reading-question-options.update')->whereNumber('option');
+    Route::delete('/reading-question-options/{option}', [AdminReadingMatchingQuestionController::class, 'deleteOption'])->name('reading-question-options.destroy')->whereNumber('option');
+    Route::put('/reading-questions/{question}', [AdminReadingMatchingQuestionController::class, 'updateQuestion'])->name('reading-questions.update')->whereNumber('question');
+    Route::delete('/reading-questions/{question}', [AdminReadingMatchingQuestionController::class, 'deleteQuestion'])->name('reading-questions.destroy')->whereNumber('question');
 
     Route::get('/reading-analytics', [ReadingAnalyticsController::class, 'index'])->name('reading-analytics.index');
     Route::get('/reading-analytics/attempts/{reading_analytic}', [ReadingAnalyticsController::class, 'attempt'])->name('reading-analytics.attempt');
