@@ -146,7 +146,7 @@
 
             <button type="button" role="tab" :aria-selected="mobilePanel==='passage'" @click="mobilePanel='passage'" class="flex-1 rounded-lg py-2 text-sm font-semibold" :class="mobilePanel==='passage' ? 'bg-brand-600 text-white' : 'bg-neutral-100'">Passage</button>
 
-            <button type="button" role="tab" :aria-selected="mobilePanel==='questions'" @click="mobilePanel='questions'" class="flex-1 rounded-lg py-2 text-sm font-semibold" :class="mobilePanel==='questions' ? 'bg-brand-600 text-white' : 'bg-neutral-100'">Questions</button>
+            <button type="button" role="tab" :aria-selected="mobilePanel==='questions'" @click="showQuestionsPanel()" class="flex-1 rounded-lg py-2 text-sm font-semibold" :class="mobilePanel==='questions' ? 'bg-brand-600 text-white' : 'bg-neutral-100'">Questions</button>
 
             <button type="button" class="rounded-lg bg-neutral-100 px-3 py-2 text-xs font-semibold" :class="timerClassName" x-text="timerLabel" aria-label="Timer"></button>
 
@@ -206,15 +206,17 @@
 
             <section
 
-                class="reading-test-questions-pane relative min-h-0 flex-1 overflow-y-auto"
+                class="reading-test-questions-pane relative flex min-h-0 flex-1 flex-col"
 
-                :class="mobilePanel === 'questions' ? 'block' : 'hidden lg:block'"
+                :class="mobilePanel === 'questions' ? 'flex' : 'hidden lg:flex'"
 
                 aria-label="Questions"
 
             >
 
-                <div class="space-y-5 p-4 pb-24 lg:p-6">
+                <div class="reading-test-questions-scroll min-h-0 flex-1 overflow-y-auto">
+
+                    <div class="space-y-5 p-4 pb-24 lg:p-6">
 
                     @foreach ($test->passages as $passage)
 
@@ -262,11 +264,13 @@
 
                     @endforeach
 
+                    </div>
+
                 </div>
 
 
 
-                <div class="reading-test-prev-next pointer-events-none sticky bottom-4 flex justify-end gap-2 px-4 lg:px-6">
+                <div class="reading-test-prev-next pointer-events-none flex justify-end gap-2">
 
                     <button type="button" @click="goPrevious()" class="pointer-events-auto reading-test-nav-circle" :disabled="activeQuestionIndex <= 0 || isLocked" aria-label="Previous question (Alt+P)">
 

@@ -92,6 +92,7 @@ export function readingTestRenderer(initialState = {}) {
             this.$nextTick(() => {
                 this.autosave.restoreAnswers();
                 this.autosave.bindInputs();
+                this.bindQuestionInteractions();
                 this.highlightCurrentQuestion();
                 this.markVisitedForCurrentQuestion();
                 this.timerController.start();
@@ -125,7 +126,7 @@ export function readingTestRenderer(initialState = {}) {
             this.currentPassageId = passageId;
             const passage = this.passages.find((p) => p.id === passageId);
             if (passage?.questions?.length) {
-                this.selectQuestion(passage.questions[0].number, false);
+                this.selectQuestion(passage.questions[0].number, false, { keepMobilePanel: true });
             }
         },
 
@@ -154,7 +155,28 @@ export function readingTestRenderer(initialState = {}) {
             }
         },
 
-        selectQuestion(number, scroll = true) {
+        selectQuestion(number, scroll = true, options = {}) {
+            const keepMobilePanel = options.keepMobilePanel === true;
+            const index = this.questions.findIndex((q) => q.number === number);
+            if (index < 0) {
+                return;
+            }
+
+            this.activateQuestion(number, { keepMobilePanel });
+
+            this.$nextTick(() => this.highlightsController?.applyStoredHighlights(this.currentPassageId));
+            this.$nextTick(() => this.sanitizePassageMarkers());
+
+            if (scroll) {
+                this.$nextTick(() => this.scrollToQuestion(number));
+            }
+
+            this.autosave?.savePosition();
+            this.markVisitedForCurrentQuestion();
+        },
+
+        activateQuestion(number, options = {}) {
+            const keepMobilePanel = options.keepMobilePanel === true;
             const index = this.questions.findIndex((q) => q.number === number);
             if (index < 0) {
                 return;
@@ -169,23 +191,77 @@ export function readingTestRenderer(initialState = {}) {
                 this.expandedPartId = question.passage_id;
             }
 
-            this.$nextTick(() => this.highlightsController?.applyStoredHighlights(this.currentPassageId));
-            this.$nextTick(() => this.sanitizePassageMarkers());
-
-            if (scroll) {
-                this.$nextTick(() => this.scrollToQuestion(number));
+            if (!this.isDesktop() && !keepMobilePanel) {
+                this.mobilePanel = 'questions';
             }
 
             this.highlightCurrentQuestion();
-            this.autosave?.savePosition();
-            this.markVisitedForCurrentQuestion();
+        },
+
+        bindQuestionInteractions() {
+            const pane = document.querySelector('.reading-test-questions-pane');
+            if (!pane || pane.dataset.questionInteractionsBound === '1') {
+                return;
+            }
+
+            pane.dataset.questionInteractionsBound = '1';
+
+            const resolveQuestionNumber = (target) => {
+                const input = target.closest('[data-question-number]');
+                if (input?.dataset?.questionNumber) {
+                    return Number(input.dataset.questionNumber);
+                }
+
+                const row = target.closest('.reading-test-question-row[data-question-number]');
+                if (row?.dataset?.questionNumber) {
+                    return Number(row.dataset.questionNumber);
+                }
+
+                return null;
+            };
+
+            const handleActivation = (event) => {
+                if (this.isLocked) {
+                    return;
+                }
+
+                const number = resolveQuestionNumber(event.target);
+                if (number > 0) {
+                    this.activateQuestion(number);
+                }
+            };
+
+            pane.addEventListener('focusin', handleActivation);
+            pane.addEventListener('pointerdown', handleActivation);
         },
 
         scrollToQuestion(number) {
             const row = document.querySelector(`[data-question-number="${number}"]`);
-            if (row) {
-                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (!row) {
+                return;
             }
+
+            const questionsPane = row.closest('.reading-test-questions-scroll')
+                ?? row.closest('.reading-test-questions-pane');
+            if (questionsPane) {
+                const paneTop = questionsPane.getBoundingClientRect().top;
+                const rowTop = row.getBoundingClientRect().top;
+                const offset = questionsPane.scrollTop + (rowTop - paneTop) - (questionsPane.clientHeight / 2) + (row.offsetHeight / 2);
+                questionsPane.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
+                return;
+            }
+
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        },
+
+        showQuestionsPanel() {
+            this.mobilePanel = 'questions';
+
+            if (!this.currentQuestionNumber) {
+                return;
+            }
+
+            this.$nextTick(() => this.scrollToQuestion(this.currentQuestionNumber));
         },
 
         highlightCurrentQuestion() {
