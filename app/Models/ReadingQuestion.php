@@ -64,4 +64,11 @@ class ReadingQuestion extends Model
     {
         return $this->hasMany(ReadingAttempt::class, 'current_question_id');
     }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (ReadingQuestion $question): void {
+            $question->answers()->delete();
+        });
+    }
 }

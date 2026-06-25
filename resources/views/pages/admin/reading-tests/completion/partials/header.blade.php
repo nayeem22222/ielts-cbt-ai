@@ -48,3 +48,5 @@
         </div>
     @endif
 </x-ui.card>
+
+@include('pages.admin.reading-tests.partials.interaction-settings', ['group' => $group, 'mode' => 'completion'])

@@ -6,11 +6,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReorderReadingQuestionGroupsRequest;
+use App\Http\Requests\Admin\UpdateReadingGroupInteractionSettingsRequest;
 use App\Http\Requests\Admin\UpdateReadingQuestionGroupRequest;
 use App\Models\ReadingPassage;
 use App\Models\ReadingQuestionGroup;
 use App\Models\ReadingTest;
 use App\Services\Admin\Exam\ReadingQuestionGroupBuilderService;
+use App\Support\Reading\ReadingGroupInteraction;
 use Illuminate\Http\RedirectResponse;
 
 class ReadingQuestionGroupController extends Controller
@@ -151,5 +153,15 @@ class ReadingQuestionGroupController extends Controller
                 'question_group' => $firstId,
             ]))
             ->with('status', 'Question group order updated.');
+    }
+
+    public function updateInteractionSettings(
+        UpdateReadingGroupInteractionSettingsRequest $request,
+        ReadingQuestionGroup $group,
+    ): RedirectResponse {
+        $settings = ReadingGroupInteraction::mergeSettings($group, $request->settingsPayload());
+        $group->forceFill(['settings' => $settings])->save();
+
+        return back()->with('status', 'Interaction settings saved.');
     }
 }

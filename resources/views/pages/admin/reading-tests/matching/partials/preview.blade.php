@@ -1,5 +1,35 @@
+@php
+    use App\Support\Reading\ReadingGroupInteraction;
+
+    $dragDrop = ReadingGroupInteraction::usesDragDrop($group);
+    $settings = $group->settings ?? [];
+@endphp
+
 <x-ui.card title="Admin Preview — {{ $type->label() }}">
-    @if ($type->value === 'matching_information')
+    @if ($dragDrop)
+        @push('head')
+            @vite(['resources/js/reading-drag-drop-preview.js'])
+        @endpush
+
+        <p class="mb-4 text-sm text-neutral-600 dark:text-neutral-300">Interactive drag &amp; drop preview. Answers are not saved.</p>
+
+        <div class="ielts-reading-cbt reading-test-cbt rounded-2xl border border-neutral-200 p-4 dark:border-neutral-700" data-dnd-preview-root data-dnd-preview="1">
+            @php
+                $viewKey = $type->studentRendererViewKey();
+            @endphp
+
+            @include('components.reading-test.renderers.'.$viewKey, [
+                'test' => $test,
+                'passage' => $passage,
+                'group' => $group,
+                'type' => $type,
+                'questions' => $questions,
+                'options' => $options,
+                'settings' => $settings,
+                'renderer' => $renderer,
+            ])
+        </div>
+    @elseif ($type->value === 'matching_information')
         <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
                 <thead>

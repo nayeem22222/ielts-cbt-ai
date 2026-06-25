@@ -26,3 +26,5 @@
         </div>
     </dl>
 </x-ui.card>
+
+@include('pages.admin.reading-tests.partials.interaction-settings', ['group' => $group, 'mode' => 'matching'])

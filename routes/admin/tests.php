@@ -65,6 +65,7 @@ Route::middleware('permission:tests.view')->group(function (): void {
         Route::post('/matching/questions', [AdminReadingMatchingQuestionController::class, 'storeQuestion'])->name('reading-question-groups.matching.questions.store');
         Route::post('/matching/bulk-import', [AdminReadingMatchingQuestionController::class, 'bulkImport'])->name('reading-question-groups.matching.bulk-import');
         Route::post('/matching/reorder', [AdminReadingMatchingQuestionController::class, 'reorder'])->name('reading-question-groups.matching.reorder');
+        Route::put('/interaction-settings', [ReadingQuestionGroupController::class, 'updateInteractionSettings'])->name('reading-question-groups.interaction-settings.update');
 
         Route::get('/objective-questions', [AdminReadingObjectiveQuestionController::class, 'index'])->name('reading-question-groups.objective-questions.index');
         Route::post('/objective-questions', [AdminReadingObjectiveQuestionController::class, 'store'])->name('reading-question-groups.objective-questions.store');

@@ -97,6 +97,14 @@ class ReadingCompletionQuestionService
             $settings['custom_answer_rule'] = $data['custom_answer_rule'] ?? null;
             $settings['template_html'] = $templateHtml;
 
+            if (isset($data['interaction_mode'])) {
+                $settings['interaction_mode'] = (string) $data['interaction_mode'];
+            }
+
+            if (array_key_exists('allow_reuse', $data)) {
+                $settings['allow_reuse'] = (bool) $data['allow_reuse'];
+            }
+
             if ($group->question_type === OfficialReadingQuestionType::TableCompletion) {
                 $settings['table_data'] = $data['table_data'] ?? null;
             }

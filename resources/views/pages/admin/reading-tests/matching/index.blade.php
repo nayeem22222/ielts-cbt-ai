@@ -50,6 +50,9 @@
                 'options' => $options,
                 'questions' => $questions,
                 'group' => $group,
+                'test' => $test,
+                'passage' => $passage,
+                'renderer' => app(\App\Services\Exam\ReadingTestRendererService::class),
             ])
         @else
             <div class="grid gap-6 xl:grid-cols-2">

@@ -8,6 +8,7 @@ import { createReadingTestNotes } from './reading-test-notes';
 import { createReadingTestTickets } from './reading-test-tickets';
 import { createReadingCbtUi } from './reading-cbt-ui';
 import { sanitizePassageReferenceMarkers } from './reading-test-reference-search';
+import { createReadingDragDrop } from './reading-drag-drop';
 
 export function readingTestRenderer(initialState = {}) {
     return {
@@ -51,6 +52,7 @@ export function readingTestRenderer(initialState = {}) {
         notesController: null,
         ticketsController: null,
         cbtUi: null,
+        dragDrop: null,
         notesPanelOpen: false,
         notesTab: 'all',
         noteDraft: { id: null, title: '', content: '', question_id: null, passage_id: null, selected_text: null, start_offset: null, end_offset: null },
@@ -77,6 +79,7 @@ export function readingTestRenderer(initialState = {}) {
             this.notesController = createReadingTestNotes(this);
             this.ticketsController = createReadingTestTickets(this);
             this.cbtUi = createReadingCbtUi(this);
+            this.dragDrop = createReadingDragDrop(this);
             this.cbtUi.bind();
 
             if (this.currentQuestionNumber) {
@@ -92,6 +95,7 @@ export function readingTestRenderer(initialState = {}) {
             this.$nextTick(() => {
                 this.autosave.restoreAnswers();
                 this.autosave.bindInputs();
+                this.dragDrop?.init();
                 this.bindQuestionInteractions();
                 this.highlightCurrentQuestion();
                 this.markVisitedForCurrentQuestion();

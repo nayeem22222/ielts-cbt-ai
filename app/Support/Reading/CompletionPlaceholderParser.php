@@ -96,8 +96,31 @@ final class CompletionPlaceholderParser
         int $passageId,
         ReadingQuestionGroup $group,
         array $questionsByNumber,
+        string $interactionMode = 'input',
     ): HtmlString {
         $type = $group->question_type?->value ?? '';
+
+        if ($interactionMode === 'drag_drop') {
+            return new HtmlString(self::renderDragDropPlaceholders(
+                $content,
+                $testId,
+                $passageId,
+                $group,
+                $questionsByNumber,
+                $type,
+            ));
+        }
+
+        if ($interactionMode === 'select') {
+            return new HtmlString(self::renderSelectPlaceholders(
+                $content,
+                $testId,
+                $passageId,
+                $group,
+                $questionsByNumber,
+                $type,
+            ));
+        }
 
         $html = self::replacePlaceholders(
             $content,
@@ -126,6 +149,103 @@ final class CompletionPlaceholderParser
         );
 
         return new HtmlString($html);
+    }
+
+    /**
+     * @param  array<int, ReadingQuestion>  $questionsByNumber
+     */
+    public static function renderDragDropPlaceholders(
+        string $content,
+        int $testId,
+        int $passageId,
+        ReadingQuestionGroup $group,
+        array $questionsByNumber,
+        string $type,
+    ): string {
+        return self::replacePlaceholders(
+            $content,
+            function (int $number, ?string $label) use ($testId, $passageId, $group, $questionsByNumber, $type): string {
+                $question = $questionsByNumber[$number] ?? null;
+                $questionId = $question?->id ?? 0;
+
+                $attrs = sprintf(
+                    'data-test-id="%d" data-passage-id="%d" data-group-id="%d" data-question-id="%d" data-question-number="%d" data-question-type="%s"',
+                    $testId,
+                    $passageId,
+                    $group->id,
+                    $questionId,
+                    $number,
+                    e($type),
+                );
+
+                $aria = $label ? ' aria-label="'.e($label).'"' : '';
+
+                return sprintf(
+                    '<span class="reading-dnd-dropzone reading-dnd-dropzone--empty reading-dnd-dropzone--inline reading-test-blank" %s tabindex="0" role="button"%s>'
+                    .'<input type="hidden" class="reading-test-input reading-dnd-input" %s value="" />'
+                    .'<span class="reading-dnd-dropzone__number">%d</span>'
+                    .'<span class="reading-dnd-dropzone__placeholder">Drop answer here</span>'
+                    .'<span class="reading-dnd-dropzone__filled" hidden>'
+                    .'<span class="reading-dnd-dropzone__key"></span>'
+                    .'<span class="reading-dnd-dropzone__label"></span>'
+                    .'<button type="button" class="reading-dnd-dropzone__remove" aria-label="Remove answer">&times;</button>'
+                    .'</span></span>',
+                    $attrs,
+                    $aria,
+                    $attrs,
+                    $number,
+                );
+            },
+        );
+    }
+
+    /**
+     * @param  array<int, ReadingQuestion>  $questionsByNumber
+     */
+    public static function renderSelectPlaceholders(
+        string $content,
+        int $testId,
+        int $passageId,
+        ReadingQuestionGroup $group,
+        array $questionsByNumber,
+        string $type,
+    ): string {
+        $options = $group->groupOptions;
+
+        return self::replacePlaceholders(
+            $content,
+            function (int $number, ?string $label) use ($testId, $passageId, $group, $questionsByNumber, $type, $options): string {
+                $question = $questionsByNumber[$number] ?? null;
+                $questionId = $question?->id ?? 0;
+
+                $attrs = sprintf(
+                    'data-test-id="%d" data-passage-id="%d" data-group-id="%d" data-question-id="%d" data-question-number="%d" data-question-type="%s"',
+                    $testId,
+                    $passageId,
+                    $group->id,
+                    $questionId,
+                    $number,
+                    e($type),
+                );
+
+                $aria = $label ? ' aria-label="'.e($label).'"' : '';
+                $optionsHtml = '<option value="">—</option>';
+                foreach ($options as $option) {
+                    $optionsHtml .= sprintf(
+                        '<option value="%s">%s</option>',
+                        e($option->option_key),
+                        e($option->option_key),
+                    );
+                }
+
+                return sprintf(
+                    '<select class="reading-test-input reading-test-select reading-test-blank" %s%s>%s</select>',
+                    $attrs,
+                    $aria,
+                    $optionsHtml,
+                );
+            },
+        );
     }
 
     /**

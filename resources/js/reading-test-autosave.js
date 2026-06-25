@@ -50,6 +50,11 @@ export function createReadingTestAutosave(component) {
                     return;
                 }
 
+                if (input.type === 'hidden') {
+                    input.value = record.answer ?? '';
+                    return;
+                }
+
                 if (input.type === 'checkbox') {
                     input.checked = Array.isArray(record.answer_json)
                         ? record.answer_json.includes(input.value)
@@ -224,7 +229,7 @@ export function createReadingTestAutosave(component) {
 
             input.dataset.autosaveBound = '1';
 
-            if (input.type === 'radio' || input.type === 'checkbox' || input.tagName === 'SELECT') {
+            if (input.type === 'radio' || input.type === 'checkbox' || input.tagName === 'SELECT' || input.type === 'hidden') {
                 input.addEventListener('change', () => queueSave(input, true));
                 return;
             }
