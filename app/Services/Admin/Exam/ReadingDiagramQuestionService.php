@@ -14,6 +14,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Support\Reading\ReadingQuestionReferenceSupport;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -216,9 +217,10 @@ class ReadingDiagramQuestionService
                     if (array_key_exists('explanation', $label)) {
                         $question->explanation = $label['explanation'];
                     }
-
-                    $question->save();
                 }
+
+                ReadingQuestionReferenceSupport::applyAttributes($question, $label);
+                $question->save();
 
                 if (
                     array_key_exists('correct_answer', $label)
@@ -277,6 +279,8 @@ class ReadingDiagramQuestionService
             if (isset($data['difficulty'])) {
                 $question->difficulty = (string) $data['difficulty'];
             }
+
+            ReadingQuestionReferenceSupport::applyAttributes($question, $data);
 
             $question->save();
 

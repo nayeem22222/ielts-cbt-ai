@@ -217,6 +217,17 @@ it('parses spaced and labeled placeholders through parser facade', function (): 
         ->and($parsed[1]['question_number'])->toBe(30);
 });
 
+it('parses placeholders wrapped in editor markup', function (): void {
+    $parsed = CompletionPlaceholderParser::parse(
+        '<p>encouraging <span class="completion-blank-token" data-completion-blank="5">{{5}}</span> as</p>'
+        .'<p>In one process <strong>{{<span>6</span>}}</strong> terms</p>',
+    );
+
+    expect($parsed)->toHaveCount(2)
+        ->and($parsed[0]['question_number'])->toBe(5)
+        ->and($parsed[1]['question_number'])->toBe(6);
+});
+
 it('bulk imports sentence completion rows', function (): void {
     [, , $group] = createCompletionBuilderContext(OfficialReadingQuestionType::SentenceCompletion);
 

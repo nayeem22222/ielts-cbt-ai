@@ -36,6 +36,12 @@
                     'case_sensitive' => \App\Support\Reading\CompletionAnswerPayload::caseSensitive($correct),
                     'explanation' => $question?->explanation ?? '',
                     'difficulty' => $question?->difficulty ?? 'medium',
+                    'reference_type' => $question?->reference_type ?? '',
+                    'reference_phrase' => $question?->reference_phrase ?? '',
+                    'reference_sentence' => $question?->reference_sentence ?? '',
+                    'reference_paragraph' => $question?->reference_paragraph ?? $question?->paragraph_reference ?? '',
+                    'reference_start_offset' => $question?->reference_start_offset ?? '',
+                    'reference_end_offset' => $question?->reference_end_offset ?? '',
                 ];
             })->values()->all(),
             'saveLabelsUrl' => route('admin.reading-question-groups.diagram-questions.labels', $group),

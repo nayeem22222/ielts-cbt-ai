@@ -6,6 +6,7 @@ namespace App\Http\Requests\Admin\Diagram;
 
 use App\Models\ReadingQuestion;
 use App\Models\ReadingQuestionGroup;
+use App\Support\Reading\ReadingQuestionReferenceSupport;
 
 class UpdateDiagramQuestionRequest extends DiagramScopedRequest
 {
@@ -19,7 +20,7 @@ class UpdateDiagramQuestionRequest extends DiagramScopedRequest
      */
     public function rules(): array
     {
-        return [
+        return array_merge([
             'question_number' => ['nullable', 'integer', 'min:1', 'max:200'],
             'label' => ['nullable', 'string', 'max:255'],
             'x' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -30,7 +31,7 @@ class UpdateDiagramQuestionRequest extends DiagramScopedRequest
             'case_sensitive' => ['nullable', 'boolean'],
             'explanation' => ['nullable', 'string', 'max:10000'],
             'difficulty' => ['nullable', 'string', 'max:20'],
-        ];
+        ], ReadingQuestionReferenceSupport::fullValidationRules());
     }
 
     /**
@@ -38,7 +39,7 @@ class UpdateDiagramQuestionRequest extends DiagramScopedRequest
      */
     public function questionAttributes(): array
     {
-        return array_filter([
+        $data = array_filter([
             'question_number' => $this->filled('question_number') ? (int) $this->input('question_number') : null,
             'label' => $this->input('label'),
             'x' => $this->filled('x') ? (float) $this->input('x') : null,
@@ -49,6 +50,14 @@ class UpdateDiagramQuestionRequest extends DiagramScopedRequest
             'explanation' => $this->input('explanation'),
             'difficulty' => $this->input('difficulty'),
         ], fn ($value) => $value !== null);
+
+        foreach (ReadingQuestionReferenceSupport::attributeKeys() as $field) {
+            if ($this->has($field)) {
+                $data[$field] = $this->input($field);
+            }
+        }
+
+        return $data;
     }
 
     protected function questionFromRoute(): ?ReadingQuestion

@@ -6,6 +6,7 @@ namespace App\Http\Requests\Admin\Completion;
 
 use App\Models\ReadingQuestion;
 use App\Models\ReadingQuestionGroup;
+use App\Support\Reading\ReadingQuestionReferenceSupport;
 
 class UpdateCompletionQuestionRequest extends CompletionScopedRequest
 {
@@ -19,7 +20,7 @@ class UpdateCompletionQuestionRequest extends CompletionScopedRequest
      */
     public function rules(): array
     {
-        return [
+        return array_merge([
             'question_number' => ['nullable', 'integer', 'min:1', 'max:200'],
             'prompt' => ['nullable', 'string', 'max:10000'],
             'sentence_before' => ['nullable', 'string', 'max:5000'],
@@ -30,7 +31,7 @@ class UpdateCompletionQuestionRequest extends CompletionScopedRequest
             'case_sensitive' => ['nullable', 'boolean'],
             'explanation' => ['nullable', 'string', 'max:10000'],
             'difficulty' => ['nullable', 'string', 'max:20'],
-        ];
+        ], ReadingQuestionReferenceSupport::fullValidationRules());
     }
 
     /**
@@ -38,7 +39,7 @@ class UpdateCompletionQuestionRequest extends CompletionScopedRequest
      */
     public function questionAttributes(): array
     {
-        return array_filter([
+        $data = array_filter([
             'question_number' => $this->filled('question_number') ? (int) $this->input('question_number') : null,
             'prompt' => $this->input('prompt'),
             'sentence_before' => $this->input('sentence_before'),
@@ -49,5 +50,13 @@ class UpdateCompletionQuestionRequest extends CompletionScopedRequest
             'explanation' => $this->input('explanation'),
             'difficulty' => $this->input('difficulty'),
         ], fn ($value) => $value !== null);
+
+        foreach (ReadingQuestionReferenceSupport::attributeKeys() as $field) {
+            if ($this->has($field)) {
+                $data[$field] = $this->input($field);
+            }
+        }
+
+        return $data;
     }
 }

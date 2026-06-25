@@ -38,6 +38,47 @@ final class ReadingQuestionReferenceSupport
         ];
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public static function fullValidationRules(): array
+    {
+        return array_merge([
+            'reference_paragraph' => ['nullable', 'string', 'max:30'],
+            'reference_start_offset' => ['nullable', 'integer', 'min:0'],
+            'reference_end_offset' => ['nullable', 'integer', 'min:0'],
+        ], self::validationRules());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function nestedLabelReferenceRules(): array
+    {
+        $rules = [];
+
+        foreach (self::fullValidationRules() as $field => $rule) {
+            $rules["labels.*.{$field}"] = $rule;
+        }
+
+        return $rules;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function attributeKeys(): array
+    {
+        return [
+            'reference_paragraph',
+            'reference_start_offset',
+            'reference_end_offset',
+            'reference_type',
+            'reference_phrase',
+            'reference_sentence',
+        ];
+    }
+
     public static function resolveType(
         ?string $type,
         ?int $start,

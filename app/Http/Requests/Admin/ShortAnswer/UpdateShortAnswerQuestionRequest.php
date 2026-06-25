@@ -6,6 +6,7 @@ namespace App\Http\Requests\Admin\ShortAnswer;
 
 use App\Enums\Exam\ReadingCompletionAnswerRule;
 use App\Models\ReadingQuestionGroup;
+use App\Support\Reading\ReadingQuestionReferenceSupport;
 use Illuminate\Validation\Rule;
 
 class UpdateShortAnswerQuestionRequest extends ShortAnswerScopedRequest
@@ -20,7 +21,7 @@ class UpdateShortAnswerQuestionRequest extends ShortAnswerScopedRequest
      */
     public function rules(): array
     {
-        return [
+        return array_merge([
             'answer_rule' => ['nullable', 'string', Rule::enum(ReadingCompletionAnswerRule::class)],
             'custom_answer_rule' => ['nullable', 'string', 'max:500'],
             'question_number' => ['nullable', 'integer', 'min:1', 'max:200'],
@@ -31,7 +32,7 @@ class UpdateShortAnswerQuestionRequest extends ShortAnswerScopedRequest
             'case_sensitive' => ['nullable', 'boolean'],
             'explanation' => ['nullable', 'string', 'max:10000'],
             'difficulty' => ['nullable', 'string', 'max:20'],
-        ];
+        ], ReadingQuestionReferenceSupport::fullValidationRules());
     }
 
     /**
@@ -39,7 +40,7 @@ class UpdateShortAnswerQuestionRequest extends ShortAnswerScopedRequest
      */
     public function questionAttributes(): array
     {
-        return array_filter([
+        $data = array_filter([
             'answer_rule' => $this->filled('answer_rule') ? $this->string('answer_rule')->toString() : null,
             'custom_answer_rule' => $this->input('custom_answer_rule'),
             'question_number' => $this->filled('question_number') ? (int) $this->input('question_number') : null,
@@ -50,5 +51,13 @@ class UpdateShortAnswerQuestionRequest extends ShortAnswerScopedRequest
             'explanation' => $this->input('explanation'),
             'difficulty' => $this->input('difficulty'),
         ], fn ($value) => $value !== null);
+
+        foreach (ReadingQuestionReferenceSupport::attributeKeys() as $field) {
+            if ($this->has($field)) {
+                $data[$field] = $this->input($field);
+            }
+        }
+
+        return $data;
     }
 }

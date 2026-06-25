@@ -9,6 +9,7 @@ use App\Models\ReadingPassage;
 use App\Models\ReadingQuestion;
 use App\Models\ReadingQuestionGroup;
 use App\Models\ReadingTest;
+use App\Support\Reading\ReadingQuestionReferenceSupport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -97,6 +98,9 @@ class ReadingShortAnswerQuestionService
                 'metadata' => ['short_answer' => true],
             ]);
 
+            ReadingQuestionReferenceSupport::applyAttributes($question, $data);
+            $question->save();
+
             $this->assertPublishedAnswerPresent($group, $data);
             $this->syncCorrectAnswers($question, $data, $this->groupBuilderSettings($group)['answer_rule']);
 
@@ -138,6 +142,8 @@ class ReadingShortAnswerQuestionService
             if (isset($data['sort_order'])) {
                 $question->sort_order = max(1, (int) $data['sort_order']);
             }
+
+            ReadingQuestionReferenceSupport::applyAttributes($question, $data);
 
             $question->save();
 

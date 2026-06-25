@@ -96,6 +96,12 @@ window.readingDiagramBuilder = (config) => ({
             case_sensitive: false,
             explanation: '',
             difficulty: 'medium',
+            reference_type: '',
+            reference_phrase: '',
+            reference_sentence: '',
+            reference_paragraph: '',
+            reference_start_offset: '',
+            reference_end_offset: '',
         });
 
         this.selectedIndex = this.labels.length - 1;

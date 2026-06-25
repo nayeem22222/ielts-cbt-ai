@@ -12,6 +12,7 @@ use App\Models\ReadingQuestionGroup;
 use App\Models\ReadingTest;
 use App\Support\Reading\CompletionBulkImportParser;
 use App\Support\Reading\CompletionPlaceholderParser;
+use App\Support\Reading\ReadingQuestionReferenceSupport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -249,6 +250,9 @@ class ReadingCompletionQuestionService
                 'metadata' => ['auto_generated' => false],
             ]);
 
+            ReadingQuestionReferenceSupport::applyAttributes($question, $data);
+            $question->save();
+
             $this->syncCorrectAnswers($question, $data);
 
             return $question->load(['correctAnswers']);
@@ -283,6 +287,8 @@ class ReadingCompletionQuestionService
             if (isset($data['difficulty'])) {
                 $question->difficulty = (string) $data['difficulty'];
             }
+
+            ReadingQuestionReferenceSupport::applyAttributes($question, $data);
 
             $question->save();
 

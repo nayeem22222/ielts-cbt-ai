@@ -6,6 +6,7 @@ namespace App\Http\Requests\Admin\ShortAnswer;
 
 use App\Enums\Exam\ReadingCompletionAnswerRule;
 use App\Models\ReadingQuestionGroup;
+use App\Support\Reading\ReadingQuestionReferenceSupport;
 use Illuminate\Validation\Rule;
 
 class StoreShortAnswerQuestionRequest extends ShortAnswerScopedRequest
@@ -20,7 +21,7 @@ class StoreShortAnswerQuestionRequest extends ShortAnswerScopedRequest
      */
     public function rules(): array
     {
-        return [
+        return array_merge([
             'answer_rule' => ['required', 'string', Rule::enum(ReadingCompletionAnswerRule::class)],
             'custom_answer_rule' => ['nullable', 'string', 'max:500'],
             'question_number' => ['required', 'integer', 'min:1', 'max:200'],
@@ -31,7 +32,7 @@ class StoreShortAnswerQuestionRequest extends ShortAnswerScopedRequest
             'case_sensitive' => ['nullable', 'boolean'],
             'explanation' => ['nullable', 'string', 'max:10000'],
             'difficulty' => ['nullable', 'string', 'max:20'],
-        ];
+        ], ReadingQuestionReferenceSupport::fullValidationRules());
     }
 
     /**
@@ -49,6 +50,12 @@ class StoreShortAnswerQuestionRequest extends ShortAnswerScopedRequest
             'case_sensitive' => $this->boolean('case_sensitive'),
             'explanation' => $this->input('explanation'),
             'difficulty' => $this->input('difficulty'),
+            'reference_paragraph' => $this->input('reference_paragraph'),
+            'reference_start_offset' => $this->input('reference_start_offset'),
+            'reference_end_offset' => $this->input('reference_end_offset'),
+            'reference_type' => $this->input('reference_type'),
+            'reference_phrase' => $this->input('reference_phrase'),
+            'reference_sentence' => $this->input('reference_sentence'),
         ];
     }
 }

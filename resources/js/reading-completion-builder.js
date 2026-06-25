@@ -114,6 +114,56 @@ function defaultFlowSteps() {
     ];
 }
 
+function normalizeCompletionTemplateHtml(html) {
+    if (!html) {
+        return '';
+    }
+
+    let normalized = html;
+
+    normalized = normalized.replace(
+        /<span[^>]*data-completion-blank=["']?\d+["']?[^>]*>(\{\{[^}]+\}\})<\/span>/gi,
+        '$1',
+    );
+
+    normalized = normalized.replace(/\{\{((?:[^}]|<[^>]*>)*)\}\}/g, (_, inner) => {
+        const cleaned = inner.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+
+        return `{{${cleaned}}}`;
+    });
+
+    normalized = normalized.replace(/\[blank:\s*((?:[^\]]|<[^>]*>)*)\]/gi, (_, inner) => {
+        const cleaned = inner.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+
+        return `[blank:${cleaned}]`;
+    });
+
+    return normalized;
+}
+
+function completionPlaceholderHtml(number) {
+    const token = `{{${number}}}`;
+
+    return `<span class="completion-blank-token" data-completion-blank="${number}" contenteditable="false" spellcheck="false">${token}</span>`;
+}
+
+function ensureEditorSelection(editor) {
+    const body = editor.getBody();
+
+    if (!body) {
+        return;
+    }
+
+    editor.focus();
+
+    const range = editor.selection?.getRng?.();
+
+    if (!range || !body.contains(range.commonAncestorContainer)) {
+        editor.selection.select(body, true);
+        editor.selection.collapse(false);
+    }
+}
+
 window.readingCompletionBuilder = (config = {}) => ({
     detectUrl: config.detectUrl ?? '',
     groupStart: Number(config.groupStart ?? 1),
@@ -173,9 +223,11 @@ window.readingCompletionBuilder = (config = {}) => ({
             skin: false,
             content_css: false,
             paste_as_text: false,
+            extended_valid_elements: 'span[class|contenteditable|data-completion-blank|spellcheck]',
+            content_style: '.completion-blank-token{display:inline-block;background:#ecfdf5;border:1px dashed #2d6a4f;border-radius:4px;padding:0 4px;font-family:ui-monospace,monospace;font-weight:600;color:#1b4332;}',
             setup(editor) {
                 const sync = () => {
-                    self.templateHtml = editor.getContent();
+                    self.templateHtml = normalizeCompletionTemplateHtml(editor.getContent());
                     self.refreshDetected();
                 };
 
@@ -256,18 +308,27 @@ window.readingCompletionBuilder = (config = {}) => ({
             this.liveDetectedCount = data.count ?? 0;
 
             const numbers = this.detectedPlaceholders.map((item) => Number(item.question_number));
-            const max = numbers.at(-1) ?? this.groupStart - 1;
+            const max = numbers.length ? Math.max(...numbers) : this.groupStart - 1;
             this.nextPlaceholderNumber = Math.min(Math.max(max + 1, this.groupStart), this.groupEnd);
         }, 250);
     },
 
     insertPlaceholder() {
+        if (this.nextPlaceholderNumber > this.groupEnd) {
+            return;
+        }
+
         const editor = tinymce.get('completion_template_html') ?? tinymce.get('completion_sentence_template_html');
         const token = `{{${this.nextPlaceholderNumber}}}`;
 
         if (editor) {
-            editor.insertContent(token);
-            this.templateHtml = editor.getContent();
+            ensureEditorSelection(editor);
+
+            editor.undoManager.transact(() => {
+                editor.insertContent(`${completionPlaceholderHtml(this.nextPlaceholderNumber)}\u00a0`);
+            });
+
+            this.templateHtml = normalizeCompletionTemplateHtml(editor.getContent());
         } else {
             this.templateHtml += token;
         }
@@ -279,8 +340,9 @@ window.readingCompletionBuilder = (config = {}) => ({
         const editor = tinymce.get('completion_template_html') ?? tinymce.get('completion_sentence_template_html');
 
         if (editor) {
+            this.templateHtml = normalizeCompletionTemplateHtml(editor.getContent());
+            editor.setContent(this.templateHtml);
             editor.save();
-            this.templateHtml = editor.getContent();
         }
     },
 

@@ -67,6 +67,8 @@
                     <label class="block text-sm font-medium">Explanation</label>
                     <textarea :name="'labels['+index+'][explanation]'" x-model="label.explanation" rows="2" class="mt-1 w-full rounded-lg border border-neutral-300 px-2 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900"></textarea>
                 </div>
+
+                @include('pages.admin.reading-tests.partials.question-reference-fields', ['arrayName' => 'labels'])
             </div>
         </template>
 

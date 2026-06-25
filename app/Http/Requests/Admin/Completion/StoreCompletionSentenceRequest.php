@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin\Completion;
 
 use App\Models\ReadingQuestionGroup;
+use App\Support\Reading\ReadingQuestionReferenceSupport;
 
 class StoreCompletionSentenceRequest extends CompletionScopedRequest
 {
@@ -20,7 +21,7 @@ class StoreCompletionSentenceRequest extends CompletionScopedRequest
      */
     public function rules(): array
     {
-        return [
+        return array_merge([
             'question_number' => ['required', 'integer', 'min:1', 'max:200'],
             'prompt' => ['nullable', 'string', 'max:10000', 'required_without_all:sentence_before,sentence_after'],
             'sentence_before' => ['nullable', 'string', 'max:5000'],
@@ -31,7 +32,7 @@ class StoreCompletionSentenceRequest extends CompletionScopedRequest
             'case_sensitive' => ['nullable', 'boolean'],
             'explanation' => ['nullable', 'string', 'max:10000'],
             'difficulty' => ['nullable', 'string', 'max:20'],
-        ];
+        ], ReadingQuestionReferenceSupport::fullValidationRules());
     }
 
     /**
@@ -49,6 +50,12 @@ class StoreCompletionSentenceRequest extends CompletionScopedRequest
             'case_sensitive' => $this->boolean('case_sensitive'),
             'explanation' => $this->input('explanation'),
             'difficulty' => $this->input('difficulty', 'medium'),
+            'reference_paragraph' => $this->input('reference_paragraph'),
+            'reference_start_offset' => $this->input('reference_start_offset'),
+            'reference_end_offset' => $this->input('reference_end_offset'),
+            'reference_type' => $this->input('reference_type'),
+            'reference_phrase' => $this->input('reference_phrase'),
+            'reference_sentence' => $this->input('reference_sentence'),
         ];
     }
 }

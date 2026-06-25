@@ -6,6 +6,7 @@ namespace App\Http\Requests\Admin\Diagram;
 
 use App\Enums\Exam\ReadingCompletionAnswerRule;
 use App\Models\ReadingQuestionGroup;
+use App\Support\Reading\ReadingQuestionReferenceSupport;
 use Illuminate\Validation\Rule;
 
 class SaveDiagramLabelsRequest extends DiagramScopedRequest
@@ -20,7 +21,7 @@ class SaveDiagramLabelsRequest extends DiagramScopedRequest
      */
     public function rules(): array
     {
-        return [
+        return array_merge([
             'answer_rule' => ['required', 'string', Rule::enum(ReadingCompletionAnswerRule::class)],
             'custom_answer_rule' => ['nullable', 'string', 'max:500'],
             'confirm_remove' => ['nullable', 'boolean'],
@@ -35,7 +36,7 @@ class SaveDiagramLabelsRequest extends DiagramScopedRequest
             'labels.*.case_sensitive' => ['nullable', 'boolean'],
             'labels.*.explanation' => ['nullable', 'string', 'max:10000'],
             'labels.*.difficulty' => ['nullable', 'string', 'max:20'],
-        ];
+        ], ReadingQuestionReferenceSupport::nestedLabelReferenceRules());
     }
 
     /**

@@ -48,6 +48,9 @@
                         </div>
                     </div>
                     <x-ui.textarea name="explanation" label="Explanation" rows="2">{{ $question->explanation }}</x-ui.textarea>
+
+                    @include('pages.admin.reading-tests.partials.question-reference-fields', ['question' => $question])
+
                     <div class="flex flex-wrap gap-2">
                         <x-ui.button type="submit" size="sm">Save</x-ui.button>
                         <x-ui.button type="button" size="sm" variant="outline" data-question-drag-handle>↕ Reorder</x-ui.button>

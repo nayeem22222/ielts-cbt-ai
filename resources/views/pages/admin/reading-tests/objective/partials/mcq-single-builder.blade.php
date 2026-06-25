@@ -41,6 +41,9 @@
         </div>
 
         <x-ui.textarea name="explanation" label="Explanation (optional)" rows="2"></x-ui.textarea>
+
+        @include('pages.admin.reading-tests.partials.question-reference-fields')
+
         <x-ui.button type="submit">Add Question</x-ui.button>
     </form>
 </x-ui.card>

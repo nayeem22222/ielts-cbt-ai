@@ -64,6 +64,8 @@
 
                     <x-ui.textarea name="explanation" label="Explanation (optional)" rows="2">{{ $question->explanation }}</x-ui.textarea>
 
+                    @include('pages.admin.reading-tests.partials.question-reference-fields', ['question' => $question])
+
                     <x-ui.button type="submit" size="sm">Save Answer</x-ui.button>
                 </form>
 

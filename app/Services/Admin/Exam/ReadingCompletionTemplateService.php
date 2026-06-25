@@ -28,6 +28,7 @@ class ReadingCompletionTemplateService
      */
     public function parseTemplate(string $template): array
     {
+        $template = $this->normalizePlaceholderHtml($template);
         $this->assertNoBrokenPlaceholderSyntax($template);
 
         if (! preg_match_all(self::PLACEHOLDER_PATTERN, $template, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
@@ -464,6 +465,39 @@ class ReadingCompletionTemplateService
                     .implode(', ', array_map('strval', $conflicts)).'.',
             ]);
         }
+    }
+
+    private function normalizePlaceholderHtml(string $template): string
+    {
+        $template = preg_replace(
+            '/<span[^>]*>\s*(\{\{\s*\d+\s*(?::\s*[a-zA-Z0-9_-]+)?\s*\}\}|\[blank:\s*\d+\s*(?::\s*[a-zA-Z0-9_-]+)?\s*\])\s*<\/span>/i',
+            '$1',
+            $template,
+        ) ?? $template;
+
+        $template = preg_replace_callback(
+            '/\{\{((?:[^}]|<[^>]*>)*)\}\}/',
+            static function (array $matches): string {
+                $inner = preg_replace('/<[^>]*>/', '', $matches[1]) ?? $matches[1];
+                $inner = preg_replace('/\s+/', ' ', trim($inner)) ?? trim($inner);
+
+                return '{{'.$inner.'}}';
+            },
+            $template,
+        ) ?? $template;
+
+        $template = preg_replace_callback(
+            '/\[blank:\s*((?:[^\]]|<[^>]*>)*)\]/i',
+            static function (array $matches): string {
+                $inner = preg_replace('/<[^>]*>/', '', $matches[1]) ?? $matches[1];
+                $inner = preg_replace('/\s+/', ' ', trim($inner)) ?? trim($inner);
+
+                return '[blank:'.$inner.']';
+            },
+            $template,
+        ) ?? $template;
+
+        return $template;
     }
 
     private function assertNoBrokenPlaceholderSyntax(string $template): void
