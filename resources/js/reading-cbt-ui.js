@@ -1,4 +1,5 @@
-const PASSAGE_WIDTH_KEY = 'ielts-reading-cbt-passage-width';
+const PASSAGE_WIDTH_KEY = 'ielts-reading-cbt-passage-width-v2';
+const DEFAULT_PASSAGE_WIDTH = 50;
 const MIN_PASSAGE_WIDTH = 35;
 const MAX_PASSAGE_WIDTH = 65;
 
@@ -21,6 +22,8 @@ export function createReadingCbtUi(renderer) {
     const clampPassageWidth = (value) => Math.min(MAX_PASSAGE_WIDTH, Math.max(MIN_PASSAGE_WIDTH, value));
 
     const restorePassageWidth = () => {
+        renderer.passageWidth = DEFAULT_PASSAGE_WIDTH;
+
         try {
             const stored = Number(localStorage.getItem(PASSAGE_WIDTH_KEY));
 

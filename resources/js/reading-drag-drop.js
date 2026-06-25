@@ -18,7 +18,42 @@ export function createReadingDragDrop(component) {
 
     const groupRoot = (el) => el.closest('.reading-dnd-group');
 
-    const allowReuseFor = (groupEl) => groupEl?.dataset?.dndAllowReuse === '1';
+    const isMatchingHeadingsGroup = (groupEl) => groupEl?.dataset?.dndType === 'matching_headings'
+        || groupEl?.dataset?.dndLayout === 'ielts-passage';
+
+    const optionLabelsForGroup = (groupId) => {
+        const config = document.querySelector(`.reading-dnd-headings-config[data-group-id="${groupId}"]`);
+        if (!config?.dataset?.optionLabels) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(config.dataset.optionLabels);
+        } catch {
+            return {};
+        }
+    };
+
+    const resolveOptionLabel = (groupId, optionKey) => {
+        const token = document.querySelector(
+            `.reading-dnd-token[data-group-id="${groupId}"][data-option-key="${CSS.escape(optionKey)}"]`,
+        );
+        if (token?.dataset?.optionLabel) {
+            return token.dataset.optionLabel;
+        }
+
+        const labels = optionLabelsForGroup(groupId);
+
+        return labels[optionKey] ?? optionKey;
+    };
+
+    const allowReuseFor = (groupEl) => {
+        if (isMatchingHeadingsGroup(groupEl)) {
+            return false;
+        }
+
+        return groupEl?.dataset?.dndAllowReuse === '1';
+    };
 
     const optionKeysForGroup = (groupId) => {
         const keys = new Set();
@@ -62,10 +97,15 @@ export function createReadingDragDrop(component) {
         const keyEl = zone.querySelector('.reading-dnd-dropzone__key');
         const labelEl = zone.querySelector('.reading-dnd-dropzone__label');
         const value = input?.value?.trim() ?? '';
+        const isHeadings = zone.classList.contains('reading-mh-passage-dropzone');
 
         if (!value) {
             placeholder?.removeAttribute('hidden');
             filled?.setAttribute('hidden', '');
+            delete zone.dataset.assignedLabel;
+            if (isHeadings) {
+                zone.draggable = false;
+            }
             setZoneState(zone, 'empty');
             return;
         }
@@ -73,13 +113,18 @@ export function createReadingDragDrop(component) {
         const token = document.querySelector(
             `.reading-dnd-token[data-group-id="${zone.dataset.groupId}"][data-option-key="${CSS.escape(value)}"]`,
         );
-        const label = token?.dataset?.optionLabel ?? value;
+        const label = zone.dataset.assignedLabel || token?.dataset?.optionLabel || resolveOptionLabel(Number(zone.dataset.groupId), value);
 
         if (keyEl) {
-            keyEl.textContent = value;
+            keyEl.textContent = isHeadings ? `${value}.` : value;
         }
         if (labelEl) {
             labelEl.textContent = label;
+        }
+
+        zone.dataset.assignedLabel = label;
+        if (isHeadings) {
+            zone.draggable = true;
         }
 
         placeholder?.setAttribute('hidden', '');
@@ -89,23 +134,53 @@ export function createReadingDragDrop(component) {
 
     const syncTokenAvailability = (groupId) => {
         const groupEl = document.querySelector(`.reading-dnd-group[data-group-id="${groupId}"]`);
-        if (!groupEl || allowReuseFor(groupEl)) {
+        const used = usedOptionKeys(groupId);
+        const isHeadings = isMatchingHeadingsGroup(groupEl);
+
+        if (!isHeadings && (!groupEl || allowReuseFor(groupEl))) {
             document.querySelectorAll(`.reading-dnd-token[data-group-id="${groupId}"]`).forEach((token) => {
                 token.classList.remove('reading-dnd-token--used');
                 token.removeAttribute('aria-disabled');
             });
+
             return;
         }
 
-        const used = usedOptionKeys(groupId);
         document.querySelectorAll(`.reading-dnd-token[data-group-id="${groupId}"]`).forEach((token) => {
             const key = token.dataset.optionKey ?? '';
             const isUsed = used.has(key);
+
+            if (isHeadings) {
+                const item = token.closest('.reading-mh-pool__item');
+                token.classList.toggle('reading-mh-card--in-use', isUsed);
+                if (item) {
+                    item.hidden = isUsed;
+                }
+                token.setAttribute('aria-hidden', isUsed ? 'true' : 'false');
+
+                return;
+            }
+
             token.classList.toggle('reading-dnd-token--used', isUsed);
             if (isUsed) {
                 token.setAttribute('aria-disabled', 'true');
             } else {
                 token.removeAttribute('aria-disabled');
+            }
+        });
+    };
+
+    const clearZonesWithOptionKey = (groupId, optionKey, exceptZone = null) => {
+        document.querySelectorAll(`.reading-dnd-dropzone[data-group-id="${groupId}"]`).forEach((zone) => {
+            if (zone === exceptZone) {
+                return;
+            }
+
+            const input = zone.querySelector('.reading-dnd-input');
+            if (input?.value === optionKey) {
+                input.value = '';
+                syncZoneDisplay(zone);
+                triggerSave(input);
             }
         });
     };
@@ -126,7 +201,7 @@ export function createReadingDragDrop(component) {
     };
 
     const selectToken = (tokenEl) => {
-        if (isLocked() || tokenEl.classList.contains('reading-dnd-token--used')) {
+        if (isLocked() || tokenEl.classList.contains('reading-dnd-token--used') || tokenEl.closest('.reading-mh-pool__item')?.hidden) {
             return;
         }
 
@@ -169,6 +244,12 @@ export function createReadingDragDrop(component) {
             return false;
         }
 
+        const groupId = Number(zone.dataset.groupId);
+
+        if (isMatchingHeadingsGroup(groupRoot(zone))) {
+            clearZonesWithOptionKey(groupId, optionKey, zone);
+        }
+
         if (!validatePlacement(zone, optionKey)) {
             return false;
         }
@@ -178,10 +259,13 @@ export function createReadingDragDrop(component) {
             return false;
         }
 
+        const resolvedLabel = optionLabel || resolveOptionLabel(groupId, optionKey);
+
         const previous = input.value;
         input.value = optionKey;
+        zone.dataset.assignedLabel = resolvedLabel;
         syncZoneDisplay(zone);
-        syncTokenAvailability(Number(zone.dataset.groupId));
+        syncTokenAvailability(groupId);
         clearSelection();
 
         if (previous !== optionKey) {
@@ -214,11 +298,12 @@ export function createReadingDragDrop(component) {
         token.dataset.dndBound = '1';
 
         token.addEventListener('dragstart', (event) => {
-            if (isLocked() || token.classList.contains('reading-dnd-token--used')) {
+            if (isLocked() || token.classList.contains('reading-dnd-token--used') || token.closest('.reading-mh-pool__item')?.hidden) {
                 event.preventDefault();
                 return;
             }
             selectToken(token);
+            token.classList.add('reading-dnd-token--dragging');
             event.dataTransfer?.setData('text/plain', token.dataset.optionKey ?? '');
             event.dataTransfer?.setData('application/x-reading-dnd', JSON.stringify({
                 optionKey: token.dataset.optionKey,
@@ -249,6 +334,35 @@ export function createReadingDragDrop(component) {
             return;
         }
         zone.dataset.dndBound = '1';
+
+        if (zone.classList.contains('reading-mh-passage-dropzone')) {
+            zone.draggable = false;
+
+            zone.addEventListener('dragstart', (event) => {
+                const input = zone.querySelector('.reading-dnd-input');
+                if (isLocked() || !input?.value) {
+                    event.preventDefault();
+                    return;
+                }
+
+                const optionKey = input.value;
+                event.dataTransfer?.setData('text/plain', optionKey);
+                event.dataTransfer?.setData('application/x-reading-dnd', JSON.stringify({
+                    optionKey,
+                    optionLabel: zone.dataset.assignedLabel || resolveOptionLabel(Number(zone.dataset.groupId), optionKey),
+                    groupId: zone.dataset.groupId,
+                    sourceQuestionId: zone.dataset.questionId,
+                }));
+                if (event.dataTransfer) {
+                    event.dataTransfer.effectAllowed = 'move';
+                }
+                zone.classList.add('reading-mh-passage-dropzone--dragging');
+            });
+
+            zone.addEventListener('dragend', () => {
+                zone.classList.remove('reading-mh-passage-dropzone--dragging');
+            });
+        }
 
         zone.addEventListener('dragover', (event) => {
             if (isLocked()) {
@@ -294,6 +408,25 @@ export function createReadingDragDrop(component) {
             }
 
             if (optionKey) {
+                const payloadData = event.dataTransfer?.getData('application/x-reading-dnd');
+                if (payloadData) {
+                    try {
+                        const parsed = JSON.parse(payloadData);
+                        if (parsed.sourceQuestionId && Number(parsed.sourceQuestionId) !== Number(zone.dataset.questionId)) {
+                            const sourceZone = document.querySelector(
+                                `.reading-dnd-dropzone[data-question-id="${parsed.sourceQuestionId}"]`,
+                            );
+                            const sourceInput = sourceZone?.querySelector('.reading-dnd-input');
+                            if (sourceInput?.value === optionKey) {
+                                sourceInput.value = '';
+                                syncZoneDisplay(sourceZone);
+                            }
+                        }
+                    } catch {
+                        // ignore malformed drag payload
+                    }
+                }
+
                 assignToZone(zone, optionKey, optionLabel);
             }
         });
@@ -326,12 +459,97 @@ export function createReadingDragDrop(component) {
         });
     };
 
+    const restoreZoneFromSaved = (zone, input) => {
+        const questionId = Number(zone.dataset.questionId ?? input?.dataset?.questionId ?? 0);
+        if (!questionId) {
+            return;
+        }
+
+        const saved = component.savedAnswers?.[questionId];
+        if (saved?.answer && input && !input.value) {
+            input.value = saved.answer;
+        }
+    };
+
+    const paragraphLetterFromNode = (node) => {
+        if (!node) {
+            return '';
+        }
+
+        const dataRef = node.getAttribute?.('data-paragraph');
+        if (dataRef) {
+            return String(dataRef).trim().toUpperCase();
+        }
+
+        const labelEl = node.querySelector?.('.reading-passage-label');
+        if (labelEl) {
+            return labelEl.textContent.trim().toUpperCase();
+        }
+
+        const strong = node.querySelector?.('strong, b');
+        if (strong) {
+            const token = strong.textContent.trim().replace(/\.$/, '');
+            if (/^[A-Z]$/.test(token)) {
+                return token;
+            }
+        }
+
+        const match = node.textContent?.trim().match(/^([A-Z])[.\s):\-–—]/);
+
+        return match ? match[1] : '';
+    };
+
+    const collectPassageParagraphs = (passageBody) => {
+        const labeled = [...passageBody.querySelectorAll('[data-paragraph], .reading-passage-paragraph')];
+        if (labeled.length > 0) {
+            return labeled;
+        }
+
+        const directBlocks = [...passageBody.children].filter((node) => {
+            const tag = node.tagName?.toLowerCase() ?? '';
+
+            return tag === 'p' || tag === 'div' || tag === 'blockquote' || tag === 'section';
+        });
+
+        if (directBlocks.length > 0) {
+            return directBlocks;
+        }
+
+        return [...passageBody.querySelectorAll('p')];
+    };
+
+    const findPassageParagraph = (passageBody, ref, index, paragraphNodes) => {
+        const nodes = paragraphNodes ?? collectPassageParagraphs(passageBody);
+        const letter = String(ref ?? '').trim().toUpperCase();
+
+        if (letter) {
+            const byAttr = passageBody.querySelector(`[data-paragraph="${CSS.escape(letter)}"]`);
+            if (byAttr) {
+                return { paragraph: byAttr, ref: letter };
+            }
+
+            const byLetter = nodes.find((node) => paragraphLetterFromNode(node) === letter);
+            if (byLetter) {
+                return { paragraph: byLetter, ref: letter };
+            }
+        }
+
+        const byIndex = nodes[index] ?? null;
+        if (!byIndex) {
+            return { paragraph: null, ref: letter };
+        }
+
+        return {
+            paragraph: byIndex,
+            ref: letter || paragraphLetterFromNode(byIndex),
+        };
+    };
+
     const injectPassageDropZones = () => {
         document.querySelectorAll('.reading-dnd-headings-config').forEach((config) => {
             if (config.dataset.dndPassageBound === '1') {
                 return;
             }
-            config.dataset.dndPassageBound = '1';
 
             let questions = [];
             try {
@@ -340,24 +558,32 @@ export function createReadingDragDrop(component) {
                 questions = [];
             }
 
+            if (questions.length === 0) {
+                return;
+            }
+
             const passageId = config.dataset.passageId;
             const passageBody = document.querySelector(`.reading-passage-body[data-passage-id="${passageId}"]`);
             if (!passageBody) {
                 return;
             }
 
-            questions.forEach((question) => {
-                const ref = String(question.paragraph_reference ?? '').trim().toUpperCase();
-                if (!ref) {
-                    return;
-                }
+            let injected = 0;
+            const paragraphNodes = collectPassageParagraphs(passageBody);
 
-                const paragraph = passageBody.querySelector(`[data-paragraph="${ref}"]`);
+            questions.forEach((question, index) => {
+                const { paragraph, ref } = findPassageParagraph(
+                    passageBody,
+                    question.paragraph_reference ?? '',
+                    index,
+                    paragraphNodes,
+                );
+
                 if (!paragraph) {
                     return;
                 }
 
-                if (paragraph.querySelector(`[data-question-id="${question.question_id}"]`)) {
+                if (passageBody.querySelector(`.reading-dnd-dropzone[data-question-id="${question.question_id}"]`)) {
                     return;
                 }
 
@@ -390,21 +616,48 @@ export function createReadingDragDrop(component) {
                     input.dataset.questionType = zone.dataset.questionType;
                 }
 
-                const label = zone.querySelector('.reading-dnd-dropzone__paragraph-label');
-                if (label) {
-                    label.textContent = `Paragraph ${ref}`;
+                const badge = zone.querySelector('.reading-mh-dropzone__badge');
+                if (badge) {
+                    badge.textContent = `[${question.question_number}]`;
                 }
 
-                const body = paragraph.querySelector('.reading-passage-paragraph-body') ?? paragraph;
-                body.insertBefore(clone, body.firstChild);
+                paragraph.parentNode?.insertBefore(clone, paragraph);
                 bindDropzone(zone);
+                restoreZoneFromSaved(zone, input);
                 syncZoneDisplay(zone);
+                injected += 1;
             });
+
+            if (injected === questions.length) {
+                config.dataset.dndPassageBound = '1';
+            }
         });
+    };
+
+    const schedulePassageInjection = (attempts = 8) => {
+        const run = (remaining) => {
+            injectPassageDropZones();
+            restoreAllZones();
+
+            if (remaining <= 0) {
+                return;
+            }
+
+            const pending = document.querySelector('.reading-dnd-headings-config:not([data-dnd-passage-bound="1"])');
+            if (!pending) {
+                return;
+            }
+
+            window.setTimeout(() => run(remaining - 1), 50);
+        };
+
+        run(attempts);
     };
 
     const restoreAllZones = () => {
         document.querySelectorAll('.reading-dnd-dropzone').forEach((zone) => {
+            const input = zone.querySelector('.reading-dnd-input');
+            restoreZoneFromSaved(zone, input);
             syncZoneDisplay(zone);
         });
 
@@ -416,12 +669,23 @@ export function createReadingDragDrop(component) {
     const bindGroups = (root = document) => {
         root.querySelectorAll('.reading-dnd-token').forEach(bindToken);
         root.querySelectorAll('.reading-dnd-dropzone').forEach(bindDropzone);
-        injectPassageDropZones();
-        restoreAllZones();
+        schedulePassageInjection();
+    };
+
+    const activateMatchingHeadingsLayout = () => {
+        const layoutRoot = document.querySelector('[data-dnd-layout="ielts-passage"]');
+        const shell = document.querySelector('.ielts-reading-cbt');
+
+        if (!layoutRoot || !shell) {
+            return;
+        }
+
+        shell.classList.add('is-matching-headings-dnd');
     };
 
     const init = (root = document) => {
         bindGroups(root);
+        activateMatchingHeadingsLayout();
 
         if (component.autosave?.bindInputs) {
             component.autosave.bindInputs(root);
@@ -432,5 +696,6 @@ export function createReadingDragDrop(component) {
         init,
         restoreAllZones,
         bindGroups,
+        schedulePassageInjection,
     };
 }

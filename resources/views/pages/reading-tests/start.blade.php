@@ -162,8 +162,6 @@
 
                 :class="mobilePanel === 'passage' ? 'block' : 'hidden lg:block'"
 
-                :style="isDesktop() ? `width:${passageWidth}%` : ''"
-
                 aria-label="Reading passage"
 
             >

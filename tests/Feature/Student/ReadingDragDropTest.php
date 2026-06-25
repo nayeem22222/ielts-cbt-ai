@@ -147,8 +147,9 @@ it('renders matching headings drag and drop ui with passage mapping config', fun
         ->get(route('reading-tests.start', $test))
         ->assertOk()
         ->assertSee('reading-dnd-headings-config', false)
-        ->assertSee('reading-dnd-token', false)
-        ->assertSee('data-paragraph="A"', false)
+        ->assertSee('reading-mh-panel', false)
+        ->assertSee('reading-mh-card', false)
+        ->assertSee('Drop heading here')
         ->assertDontSee('reading-test-select', false);
 });
 

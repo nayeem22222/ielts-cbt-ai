@@ -108,6 +108,7 @@ export function readingTestRenderer(initialState = {}) {
                 this.highlightsController.bind();
                 this.ticketsController.bind();
                 this.sanitizePassageMarkers();
+                this.syncSplitLayout();
             });
         },
 
@@ -121,6 +122,23 @@ export function readingTestRenderer(initialState = {}) {
             return window.innerWidth >= 1024;
         },
 
+        syncSplitLayout() {
+            const container = this.$refs.splitContainer;
+
+            if (!container) {
+                return;
+            }
+
+            if (!this.isDesktop()) {
+                container.style.gridTemplateColumns = '';
+
+                return;
+            }
+
+            const left = this.passageWidth ?? 50;
+            container.style.gridTemplateColumns = `${left}fr 0.375rem ${100 - left}fr`;
+        },
+
         expandPart(passageId) {
             this.expandedPartId = passageId;
             this.switchPart(passageId);
@@ -132,6 +150,7 @@ export function readingTestRenderer(initialState = {}) {
             if (passage?.questions?.length) {
                 this.selectQuestion(passage.questions[0].number, false, { keepMobilePanel: true });
             }
+            this.$nextTick(() => this.dragDrop?.schedulePassageInjection?.());
         },
 
         async markVisitedForCurrentQuestion() {
@@ -387,6 +406,7 @@ export function readingTestRenderer(initialState = {}) {
                 this.passageWidth = this.cbtUi?.clampPassageWidth
                     ? this.cbtUi.clampPassageWidth(next)
                     : Math.min(65, Math.max(35, next));
+                this.syncSplitLayout();
             };
             const onUp = () => {
                 this.resizing = false;
