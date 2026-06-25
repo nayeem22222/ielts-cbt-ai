@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin\Objective;
 
 use App\Models\ReadingQuestionGroup;
+use App\Support\Reading\ReadingQuestionReferenceSupport;
 
 class UpdateObjectiveQuestionRequest extends ObjectiveScopedRequest
 {
@@ -13,7 +14,7 @@ class UpdateObjectiveQuestionRequest extends ObjectiveScopedRequest
      */
     public function rules(): array
     {
-        return [
+        return array_merge([
             'question_number' => ['sometimes', 'required', 'integer', 'min:1', 'max:200'],
             'prompt' => ['sometimes', 'required', 'string', 'max:10000'],
             'correct_answer' => ['nullable', 'string', 'max:50'],
@@ -24,7 +25,10 @@ class UpdateObjectiveQuestionRequest extends ObjectiveScopedRequest
             'options' => ['nullable', 'array', 'min:2'],
             'options.*.option_key' => ['nullable', 'string', 'max:50'],
             'options.*.option_label' => ['required_with:options', 'string', 'max:5000'],
-        ];
+            'reference_paragraph' => ['nullable', 'string', 'max:30'],
+            'reference_start_offset' => ['nullable', 'integer', 'min:0'],
+            'reference_end_offset' => ['nullable', 'integer', 'min:0'],
+        ], ReadingQuestionReferenceSupport::validationRules());
     }
 
     /**
@@ -34,7 +38,21 @@ class UpdateObjectiveQuestionRequest extends ObjectiveScopedRequest
     {
         $data = [];
 
-        foreach (['question_number', 'prompt', 'correct_answer', 'correct_answers', 'explanation', 'difficulty', 'options'] as $field) {
+        foreach ([
+            'question_number',
+            'prompt',
+            'correct_answer',
+            'correct_answers',
+            'explanation',
+            'difficulty',
+            'options',
+            'reference_paragraph',
+            'reference_start_offset',
+            'reference_end_offset',
+            'reference_type',
+            'reference_phrase',
+            'reference_sentence',
+        ] as $field) {
             if ($this->has($field)) {
                 $data[$field] = $this->input($field);
             }

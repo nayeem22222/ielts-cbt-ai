@@ -398,10 +398,36 @@
     50% { box-shadow: 0 0 0 3px rgb(244 63 94 / 0.45); }
 }
 
-.reading-reference-highlight {
-    background: #fde68a;
+.reading-reference-highlight,
+.reading-highlight {
+    display: inline;
+    white-space: normal;
+    background: #fdba74;
     border-radius: 0.125rem;
-    box-shadow: 0 0 0 2px #f59e0b;
+    padding: 0.0625rem 0.125rem;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+    vertical-align: baseline;
+}
+
+.reading-reference-highlight.is-active,
+.reading-highlight.is-active {
+    background: #fb923c;
+    box-shadow: 0 0 0 2px #ea580c;
+}
+
+.reading-reference-label {
+    display: inline-flex;
+    position: static;
+    vertical-align: middle;
+    margin-right: 0.35rem;
+    font-weight: 700;
+    color: #9a3412;
+    white-space: nowrap;
+}
+
+.reading-reference-highlight.is-active .reading-reference-label {
+    color: #7c2d12;
 }
 
 .reading-paragraph-focus {
@@ -545,6 +571,19 @@
 .reading-result-legend.is-incorrect { background: #fca5a5; }
 .reading-result-legend.is-unanswered { background: #d4d4d4; }
 .reading-result-legend.is-flagged { background: #fbbf24; }
+
+.reading-test-result-review .reading-passage-paragraph-body {
+    min-width: 0;
+}
+
+.reading-test-result-review .reading-passage-body mark.reading-reference-highlight {
+    position: static;
+    float: none;
+}
+
+.reading-test-result-review .reading-reference-highlight {
+    display: inline;
+}
 
 .reading-test-result-review .reading-test-passage-pane {
     height: calc(100vh - 3.5rem);

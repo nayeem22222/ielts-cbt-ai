@@ -12,9 +12,22 @@ final class ReadingPassageContentRenderer
 {
     private const LABELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+    public static function sanitizeReferenceMarkers(string $html): string
+    {
+        if ($html === '') {
+            return '';
+        }
+
+        // Legacy/broken admin markers like {[quoted text]}15}] — keep the text, drop the marker.
+        $html = preg_replace('/\{\[([^\]]*)\]\}\d+\}\]/u', '$1', $html) ?? $html;
+        $html = preg_replace('/\{\[([^\]]*)\]\}/u', '$1', $html) ?? $html;
+
+        return $html;
+    }
+
     public static function applyParagraphLabels(string $html): string
     {
-        $html = trim($html);
+        $html = trim(self::sanitizeReferenceMarkers($html));
 
         if ($html === '') {
             return '';
@@ -54,6 +67,7 @@ final class ReadingPassageContentRenderer
 
             $wrapper = $document->createElement('div');
             $wrapper->setAttribute('class', 'reading-passage-paragraph flex gap-4');
+            $wrapper->setAttribute('data-paragraph', $label);
 
             $labelNode = $document->createElement('span', $label);
             $labelNode->setAttribute('class', 'reading-passage-label shrink-0 font-bold');

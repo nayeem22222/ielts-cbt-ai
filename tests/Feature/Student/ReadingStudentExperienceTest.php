@@ -64,7 +64,8 @@ function createExperienceReadingTest(): ReadingTest
         'title' => 'Passage One',
         'start_question' => 1,
         'end_question' => 2,
-        'content_html' => '<p>Urban transport systems are evolving rapidly.</p>',
+        'content_html' => '<p>Urban transport systems are evolving rapidly.</p><p>City planners now prefer sustainable options.</p>',
+        'settings' => ['auto_paragraph_labels' => true],
         'status' => PassageStatus::Published,
         'sort_order' => 1,
     ]);
@@ -84,9 +85,11 @@ function createExperienceReadingTest(): ReadingTest
             'question_number' => $number,
             'prompt' => "Prompt {$number}",
             'explanation' => "Because paragraph {$number} states it clearly.",
-            'reference_start_offset' => 0,
-            'reference_end_offset' => 12,
-            'reference_paragraph' => 'A',
+            'reference_type' => $number === 1 ? 'phrase' : 'offset',
+            'reference_phrase' => $number === 1 ? 'Urban transport systems' : null,
+            'reference_start_offset' => $number === 1 ? null : 0,
+            'reference_end_offset' => $number === 1 ? null : 44,
+            'reference_paragraph' => $number === 1 ? null : 'B',
             'marks' => 1,
             'sort_order' => 1,
         ]);
@@ -216,4 +219,25 @@ it('includes analytics on the result page', function (): void {
         ->assertOk()
         ->assertSee('Question Map')
         ->assertSee('Reading Insights');
+});
+
+it('includes passage reference metadata on the review page', function (): void {
+    $student = experienceStudent();
+    $test = createExperienceReadingTest();
+    $attempt = startExperienceAttempt($student, $test);
+
+    $this->actingAs($student)
+        ->postJson(route('reading-attempts.submit', $attempt))
+        ->assertOk();
+
+    $this->actingAs($student)
+        ->get(route('reading-attempts.result.review', $attempt))
+        ->assertOk()
+        ->assertSee('reading-passage-paragraph', false)
+        ->assertSee('Because paragraph 1 states it clearly.', false)
+        ->assertSee('readingTestResultReview', false)
+        ->assertSee('reference_type', false)
+        ->assertSee('reference_phrase', false)
+        ->assertSee('Urban transport systems', false)
+        ->assertSee('reference_start_offset', false);
 });

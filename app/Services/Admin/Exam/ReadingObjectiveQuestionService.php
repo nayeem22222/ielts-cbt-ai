@@ -11,7 +11,7 @@ use App\Models\ReadingQuestion;
 use App\Models\ReadingQuestionGroup;
 use App\Models\ReadingQuestionOption;
 use App\Models\ReadingTest;
-use App\Support\Reading\ObjectiveBulkImportParser;
+use App\Support\Reading\ReadingQuestionReferenceSupport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -76,6 +76,9 @@ class ReadingObjectiveQuestionService
                 'marks' => 1,
             ]);
 
+            ReadingQuestionReferenceSupport::applyAttributes($question, $data);
+            $question->save();
+
             if ($group->question_type->usesPerQuestionOptions()) {
                 $this->syncQuestionOptions($question, $data['options'] ?? []);
             }
@@ -116,6 +119,8 @@ class ReadingObjectiveQuestionService
             if (isset($data['sort_order'])) {
                 $question->sort_order = max(1, (int) $data['sort_order']);
             }
+
+            ReadingQuestionReferenceSupport::applyAttributes($question, $data);
 
             $question->save();
 
@@ -158,6 +163,13 @@ class ReadingObjectiveQuestionService
                 'question_number' => 0,
                 'prompt' => $question->prompt,
                 'explanation' => $question->explanation,
+                'paragraph_reference' => $question->paragraph_reference,
+                'reference_paragraph' => $question->reference_paragraph,
+                'reference_type' => $question->reference_type,
+                'reference_phrase' => $question->reference_phrase,
+                'reference_sentence' => $question->reference_sentence,
+                'reference_start_offset' => $question->reference_start_offset,
+                'reference_end_offset' => $question->reference_end_offset,
                 'difficulty' => $question->difficulty,
                 'sort_order' => $sortOrder,
                 'marks' => $question->marks,

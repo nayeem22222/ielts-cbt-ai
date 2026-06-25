@@ -11,7 +11,7 @@ use App\Models\ReadingQuestion;
 use App\Models\ReadingQuestionGroup;
 use App\Models\ReadingQuestionOption;
 use App\Models\ReadingTest;
-use App\Support\Reading\MatchingBulkImportParser;
+use App\Support\Reading\ReadingQuestionReferenceSupport;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -141,14 +141,13 @@ class ReadingMatchingQuestionService
             $question = $group->questions()->create([
                 'question_number' => $questionNumber,
                 'prompt' => (string) $data['prompt'],
-                'paragraph_reference' => $data['paragraph_reference'] ?? $data['reference_paragraph'] ?? null,
-                'reference_paragraph' => $data['reference_paragraph'] ?? $data['paragraph_reference'] ?? null,
-                'reference_start_offset' => $data['reference_start_offset'] ?? null,
-                'reference_end_offset' => $data['reference_end_offset'] ?? null,
                 'explanation' => $data['explanation'] ?? null,
                 'sort_order' => max(1, $sortOrder),
                 'marks' => 1,
             ]);
+
+            ReadingQuestionReferenceSupport::applyAttributes($question, $data);
+            $question->save();
 
             if (! empty($data['correct_answer'])) {
                 $this->syncCorrectAnswer($group, $question, (string) $data['correct_answer']);
@@ -184,28 +183,7 @@ class ReadingMatchingQuestionService
                 $question->prompt = (string) $data['prompt'];
             }
 
-            if (array_key_exists('paragraph_reference', $data)) {
-                $question->paragraph_reference = $data['paragraph_reference'];
-            }
-
-            if (array_key_exists('reference_paragraph', $data)) {
-                $question->reference_paragraph = $data['reference_paragraph'];
-                if (! array_key_exists('paragraph_reference', $data)) {
-                    $question->paragraph_reference = $data['reference_paragraph'];
-                }
-            }
-
-            if (array_key_exists('reference_start_offset', $data)) {
-                $question->reference_start_offset = $data['reference_start_offset'] !== null && $data['reference_start_offset'] !== ''
-                    ? (int) $data['reference_start_offset']
-                    : null;
-            }
-
-            if (array_key_exists('reference_end_offset', $data)) {
-                $question->reference_end_offset = $data['reference_end_offset'] !== null && $data['reference_end_offset'] !== ''
-                    ? (int) $data['reference_end_offset']
-                    : null;
-            }
+            ReadingQuestionReferenceSupport::applyAttributes($question, $data);
 
             if (array_key_exists('explanation', $data)) {
                 $question->explanation = $data['explanation'];

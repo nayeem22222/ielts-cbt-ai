@@ -243,3 +243,21 @@ it('rejects matching builder for non matching question types', function (): void
     $this->get(route('admin.reading-question-groups.questions.index', $group))
         ->assertNotFound();
 });
+
+it('stores phrase-based passage references on matching questions', function (): void {
+    [$test, $passage, $group] = createMatchingBuilderContext(OfficialReadingQuestionType::MatchingInformation, 1, 4);
+    seedMatchingOptions($group, ['A', 'B', 'C']);
+
+    $this->post(route('admin.reading-question-groups.matching.questions.store', $group), [
+        'question_number' => 1,
+        'prompt' => 'Statement one',
+        'correct_answer' => 'A',
+        'reference_type' => 'phrase',
+        'reference_phrase' => 'concrete has shaped modern cities',
+    ])->assertRedirect();
+
+    $question = ReadingQuestion::query()->where('group_id', $group->id)->where('question_number', 1)->firstOrFail();
+
+    expect($question->reference_type)->toBe('phrase')
+        ->and($question->reference_phrase)->toBe('concrete has shaped modern cities');
+});

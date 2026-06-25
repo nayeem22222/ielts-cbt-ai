@@ -19,6 +19,9 @@
         </x-ui.select>
         <x-ui.textarea name="explanation" label="Explanation (optional)" class="md:col-span-2" rows="2"></x-ui.textarea>
         <div class="md:col-span-2">
+            @include('pages.admin.reading-tests.partials.question-reference-fields')
+        </div>
+        <div class="md:col-span-2">
             <x-ui.button type="submit">Add Question</x-ui.button>
         </div>
     </form>

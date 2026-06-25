@@ -45,6 +45,7 @@ function applyParagraphLabels(html) {
 
         const wrapper = document.createElement('div');
         wrapper.className = 'reading-passage-paragraph flex gap-4';
+        wrapper.dataset.paragraph = label;
 
         const labelNode = document.createElement('span');
         labelNode.className = 'reading-passage-label shrink-0 font-bold';

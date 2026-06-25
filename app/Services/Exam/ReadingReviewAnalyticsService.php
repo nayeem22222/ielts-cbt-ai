@@ -143,14 +143,11 @@ class ReadingReviewAnalyticsService
         $test = $this->renderer->loadForRenderer($test);
 
         return $test->passages->map(function (ReadingPassage $passage): array {
-            $useAutoLabels = (bool) $passage->auto_paragraph_labels;
-            $html = $useAutoLabels ? $passage->renderedContentHtml() : ($passage->content_html ?? '');
-
             return [
                 'id' => $passage->id,
                 'part_number' => $passage->part_number,
                 'title' => $passage->title,
-                'content_html' => $html,
+                'content_html' => $passage->renderedContentHtml(),
             ];
         })->values()->all();
     }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\Matching;
 
+use App\Support\Reading\ReadingQuestionReferenceSupport;
+
 class StoreMatchingQuestionRequest extends MatchingQuestionRequest
 {
     /**
@@ -11,7 +13,7 @@ class StoreMatchingQuestionRequest extends MatchingQuestionRequest
      */
     public function rules(): array
     {
-        return [
+        return array_merge([
             'question_number' => ['required', 'integer', 'min:1', 'max:200'],
             'prompt' => ['required', 'string', 'max:10000'],
             'paragraph_reference' => ['nullable', 'string', 'max:30'],
@@ -21,7 +23,7 @@ class StoreMatchingQuestionRequest extends MatchingQuestionRequest
             'reference_start_offset' => ['nullable', 'integer', 'min:0'],
             'reference_end_offset' => ['nullable', 'integer', 'min:0'],
             'sort_order' => ['nullable', 'integer', 'min:1'],
-        ];
+        ], ReadingQuestionReferenceSupport::validationRules());
     }
 
     /**
@@ -38,6 +40,9 @@ class StoreMatchingQuestionRequest extends MatchingQuestionRequest
             'reference_paragraph' => $this->input('reference_paragraph'),
             'reference_start_offset' => $this->input('reference_start_offset'),
             'reference_end_offset' => $this->input('reference_end_offset'),
+            'reference_type' => $this->input('reference_type'),
+            'reference_phrase' => $this->input('reference_phrase'),
+            'reference_sentence' => $this->input('reference_sentence'),
             'sort_order' => $this->input('sort_order'),
         ];
     }

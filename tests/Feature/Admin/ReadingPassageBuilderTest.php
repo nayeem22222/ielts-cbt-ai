@@ -276,8 +276,19 @@ it('applies auto paragraph labels in rendered content', function (): void {
     $rendered = ReadingPassageContentRenderer::applyParagraphLabels($html);
 
     expect($rendered)->toContain('reading-passage-label');
+    expect($rendered)->toContain('data-paragraph="A"');
+    expect($rendered)->toContain('data-paragraph="B"');
     expect($rendered)->toContain('>A<');
     expect($rendered)->toContain('>B<');
+});
+
+it('strips broken passage reference markers from rendered content', function (): void {
+    $html = '<p>{[The problem with replacing concrete is that it is so very good at what it does.]}10}]</p>';
+    $rendered = ReadingPassageContentRenderer::applyParagraphLabels($html);
+
+    expect($rendered)->toContain('The problem with replacing concrete');
+    expect($rendered)->not->toContain('{[');
+    expect($rendered)->not->toContain('}]');
 });
 
 it('opens builder after creating a reading test', function (): void {

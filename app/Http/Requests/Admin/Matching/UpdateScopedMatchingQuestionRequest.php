@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin\Matching;
 
 use App\Models\ReadingQuestionGroup;
+use App\Support\Reading\ReadingQuestionReferenceSupport;
 
 class UpdateScopedMatchingQuestionRequest extends MatchingScopedRequest
 {
@@ -13,7 +14,7 @@ class UpdateScopedMatchingQuestionRequest extends MatchingScopedRequest
      */
     public function rules(): array
     {
-        return [
+        return array_merge([
             'question_number' => ['sometimes', 'required', 'integer', 'min:1', 'max:200'],
             'prompt' => ['sometimes', 'required', 'string', 'max:10000'],
             'paragraph_reference' => ['nullable', 'string', 'max:30'],
@@ -23,7 +24,7 @@ class UpdateScopedMatchingQuestionRequest extends MatchingScopedRequest
             'reference_start_offset' => ['nullable', 'integer', 'min:0'],
             'reference_end_offset' => ['nullable', 'integer', 'min:0'],
             'sort_order' => ['nullable', 'integer', 'min:1'],
-        ];
+        ], ReadingQuestionReferenceSupport::validationRules());
     }
 
     /**
@@ -63,6 +64,12 @@ class UpdateScopedMatchingQuestionRequest extends MatchingScopedRequest
 
         if ($this->has('reference_end_offset')) {
             $data['reference_end_offset'] = $this->input('reference_end_offset');
+        }
+
+        foreach (['reference_type', 'reference_phrase', 'reference_sentence'] as $field) {
+            if ($this->has($field)) {
+                $data[$field] = $this->input($field);
+            }
         }
 
         if ($this->has('sort_order')) {
