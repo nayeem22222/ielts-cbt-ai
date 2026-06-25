@@ -1,7 +1,8 @@
-import { getPassageBody, wrapTextRange } from './reading-test-highlights';
+import { getPassageBody, wrapDomRange, wrapTextRange } from './reading-test-highlights';
 import {
     findParagraphBlock,
     resolveHighlightRange,
+    sanitizePassageReferenceMarkers,
 } from './reading-test-reference-search';
 
 function clearPassageHighlights(body) {
@@ -23,14 +24,16 @@ function clearPassageHighlights(body) {
     });
 }
 
-function wrapReferenceHighlight(container, start, end, questionNumber) {
-    const mark = wrapTextRange(
-        container,
-        start,
-        end,
-        'reading-reference-highlight reading-highlight',
-        { questionNumber },
-    );
+function wrapReferenceHighlight(container, start, end, questionNumber, domRange = null) {
+    const mark = domRange
+        ? wrapDomRange(domRange, 'reading-reference-highlight reading-highlight', { questionNumber })
+        : wrapTextRange(
+            container,
+            start,
+            end,
+            'reading-reference-highlight reading-highlight',
+            { questionNumber },
+        );
 
     if (!mark) {
         return null;
@@ -53,9 +56,11 @@ export function readingTestResultReview(initialState = {}) {
         activePassageId: initialState.passages?.[0]?.id ?? null,
         mobilePanel: 'questions',
         _renderFrameId: null,
+        _renderRetryCount: 0,
 
         init() {
             this.$watch('activePassageId', () => {
+                this._renderRetryCount = 0;
                 this.schedulePassageReferenceRender();
             });
 
@@ -70,18 +75,29 @@ export function readingTestResultReview(initialState = {}) {
 
             this.$nextTick(() => {
                 this._renderFrameId = requestAnimationFrame(() => {
-                    this._renderFrameId = null;
-                    this.renderPassageReferenceHighlights();
+                    this._renderFrameId = requestAnimationFrame(() => {
+                        this._renderFrameId = null;
+                        const rendered = this.renderPassageReferenceHighlights();
 
-                    if (focusActive && this.activeQuestionNumber) {
-                        this.focusQuestionReference(this.activeQuestionNumber, false);
-                    }
+                        if (!rendered && this._renderRetryCount < 5) {
+                            this._renderRetryCount += 1;
+                            this.schedulePassageReferenceRender(focusActive);
+                            return;
+                        }
+
+                        this._renderRetryCount = 0;
+
+                        if (focusActive && this.activeQuestionNumber) {
+                            this.focusQuestionReference(this.activeQuestionNumber, false);
+                        }
+                    });
                 });
             });
         },
 
         questionsForPassage(passageId) {
-            const part = this.parts.find((item) => item.passage_id === passageId);
+            const id = Number(passageId);
+            const part = this.parts.find((item) => Number(item.passage_id) === id);
 
             return part?.questions ?? [];
         },
@@ -123,14 +139,16 @@ export function readingTestResultReview(initialState = {}) {
         renderPassageReferenceHighlights() {
             const body = getPassageBody(this.activePassageId);
 
-            if (!body) {
-                return;
+            if (!body || !body.textContent?.trim()) {
+                return false;
             }
 
             clearPassageHighlights(body);
+            sanitizePassageReferenceMarkers(body);
 
             const seen = new Set();
             const jobs = [];
+            let highlightCount = 0;
 
             for (const question of this.questionsForPassage(this.activePassageId)) {
                 if (seen.has(question.question_number)) {
@@ -150,6 +168,7 @@ export function readingTestResultReview(initialState = {}) {
                     container: range.container,
                     start: range.start,
                     end: range.end,
+                    domRange: range.domRange ?? null,
                 });
             }
 
@@ -166,10 +185,22 @@ export function readingTestResultReview(initialState = {}) {
             for (const [container, containerJobs] of byContainer) {
                 containerJobs.sort((a, b) => b.start - a.start);
 
-                for (const { question, start, end } of containerJobs) {
-                    wrapReferenceHighlight(container, start, end, question.question_number);
+                for (const { question, start, end, domRange } of containerJobs) {
+                    const mark = wrapReferenceHighlight(
+                        container,
+                        start,
+                        end,
+                        question.question_number,
+                        domRange,
+                    );
+
+                    if (mark) {
+                        highlightCount += 1;
+                    }
                 }
             }
+
+            return highlightCount > 0 || jobs.length === 0;
         },
 
         focusQuestionReference(number, scroll = true) {

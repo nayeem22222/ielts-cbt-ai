@@ -3,7 +3,11 @@ function csrfToken() {
 }
 
 function getPassageBody(passageId) {
-    return document.querySelector(`.reading-passage-body[data-passage-id="${passageId}"]`);
+    if (passageId == null || passageId === '') {
+        return null;
+    }
+
+    return document.querySelector(`.reading-passage-body[data-passage-id="${Number(passageId)}"]`);
 }
 
 function getQuestionAnchorContainer(questionId) {
@@ -59,6 +63,14 @@ function wrapTextRange(container, start, end, className, dataset = {}) {
     const range = document.createRange();
     range.setStart(startNode, startOffset);
     range.setEnd(endNode, endOffset);
+
+    return wrapDomRange(range, className, dataset);
+}
+
+function wrapDomRange(range, className, dataset = {}) {
+    if (!range) {
+        return null;
+    }
 
     const mark = document.createElement('mark');
     mark.className = className;
@@ -444,4 +456,4 @@ export function createReadingTestHighlights(renderer) {
     };
 }
 
-export { wrapTextRange, getPassageBody };
+export { wrapTextRange, wrapDomRange, getPassageBody };

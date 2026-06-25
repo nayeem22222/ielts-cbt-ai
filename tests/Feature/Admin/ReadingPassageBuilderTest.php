@@ -291,6 +291,15 @@ it('strips broken passage reference markers from rendered content', function ():
     expect($rendered)->not->toContain('}]');
 });
 
+it('strips bracketed question id reference markers from rendered content', function (): void {
+    $html = '<p>Mix. {[Iron-ore slag, a byproduct of the iron-ore smelting process, can be used in a similar way.}[1]</p>';
+    $rendered = ReadingPassageContentRenderer::applyParagraphLabels($html);
+
+    expect($rendered)->toContain('Iron-ore slag, a byproduct of the iron-ore smelting process');
+    expect($rendered)->not->toContain('{[');
+    expect($rendered)->not->toContain('}[1]');
+});
+
 it('opens builder after creating a reading test', function (): void {
     $this->withoutVite();
 

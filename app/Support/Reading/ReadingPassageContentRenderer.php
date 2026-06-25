@@ -18,11 +18,35 @@ final class ReadingPassageContentRenderer
             return '';
         }
 
-        // Legacy/broken admin markers like {[quoted text]}15}] — keep the text, drop the marker.
-        $html = preg_replace('/\{\[([^\]]*)\]\}\d+\}\]/u', '$1', $html) ?? $html;
+        // {[quoted text}[12] — reference markers with }[id] suffix.
+        $html = preg_replace('/\{\[([^\}]*)\}\[(\d+)\]/u', '$1', $html) ?? $html;
+        // {[quoted text][12]} — reference markers with question id suffix.
+        $html = preg_replace('/\{\[([^\]]*)\]\[(\d+)\]\}/u', '$1', $html) ?? $html;
+        // {[quoted text]}12}] — legacy broken closing format.
+        $html = preg_replace('/\{\[([^\]]*)\]\}(\d+)\}\]/u', '$1', $html) ?? $html;
+        // {[quoted text]} — unclosed/open marker prefix.
         $html = preg_replace('/\{\[([^\]]*)\]\}/u', '$1', $html) ?? $html;
+        // Orphan suffixes like ][12]} or }[12] left after partial cleanup.
+        $html = preg_replace('/\]\[(\d+)\]\}/u', '', $html) ?? $html;
+        $html = preg_replace('/\}\[(\d+)\]/u', '', $html) ?? $html;
 
         return $html;
+    }
+
+    public static function sanitizeReferenceMarkersInPlainText(string $text): string
+    {
+        if ($text === '') {
+            return '';
+        }
+
+        $text = preg_replace('/\{\[([^\}]*)\}\[(\d+)\]/u', '$1', $text) ?? $text;
+        $text = preg_replace('/\{\[([^\]]*)\]\[(\d+)\]\}/u', '$1', $text) ?? $text;
+        $text = preg_replace('/\{\[([^\]]*)\]\}(\d+)\}\]/u', '$1', $text) ?? $text;
+        $text = preg_replace('/\{\[([^\]]*)\]\}/u', '$1', $text) ?? $text;
+        $text = preg_replace('/\]\[(\d+)\]\}/u', '', $text) ?? $text;
+        $text = preg_replace('/\}\[(\d+)\]/u', '', $text) ?? $text;
+
+        return $text;
     }
 
     public static function applyParagraphLabels(string $html): string

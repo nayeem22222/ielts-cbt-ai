@@ -241,3 +241,68 @@ it('includes passage reference metadata on the review page', function (): void {
         ->assertSee('Urban transport systems', false)
         ->assertSee('reference_start_offset', false);
 });
+
+it('includes paragraph-scoped phrase reference for review highlights', function (): void {
+    $student = experienceStudent();
+    $admin = createUserWithRole(UserRole::SuperAdmin, ['email_verified_at' => now()]);
+
+    $test = ReadingTest::query()->create([
+        'title' => 'Phrase Review Test',
+        'slug' => 'phrase-review-'.uniqid(),
+        'exam_type' => ExamType::Academic,
+        'duration_minutes' => 60,
+        'status' => PublishStatus::Published,
+        'published_at' => now(),
+        'created_by' => $admin->id,
+        'updated_by' => $admin->id,
+    ]);
+
+    $passage = ReadingPassage::query()->create([
+        'reading_test_id' => $test->id,
+        'part_number' => 1,
+        'title' => 'Concrete',
+        'start_question' => 1,
+        'end_question' => 1,
+        'content_html' => '<p>Fly ash, a byproduct of coal-burning power plants, can be incorporated into concrete mixes to make up as much as 15 to 30% of the cement, without harming the strength or durability of the resulting mix.</p>'
+            .'<p>Iron-ore slag, a byproduct of the iron-ore smelting process, can be used in a similar way.</p>',
+        'settings' => ['auto_paragraph_labels' => true],
+        'status' => PassageStatus::Published,
+        'sort_order' => 1,
+    ]);
+
+    $group = ReadingQuestionGroup::query()->create([
+        'passage_id' => $passage->id,
+        'question_type' => OfficialReadingQuestionType::MatchingInformation,
+        'title' => 'Q1',
+        'start_question' => 1,
+        'end_question' => 1,
+        'sort_order' => 1,
+        'status' => PassageStatus::Published,
+    ]);
+
+    $group->questions()->create([
+        'question_number' => 1,
+        'prompt' => 'Question 1',
+        'explanation' => 'Test Explanation',
+        'reference_type' => 'phrase',
+        'reference_phrase' => 'Iron-ore slag, a byproduct of the iron-ore smelting process, can be used in a similar way.',
+        'reference_paragraph' => 'B',
+        'paragraph_reference' => 'B',
+        'marks' => 1,
+        'sort_order' => 1,
+    ]);
+
+    $attempt = startExperienceAttempt($student, $test->fresh());
+
+    $this->actingAs($student)
+        ->postJson(route('reading-attempts.submit', $attempt))
+        ->assertOk();
+
+    $this->actingAs($student)
+        ->get(route('reading-attempts.result.review', $attempt))
+        ->assertOk()
+        ->assertSee('reading-passage-paragraph', false)
+        ->assertSee('Iron-ore slag, a byproduct of the iron-ore smelting process', false)
+        ->assertSee('Iron-ore slag, a byproduct of the iron-ore smelting process, can be used in a similar way.', false)
+        ->assertSee('Reference: Paragraph B', false);
+});
