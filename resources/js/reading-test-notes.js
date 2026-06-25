@@ -41,14 +41,18 @@ export function createReadingTestNotes(renderer) {
             return;
         }
 
+        renderer.notesSaveStatus = 'saving';
         clearTimeout(saveTimer);
         saveTimer = setTimeout(() => persistDraft(), 600);
     };
 
     const persistDraft = async () => {
         if (!renderer.endpoints?.notes || !renderer.noteDraft.content?.trim()) {
+            renderer.notesSaveStatus = 'saved';
             return;
         }
+
+        renderer.notesSaveStatus = 'saving';
 
         const payload = {
             title: renderer.noteDraft.title || null,
@@ -82,7 +86,10 @@ export function createReadingTestNotes(renderer) {
             if (response.ok) {
                 const json = await response.json();
                 renderer.notes = (renderer.notes ?? []).map((note) => (note.id === json.data.id ? json.data : note));
+                renderer.notesSaveStatus = 'saved';
                 refreshAnchors();
+            } else {
+                renderer.notesSaveStatus = 'error';
             }
 
             return;
@@ -108,7 +115,10 @@ export function createReadingTestNotes(renderer) {
                 start_offset: json.data.start_offset,
                 end_offset: json.data.end_offset,
             };
+            renderer.notesSaveStatus = 'saved';
             refreshAnchors();
+        } else {
+            renderer.notesSaveStatus = 'error';
         }
     };
 

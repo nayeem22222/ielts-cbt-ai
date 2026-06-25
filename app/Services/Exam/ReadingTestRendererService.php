@@ -71,7 +71,8 @@ class ReadingTestRendererService
                 'instruction' => $passage->instruction,
                 'question_from' => $passage->start_question,
                 'question_to' => $passage->end_question,
-                'question_range' => $passage->question_range_label,
+                'question_range' => $this->questionRangeLabel($questions, $passage),
+                'question_range_configured' => $passage->question_range_label,
                 'question_count' => $questions->count(),
                 'groups' => $groups,
                 'questions' => $questions->map(fn (ReadingQuestion $question): array => [
@@ -143,5 +144,26 @@ class ReadingTestRendererService
         }
 
         return route('reading-tests.groups.diagram-image', $group);
+    }
+
+    /**
+     * @param  BaseCollection<int, ReadingQuestion>  $questions
+     */
+    public function questionRangeLabel(BaseCollection $questions, ReadingPassage $passage): string
+    {
+        $numbers = $questions
+            ->pluck('question_number')
+            ->filter(fn (int $number): bool => $number > 0)
+            ->sort()
+            ->values();
+
+        if ($numbers->isEmpty()) {
+            return $passage->question_range_label ?? '—';
+        }
+
+        $min = (int) $numbers->first();
+        $max = (int) $numbers->last();
+
+        return $min === $max ? (string) $min : "{$min}-{$max}";
     }
 }

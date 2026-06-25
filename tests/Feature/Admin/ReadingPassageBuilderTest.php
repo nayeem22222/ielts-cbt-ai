@@ -300,6 +300,16 @@ it('strips bracketed question id reference markers from rendered content', funct
     expect($rendered)->not->toContain('}[1]');
 });
 
+it('strips reference markers with double closing brackets', function (): void {
+    $html = '<p>B {[The problem with replacing concrete is that it is so very good at what it does. Chris Cheeseman,][10]]} more text.</p>';
+    $rendered = ReadingPassageContentRenderer::sanitizeReferenceMarkers($html);
+
+    expect($rendered)->toContain('Chris Cheeseman');
+    expect($rendered)->toContain('more text.');
+    expect($rendered)->not->toContain('{[');
+    expect($rendered)->not->toContain('[10]');
+});
+
 it('opens builder after creating a reading test', function (): void {
     $this->withoutVite();
 

@@ -2,6 +2,7 @@ function stripReferenceMarkers(text) {
     return String(text ?? '')
         .replace(/\{\[([^\}]*)\}\[(\d+)\]/g, '$1')
         .replace(/\{\[([^\]]*)\]\[(\d+)\]\}/g, '$1')
+        .replace(/\{\[([^\]]*)\]\[(\d+)\]\]\}/g, '$1')
         .replace(/\{\[([^\]]*)\]\}(\d+)\}\]/g, '$1')
         .replace(/\{\[([^\]]*)\]\}/g, '$1')
         .replace(/\]\[(\d+)\]\}/g, '')

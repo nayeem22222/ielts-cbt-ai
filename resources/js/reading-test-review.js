@@ -83,6 +83,14 @@ export function createReadingTestReview(component) {
         }
     };
 
+    const reviewFlaggedFromPanel = () => {
+        const first = component.review?.flagged_numbers?.[0];
+        component.reviewOpen = false;
+        if (first) {
+            component.selectQuestion(first);
+        }
+    };
+
     const selectFromReview = (questionNumber) => {
         component.reviewOpen = false;
         component.selectQuestion(questionNumber);
@@ -98,6 +106,7 @@ export function createReadingTestReview(component) {
         openSubmitModal,
         closeSubmitModal,
         reviewUnansweredFromPanel,
+        reviewFlaggedFromPanel,
         submitAnyway,
         selectFromReview,
         refreshReview,

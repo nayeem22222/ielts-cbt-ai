@@ -1,10 +1,13 @@
 import '../css/reading-test-renderer.css';
+import '../css/reading-cbt-ui.css';
 import { createReadingTestAutosave } from './reading-test-autosave';
 import { createReadingTestTimer } from './reading-test-timer';
 import { createReadingTestReview } from './reading-test-review';
 import { createReadingTestHighlights } from './reading-test-highlights';
 import { createReadingTestNotes } from './reading-test-notes';
 import { createReadingTestTickets } from './reading-test-tickets';
+import { createReadingCbtUi } from './reading-cbt-ui';
+import { sanitizePassageReferenceMarkers } from './reading-test-reference-search';
 
 export function readingTestRenderer(initialState = {}) {
     return {
@@ -47,6 +50,7 @@ export function readingTestRenderer(initialState = {}) {
         highlightsController: null,
         notesController: null,
         ticketsController: null,
+        cbtUi: null,
         notesPanelOpen: false,
         notesTab: 'all',
         noteDraft: { id: null, title: '', content: '', question_id: null, passage_id: null, selected_text: null, start_offset: null, end_offset: null },
@@ -58,6 +62,7 @@ export function readingTestRenderer(initialState = {}) {
         ticketQuestionId: null,
         ticketQuestionNumber: null,
         ticketIssueTypes: [],
+        notesSaveStatus: 'saved',
 
         init() {
             if (this.isLocked && this.endpoints?.result) {
@@ -71,6 +76,8 @@ export function readingTestRenderer(initialState = {}) {
             this.highlightsController = createReadingTestHighlights(this);
             this.notesController = createReadingTestNotes(this);
             this.ticketsController = createReadingTestTickets(this);
+            this.cbtUi = createReadingCbtUi(this);
+            this.cbtUi.bind();
 
             if (this.currentQuestionNumber) {
                 this.activeQuestionIndex = this.questions.findIndex(
@@ -95,6 +102,13 @@ export function readingTestRenderer(initialState = {}) {
 
                 this.highlightsController.bind();
                 this.ticketsController.bind();
+                this.sanitizePassageMarkers();
+            });
+        },
+
+        sanitizePassageMarkers() {
+            document.querySelectorAll('.reading-passage-body').forEach((body) => {
+                sanitizePassageReferenceMarkers(body);
             });
         },
 
@@ -156,6 +170,7 @@ export function readingTestRenderer(initialState = {}) {
             }
 
             this.$nextTick(() => this.highlightsController?.applyStoredHighlights(this.currentPassageId));
+            this.$nextTick(() => this.sanitizePassageMarkers());
 
             if (scroll) {
                 this.$nextTick(() => this.scrollToQuestion(number));
@@ -257,6 +272,14 @@ export function readingTestRenderer(initialState = {}) {
             this.reviewController?.reviewUnansweredFromPanel();
         },
 
+        reviewFlagged() {
+            this.reviewController?.reviewFlaggedFromPanel();
+        },
+
+        continueTest() {
+            this.reviewController?.closeReview();
+        },
+
         submitAnyway() {
             this.reviewController?.submitAnyway();
         },
@@ -272,16 +295,23 @@ export function readingTestRenderer(initialState = {}) {
         startResize(event) {
             this.resizing = true;
             const container = this.$refs.splitContainer;
+            const divider = event.currentTarget;
+            divider?.classList.add('is-dragging');
+
             const onMove = (moveEvent) => {
                 if (!this.resizing || !container) {
                     return;
                 }
                 const rect = container.getBoundingClientRect();
                 const next = ((moveEvent.clientX - rect.left) / rect.width) * 100;
-                this.passageWidth = Math.min(70, Math.max(30, next));
+                this.passageWidth = this.cbtUi?.clampPassageWidth
+                    ? this.cbtUi.clampPassageWidth(next)
+                    : Math.min(65, Math.max(35, next));
             };
             const onUp = () => {
                 this.resizing = false;
+                divider?.classList.remove('is-dragging');
+                this.cbtUi?.persistPassageWidth?.();
                 window.removeEventListener('mousemove', onMove);
                 window.removeEventListener('mouseup', onUp);
             };

@@ -12,7 +12,7 @@
     $displaySubtitle = $subtitle ?? $passage?->subtitle;
     $displayInstruction = $instruction ?? $passage?->instruction;
     $useAutoLabels = $autoLabels ?? $passage?->auto_paragraph_labels ?? false;
-    $html = $content ?? ($passage ? ($useAutoLabels ? $passage->renderedContentHtml() : ($passage->content_html ?? '')) : '');
+    $html = $content ?? ($passage?->renderedContentHtml() ?? '');
 @endphp
 
 <article class="reading-passage-preview mx-auto max-w-3xl">

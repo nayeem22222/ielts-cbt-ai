@@ -33,7 +33,10 @@
                         </td>
                     @endforeach
                     <td class="text-center align-middle">
-                        <x-reading-test.report-question-button :question="$question" />
+                        <div class="flex items-center justify-center gap-1">
+                            <x-reading-test.flag-button :question="$question" />
+                            <x-reading-test.report-question-button :question="$question" />
+                        </div>
                     </td>
                 </tr>
             @endforeach

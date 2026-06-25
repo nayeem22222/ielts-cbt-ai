@@ -8,13 +8,25 @@
     <aside class="reading-test-notes-drawer">
         <div class="flex items-center justify-between border-b border-neutral-200 px-5 py-4">
             <h2 class="text-lg font-bold text-neutral-900">Notes</h2>
-            <button type="button" class="reading-test-icon-btn" @click="closeNotesPanel()">✕</button>
+            <div class="flex items-center gap-3">
+                <span
+                    class="reading-test-notes-save-status"
+                    :class="{
+                        'is-saving': notesSaveStatus === 'saving',
+                        'is-saved': notesSaveStatus === 'saved',
+                        'is-error': notesSaveStatus === 'error',
+                    }"
+                    x-text="notesSaveStatus === 'saving' ? 'Saving…' : (notesSaveStatus === 'error' ? 'Save error' : 'Saved')"
+                    aria-live="polite"
+                ></span>
+                <button type="button" class="reading-test-icon-btn" @click="closeNotesPanel()" aria-label="Close notes panel">✕</button>
+            </div>
         </div>
 
-        <div class="flex gap-2 border-b border-neutral-200 px-4 py-3">
-            <button type="button" class="reading-test-notes-tab" :class="notesTab === 'all' ? 'is-active' : ''" @click="notesTab = 'all'">My Notes</button>
-            <button type="button" class="reading-test-notes-tab" :class="notesTab === 'passage' ? 'is-active' : ''" @click="notesTab = 'passage'">Passage Notes</button>
-            <button type="button" class="reading-test-notes-tab" :class="notesTab === 'question' ? 'is-active' : ''" @click="notesTab = 'question'">Question Notes</button>
+        <div class="flex gap-2 border-b border-neutral-200 px-4 py-3" role="tablist" aria-label="Note categories">
+            <button type="button" role="tab" class="reading-test-notes-tab" :class="notesTab === 'all' ? 'is-active' : ''" :aria-selected="notesTab === 'all'" @click="notesTab = 'all'">All notes</button>
+            <button type="button" role="tab" class="reading-test-notes-tab" :class="notesTab === 'passage' ? 'is-active' : ''" :aria-selected="notesTab === 'passage'" @click="notesTab = 'passage'">Passage</button>
+            <button type="button" role="tab" class="reading-test-notes-tab" :class="notesTab === 'question' ? 'is-active' : ''" :aria-selected="notesTab === 'question'" @click="notesTab = 'question'">Questions</button>
         </div>
 
         <div class="space-y-3 border-b border-neutral-200 p-4">
@@ -32,7 +44,7 @@
                 x-model="noteDraft.content"
                 @input="saveNoteDraft()"
             ></textarea>
-            <p class="text-xs text-neutral-500">Notes save automatically.</p>
+            <p class="text-xs text-neutral-500">Notes save automatically while you type.</p>
         </div>
 
         <div class="max-h-[40vh] overflow-y-auto p-4">

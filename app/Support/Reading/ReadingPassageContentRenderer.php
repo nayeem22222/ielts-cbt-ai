@@ -22,6 +22,8 @@ final class ReadingPassageContentRenderer
         $html = preg_replace('/\{\[([^\}]*)\}\[(\d+)\]/u', '$1', $html) ?? $html;
         // {[quoted text][12]} — reference markers with question id suffix.
         $html = preg_replace('/\{\[([^\]]*)\]\[(\d+)\]\}/u', '$1', $html) ?? $html;
+        // {[quoted text][12]]} — variant with extra closing bracket.
+        $html = preg_replace('/\{\[([^\]]*)\]\[(\d+)\]\]\}/u', '$1', $html) ?? $html;
         // {[quoted text]}12}] — legacy broken closing format.
         $html = preg_replace('/\{\[([^\]]*)\]\}(\d+)\}\]/u', '$1', $html) ?? $html;
         // {[quoted text]} — unclosed/open marker prefix.
@@ -41,6 +43,7 @@ final class ReadingPassageContentRenderer
 
         $text = preg_replace('/\{\[([^\}]*)\}\[(\d+)\]/u', '$1', $text) ?? $text;
         $text = preg_replace('/\{\[([^\]]*)\]\[(\d+)\]\}/u', '$1', $text) ?? $text;
+        $text = preg_replace('/\{\[([^\]]*)\]\[(\d+)\]\]\}/u', '$1', $text) ?? $text;
         $text = preg_replace('/\{\[([^\]]*)\]\}(\d+)\}\]/u', '$1', $text) ?? $text;
         $text = preg_replace('/\{\[([^\]]*)\]\}/u', '$1', $text) ?? $text;
         $text = preg_replace('/\]\[(\d+)\]\}/u', '', $text) ?? $text;
