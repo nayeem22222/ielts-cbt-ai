@@ -34,10 +34,10 @@
 
         <x-ui.textarea name="instruction" label="Instruction" rows="3" help="Example: You should spend about 20 minutes on Questions 1–13, which are based on Reading Passage 1 below.">{{ old('instruction', $selectedPassage->instruction) }}</x-ui.textarea>
 
-        <div class="space-y-2">
+        <div class="reading-builder-editor min-w-0 space-y-2">
             <label for="content_html" class="block text-sm font-medium text-neutral-700 dark:text-neutral-200">Content</label>
-            <textarea id="content_html" name="content_html" class="hidden">{{ old('content_html', $selectedPassage->content_html) }}</textarea>
             <p class="text-xs aa-muted">Paste directly from IELTS PDFs. Formatting, lists, and paragraph breaks are preserved.</p>
+            <textarea id="content_html" name="content_html" class="hidden">{{ old('content_html', $selectedPassage->content_html) }}</textarea>
         </div>
 
         <label class="flex items-center gap-3 text-sm font-medium text-neutral-700 dark:text-neutral-200">

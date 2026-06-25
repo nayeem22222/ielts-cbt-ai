@@ -156,6 +156,8 @@ window.readingTestBuilder = (config = {}) => ({
         tinymce.init({
             target: textarea,
             height: 420,
+            width: '100%',
+            resize: false,
             menubar: 'edit view',
             plugins: 'advlist autolink lists link searchreplace wordcount fullscreen',
             toolbar:

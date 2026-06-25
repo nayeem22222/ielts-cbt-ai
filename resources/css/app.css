@@ -71,6 +71,20 @@ html.dark .field input {
     @apply border-neutral-700 bg-neutral-950 text-neutral-100;
 }
 
+[data-reading-test-builder] .tox-tinymce {
+    width: 100% !important;
+    max-width: 100%;
+}
+
+[data-reading-test-builder] .tox .tox-editor-container,
+[data-reading-test-builder] .tox .tox-edit-area {
+    max-width: 100%;
+}
+
+[data-reading-test-builder] .reading-builder-editor {
+    overflow: hidden;
+}
+
 /* aa-ui.css sets `a { color: inherit }` which breaks link-styled buttons. */
 a.inline-flex.items-center.justify-center {
     text-decoration: none;

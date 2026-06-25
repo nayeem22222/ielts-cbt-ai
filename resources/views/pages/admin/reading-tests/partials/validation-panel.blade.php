@@ -5,7 +5,7 @@
     $isValid = (bool) ($result['is_valid'] ?? false);
 @endphp
 
-<x-ui.card title="Validation Summary">
+<x-ui.card title="Validation Summary" {{ $attributes->merge(['class' => trim('mb-4 '.($attributes->get('class') ?? ''))]) }}>
     <dl class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 text-sm">
         <div>
             <dt class="aa-muted">Passages</dt>

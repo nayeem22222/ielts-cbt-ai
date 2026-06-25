@@ -25,10 +25,10 @@
     @include('partials.admin.sidebar')
   </aside>
 
-  <div class="flex min-h-screen flex-col transition-all duration-300" :class="collapsed ? 'lg:pl-20' : 'lg:pl-72'">
+  <div class="flex min-h-screen min-w-0 flex-col overflow-x-hidden transition-all duration-300" :class="collapsed ? 'lg:pl-20' : 'lg:pl-72'">
     @include('partials.admin.topbar', ['heading' => $heading, 'eyebrow' => $eyebrow])
 
-    <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+    <main class="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
       @if (count($breadcrumbs) > 0)
         <x-ui.breadcrumb :items="$breadcrumbs" class="mb-4" data-admin-breadcrumb />
       @endif

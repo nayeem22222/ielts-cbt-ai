@@ -27,7 +27,7 @@
         @vite(['resources/js/reading-passage-builder.js'])
     @endpush
 
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
             <p class="text-sm aa-muted">ID {{ $test->id }} · {{ $test->exam_type?->label() }} · {{ $test->duration_minutes }} minutes · {{ $passages->count() }} {{ Str::plural('passage', $passages->count()) }}</p>
             <h2 class="text-2xl font-bold text-neutral-900 dark:text-white">{{ $test->title }}</h2>
@@ -53,11 +53,12 @@
     ])
 
     <div
-        class="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]"
+        class="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)] xl:gap-6"
+        data-reading-test-builder
         x-data="readingTestBuilder(@js($builderConfig))"
         x-init="init()"
     >
-        <aside class="order-2 space-y-4 xl:order-1">
+        <aside class="order-2 min-w-0 space-y-4 xl:order-1">
             <x-ui.card title="Reading Test" padding="p-5">
                 <dl class="space-y-3 text-sm">
                     <div>
@@ -107,7 +108,7 @@
             </x-ui.card>
         </aside>
 
-        <section class="order-1 space-y-6 xl:order-2 xl:sticky xl:top-6 xl:max-h-[calc(100vh-7rem)] xl:self-start xl:overflow-y-auto">
+        <section class="order-1 min-w-0 space-y-4 xl:order-2">
             @if ($activePanel === 'group' && $selectedGroup && $selectedPassage)
                 @include('pages.admin.reading-tests.partials.group-editor', [
                     'test' => $test,
