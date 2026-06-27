@@ -168,6 +168,10 @@ class ListeningSectionService
      * @return array{
      *     has_audio: bool,
      *     has_transcript: bool,
+     *     has_timestamped_transcript: bool,
+     *     transcript_audio_matches: bool,
+     *     transcript_visibility: string|null,
+     *     transcript_ready_for_review: bool,
      *     has_valid_range: bool,
      *     groups_count: int,
      *     questions_count: int,
@@ -178,6 +182,7 @@ class ListeningSectionService
      */
     public function getSectionReadiness(ListeningSection $section): array
     {
+        $section->loadMissing(['transcript']);
         $section->loadCount([
             'questionGroups' => fn ($query) => $query->where('is_active', true),
             'questions' => fn ($query) => $query->where('is_active', true),
@@ -185,6 +190,12 @@ class ListeningSectionService
 
         $hasAudio = $section->audio_id !== null;
         $hasTranscript = $section->transcript_id !== null;
+        $hasTimestamped = $hasTranscript && is_array($section->transcript?->timestamped_transcript) && $section->transcript->timestamped_transcript !== [];
+        $transcriptVisibility = $section->transcript?->visibility?->value;
+        $transcriptAudioMatches = ! $hasTranscript || $this->transcriptAudioMatchesSection($section);
+        $transcriptReadyForReview = $hasTranscript
+            && $section->transcript?->visibility === \App\Enums\Listening\ListeningTranscriptVisibility::ReviewVisible
+            && config('listening.transcript.allow_review_visibility', true);
         $rangeErrors = $this->validateRange->validateSection($section);
         $hasValidRange = $rangeErrors === [];
 
@@ -218,11 +229,19 @@ class ListeningSectionService
             }
         }
 
+        if (config('listening.transcript.require_for_publish', false) && ! $hasTranscript) {
+            $missing[] = 'Section transcript is missing.';
+        }
+
         $isReady = $hasValidRange && $hasAudio && $questionsCount === $expectedQuestions && $missing === [];
 
         return [
             'has_audio' => $hasAudio,
             'has_transcript' => $hasTranscript,
+            'has_timestamped_transcript' => $hasTimestamped,
+            'transcript_audio_matches' => $transcriptAudioMatches,
+            'transcript_visibility' => $transcriptVisibility,
+            'transcript_ready_for_review' => $transcriptReadyForReview,
             'has_valid_range' => $hasValidRange,
             'groups_count' => (int) $section->question_groups_count,
             'questions_count' => $questionsCount,
@@ -329,6 +348,19 @@ class ListeningSectionService
         }
 
         return $payload;
+    }
+
+    private function transcriptAudioMatchesSection(ListeningSection $section): bool
+    {
+        if ($section->transcript === null) {
+            return true;
+        }
+
+        if ($section->audio_id === null || $section->transcript->listening_audio_id === null) {
+            return true;
+        }
+
+        return (int) $section->audio_id === (int) $section->transcript->listening_audio_id;
     }
 
     private function assertTestAllowsSectionChanges(

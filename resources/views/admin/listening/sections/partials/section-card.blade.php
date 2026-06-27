@@ -1,5 +1,10 @@
 @php
-    $range = $sectionRangeMap[$section->section_number] ?? null;
+    $hasAudio = (bool) $section->audio_id;
+    $hasTranscript = (bool) $section->transcript_id;
+    $transcriptMismatch = $hasTranscript
+        && $section->audio_id
+        && $section->transcript?->listening_audio_id
+        && (int) $section->audio_id !== (int) $section->transcript->listening_audio_id;
 @endphp
 <div class="rounded-2xl border border-neutral-200 p-4 dark:border-neutral-800">
     <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
@@ -8,12 +13,19 @@
             <h3 class="text-lg font-semibold text-neutral-900 dark:text-white">{{ $section->title }}</h3>
             <p class="text-sm aa-muted">{{ $section->section_type?->label() }} · Q{{ $section->start_question_number }}–{{ $section->end_question_number }}</p>
         </div>
-        <x-ui.badge :tone="$section->is_active ? 'green' : 'neutral'">{{ $section->is_active ? 'Active' : 'Inactive' }}</x-ui.badge>
+        <div class="flex flex-wrap gap-2">
+            <x-ui.badge :tone="$section->is_active ? 'green' : 'neutral'">{{ $section->is_active ? 'Active' : 'Inactive' }}</x-ui.badge>
+            <x-ui.badge :tone="$hasAudio ? 'green' : 'amber'">{{ $hasAudio ? 'Audio' : 'No audio' }}</x-ui.badge>
+            <x-ui.badge :tone="$hasTranscript ? 'green' : 'neutral'">{{ $hasTranscript ? 'Transcript' : 'No transcript' }}</x-ui.badge>
+            @if ($transcriptMismatch)
+                <x-ui.badge tone="amber">Audio mismatch</x-ui.badge>
+            @endif
+        </div>
     </div>
 
     <dl class="mb-4 grid gap-2 text-sm sm:grid-cols-2">
-        <div><dt class="aa-muted">Audio</dt><dd>{{ $section->audio_id ? ($section->audio?->original_name ?? 'Attached') : 'Missing' }}</dd></div>
-        <div><dt class="aa-muted">Transcript</dt><dd>{{ $section->transcript_id ? ($section->transcript?->title ?? 'Attached') : 'None' }}</dd></div>
+        <div><dt class="aa-muted">Audio</dt><dd>{{ $hasAudio ? ($section->audio?->original_name ?? 'Attached') : 'Missing' }}</dd></div>
+        <div><dt class="aa-muted">Transcript</dt><dd>{{ $hasTranscript ? ($section->transcript?->title ?? 'Attached') : 'None' }}</dd></div>
         <div><dt class="aa-muted">Groups</dt><dd>{{ $section->question_groups_count ?? 0 }} (placeholder)</dd></div>
         <div><dt class="aa-muted">Questions</dt><dd>{{ $section->questions_count ?? 0 }}/{{ $section->total_questions }}</dd></div>
     </dl>
@@ -24,9 +36,9 @@
         @endcan
         @can('update', $section)
             <x-ui.button href="{{ route($sectionsRoutePrefix.'.edit', [$listeningTest, $section]) }}" size="sm" variant="outline">Edit</x-ui.button>
+            <x-ui.button href="{{ route($sectionsRoutePrefix.'.show', [$listeningTest, $section]).'#transcript' }}" size="sm" variant="outline">Transcript</x-ui.button>
         @endcan
         <x-ui.button size="sm" variant="outline" disabled>Manage Questions</x-ui.button>
-        <x-ui.button size="sm" variant="outline" disabled>Manage Audio</x-ui.button>
         @can('delete', $section)
             <form method="POST" action="{{ route($sectionsRoutePrefix.'.destroy', [$listeningTest, $section]) }}" onsubmit="return confirm('Delete this section?')">
                 @csrf @method('DELETE')

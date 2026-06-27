@@ -47,6 +47,10 @@ class PublishListeningTestAction
                 $errors[] = "Section {$section->section_number} is missing audio.";
             }
 
+            if (config('listening.transcript.require_for_publish', false) && $section->transcript_id === null) {
+                $errors[] = "Section {$section->section_number} is missing a transcript.";
+            }
+
             $expectedRange = ListeningConstants::SECTION_QUESTION_RANGES[$section->section_number] ?? null;
 
             if ($expectedRange === null) {

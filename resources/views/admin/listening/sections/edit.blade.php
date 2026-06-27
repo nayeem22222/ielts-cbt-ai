@@ -2,12 +2,17 @@
     @include('admin.listening.sections.partials.alerts')
 
     <div class="space-y-6">
-        <x-ui.card>
+        <x-ui.card title="Section Settings">
+            <p class="mb-4 text-sm aa-muted">Update section details here. Manage transcript attachment in the panel below.</p>
             <form method="POST" action="{{ route($sectionsRoutePrefix.'.update', [$listeningTest, $section]) }}">
                 @csrf @method('PUT')
-                @include('admin.listening.sections.partials.form', ['submitLabel' => 'Update Section'])
+                @include('admin.listening.sections.partials.form', ['submitLabel' => 'Update Section', 'hideTranscriptSelector' => true])
             </form>
         </x-ui.card>
-        @include('admin.listening.sections.partials.readiness-card')
+
+        <div class="grid gap-6 lg:grid-cols-2">
+            @include('admin.listening.sections.partials.readiness-card')
+            @include('admin.listening.sections.partials.transcript-card')
+        </div>
     </div>
 </x-layouts.admin>

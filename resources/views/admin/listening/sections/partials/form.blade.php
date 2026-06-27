@@ -35,7 +35,14 @@
     <x-ui.input name="display_order" type="number" min="1" max="4" label="Display Order" :value="old('display_order', $section->display_order ?? '')" />
     <x-ui.textarea name="instruction" label="Instruction" class="md:col-span-2" rows="4">{{ old('instruction', $section->instruction ?? '') }}</x-ui.textarea>
     @include('admin.listening.sections.partials.audio-selector')
-    @include('admin.listening.sections.partials.transcript-selector')
+    @unless ($hideTranscriptSelector ?? false)
+        <div class="md:col-span-2 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
+            <p class="mb-3 text-sm font-medium">Transcript (optional)</p>
+            @include('admin.listening.sections.partials.transcript-selector')
+        </div>
+    @else
+        <input type="hidden" name="transcript_id" value="{{ old('transcript_id', $section->transcript_id ?? '') }}">
+    @endunless
     <x-ui.input name="duration_seconds" type="number" min="1" max="3600" label="Duration (seconds)" :value="old('duration_seconds', $section->duration_seconds ?? '')" />
     <x-ui.input name="preparation_seconds" type="number" min="0" max="300" label="Preparation (seconds)" :value="old('preparation_seconds', $section->preparation_seconds ?? '')" />
     <label class="flex items-center gap-2 text-sm md:col-span-2">

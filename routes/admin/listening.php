@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\Listening\ListeningSectionController;
+use App\Http\Controllers\Admin\Listening\ListeningSectionTranscriptController;
 use App\Http\Controllers\Admin\Listening\ListeningTestController;
+use App\Http\Controllers\Admin\Listening\ListeningTranscriptController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('permission:listening.tests.view')->prefix('listening/tests')->name('listening.tests.')->group(function (): void {
@@ -33,5 +35,19 @@ Route::middleware('permission:listening.tests.view')->prefix('listening/tests')-
         Route::put('/{section}', [ListeningSectionController::class, 'update'])->name('update');
         Route::delete('/{section}', [ListeningSectionController::class, 'destroy'])->name('destroy');
         Route::post('/{sectionId}/restore', [ListeningSectionController::class, 'restore'])->name('restore')->whereNumber('sectionId');
+
+        Route::post('/{section}/transcript/attach', [ListeningSectionTranscriptController::class, 'attach'])->name('transcript.attach');
+        Route::delete('/{section}/transcript/detach', [ListeningSectionTranscriptController::class, 'detach'])->name('transcript.detach');
     });
+});
+
+Route::middleware('permission:listening.transcripts.view,listening.tests.view')->prefix('listening/transcripts')->name('listening.transcripts.')->group(function (): void {
+    Route::get('/', [ListeningTranscriptController::class, 'index'])->name('index');
+    Route::get('/create', [ListeningTranscriptController::class, 'create'])->name('create');
+    Route::post('/', [ListeningTranscriptController::class, 'store'])->name('store');
+    Route::get('/{transcript}', [ListeningTranscriptController::class, 'show'])->name('show');
+    Route::get('/{transcript}/edit', [ListeningTranscriptController::class, 'edit'])->name('edit');
+    Route::put('/{transcript}', [ListeningTranscriptController::class, 'update'])->name('update');
+    Route::delete('/{transcript}', [ListeningTranscriptController::class, 'destroy'])->name('destroy');
+    Route::put('/{transcript}/timestamps', [ListeningTranscriptController::class, 'updateTimestamps'])->name('timestamps.update');
 });

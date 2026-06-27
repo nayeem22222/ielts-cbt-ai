@@ -12,9 +12,9 @@ use App\Http\Requests\Admin\Listening\UpdateListeningSectionRequest;
 use App\Models\Listening\ListeningAudio;
 use App\Models\Listening\ListeningSection;
 use App\Models\Listening\ListeningTest;
-use App\Models\Listening\ListeningTranscript;
 use App\Repositories\Listening\ListeningSectionRepository;
 use App\Services\Listening\ListeningSectionService;
+use App\Services\Listening\ListeningTranscriptService;
 use App\Support\Listening\ListeningSectionMap;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -26,6 +26,7 @@ class ListeningSectionController extends Controller
     public function __construct(
         private readonly ListeningSectionService $sections,
         private readonly ListeningSectionRepository $sectionRepository,
+        private readonly ListeningTranscriptService $transcripts,
     ) {}
 
     public function index(ListeningTest $listeningTest): View
@@ -56,7 +57,8 @@ class ListeningSectionController extends Controller
                 'display_order' => $firstAvailable,
             ]),
             'audios' => $this->audioOptions(),
-            'transcripts' => $this->transcriptOptions(),
+            'transcripts' => $this->transcripts->getAvailableForSection(null),
+            'listeningTest' => $listeningTest,
             'availableSectionNumbers' => $availableSectionNumbers,
             'existingSectionNumbers' => $existingSectionNumbers,
         ]));
@@ -91,6 +93,7 @@ class ListeningSectionController extends Controller
         return view('admin.listening.sections.show', $this->sharedViewData($listeningTest, [
             'section' => $section,
             'readiness' => $this->sections->getSectionReadiness($section),
+            'availableTranscripts' => $this->transcripts->getAvailableForSection($section->audio_id),
         ]));
     }
 
@@ -108,7 +111,8 @@ class ListeningSectionController extends Controller
             'section' => $section,
             'readiness' => $this->sections->getSectionReadiness($section),
             'audios' => $this->audioOptions(),
-            'transcripts' => $this->transcriptOptions(),
+            'transcripts' => $this->transcripts->getAvailableForSection($section->audio_id),
+            'availableTranscripts' => $this->transcripts->getAvailableForSection($section->audio_id),
             'availableSectionNumbers' => $this->sectionRepository->availableSectionNumbersForEdit($listeningTest, $section),
         ]));
     }
@@ -239,15 +243,5 @@ class ListeningSectionController extends Controller
         return ListeningAudio::query()
             ->orderBy('original_name')
             ->get(['id', 'original_name', 'duration_seconds', 'processing_status', 'validation_status']);
-    }
-
-    /**
-     * @return Collection<int, ListeningTranscript>
-     */
-    private function transcriptOptions()
-    {
-        return ListeningTranscript::query()
-            ->orderBy('title')
-            ->get(['id', 'title', 'visibility', 'is_official']);
     }
 }

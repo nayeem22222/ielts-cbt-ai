@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Listening;
 
+use App\Enums\Listening\ListeningTranscriptSourceType;
 use App\Enums\Listening\ListeningTranscriptVisibility;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,12 +20,18 @@ class ListeningTranscript extends Model
     protected $fillable = [
         'listening_audio_id',
         'title',
+        'passage_title',
         'transcript_text',
         'formatted_transcript',
+        'passage_note',
         'timestamped_transcript',
         'language',
         'visibility',
         'is_official',
+        'source_type',
+        'version',
+        'reviewed_at',
+        'reviewed_by',
         'created_by',
         'meta',
     ];
@@ -34,7 +41,10 @@ class ListeningTranscript extends Model
         return [
             'timestamped_transcript' => 'array',
             'visibility' => ListeningTranscriptVisibility::class,
+            'source_type' => ListeningTranscriptSourceType::class,
             'is_official' => 'boolean',
+            'version' => 'integer',
+            'reviewed_at' => 'datetime',
             'meta' => 'array',
         ];
     }
@@ -52,6 +62,11 @@ class ListeningTranscript extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     public function scopeVisibleForReview(Builder $query): Builder

@@ -64,6 +64,13 @@ enum Permission: string
     case ListeningSectionsRestore = 'listening.sections.restore';
     case ListeningSectionsReorder = 'listening.sections.reorder';
 
+    case ListeningTranscriptsView = 'listening.transcripts.view';
+    case ListeningTranscriptsCreate = 'listening.transcripts.create';
+    case ListeningTranscriptsUpdate = 'listening.transcripts.update';
+    case ListeningTranscriptsDelete = 'listening.transcripts.delete';
+    case ListeningTranscriptsAttach = 'listening.transcripts.attach';
+    case ListeningTranscriptsTimestampsUpdate = 'listening.transcripts.timestamps.update';
+
     case QuestionBanksView = 'question_banks.view';
     case QuestionBanksCreate = 'question_banks.create';
     case QuestionBanksUpdate = 'question_banks.update';
@@ -115,6 +122,14 @@ enum Permission: string
             self::ListeningSectionsDelete => 'Delete listening sections',
             self::ListeningSectionsRestore => 'Restore listening sections',
             self::ListeningSectionsReorder => 'Reorder listening sections',
+
+            self::ListeningTranscriptsView => 'View listening transcripts',
+            self::ListeningTranscriptsCreate => 'Create listening transcripts',
+            self::ListeningTranscriptsUpdate => 'Update listening transcripts',
+            self::ListeningTranscriptsDelete => 'Delete listening transcripts',
+            self::ListeningTranscriptsAttach => 'Attach listening transcripts',
+            self::ListeningTranscriptsTimestampsUpdate => 'Update listening transcript timestamps',
+
             self::QuestionBanksView => 'View question banks',
             self::QuestionBanksCreate => 'Create question banks',
             self::QuestionBanksUpdate => 'Update question banks',
@@ -179,6 +194,13 @@ enum Permission: string
             self::ListeningSectionsRestore,
             self::ListeningSectionsReorder => 'listening_sections',
 
+            self::ListeningTranscriptsView,
+            self::ListeningTranscriptsCreate,
+            self::ListeningTranscriptsUpdate,
+            self::ListeningTranscriptsDelete,
+            self::ListeningTranscriptsAttach,
+            self::ListeningTranscriptsTimestampsUpdate => 'listening_transcripts',
+
             self::QuestionBanksView,
             self::QuestionBanksCreate,
             self::QuestionBanksUpdate,
@@ -237,6 +259,12 @@ enum Permission: string
                 self::ListeningSectionsDelete,
                 self::ListeningSectionsRestore,
                 self::ListeningSectionsReorder,
+                self::ListeningTranscriptsView,
+                self::ListeningTranscriptsCreate,
+                self::ListeningTranscriptsUpdate,
+                self::ListeningTranscriptsDelete,
+                self::ListeningTranscriptsAttach,
+                self::ListeningTranscriptsTimestampsUpdate,
                 self::QuestionBanksView,
                 self::QuestionBanksCreate,
                 self::QuestionBanksUpdate,
