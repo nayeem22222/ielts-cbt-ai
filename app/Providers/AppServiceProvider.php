@@ -11,12 +11,22 @@ use App\Models\CourseSection;
 use App\Models\ExamTest;
 use App\Models\Lesson;
 use App\Models\LessonResource;
+use App\Models\Listening\ListeningTest;
 use App\Models\Package;
+use App\Models\Permission;
 use App\Models\QuestionBank;
 use App\Models\ReadingAttempt;
 use App\Models\ReadingTest;
 use App\Models\Role;
 use App\Models\User;
+use App\Policies\CoursePolicy;
+use App\Policies\ExamPolicy;
+use App\Policies\ListeningTestPolicy;
+use App\Policies\PackagePolicy;
+use App\Policies\PermissionPolicy;
+use App\Policies\QuestionBankPolicy;
+use App\Policies\ReadingAttemptPolicy;
+use App\Policies\RolePolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -35,20 +45,21 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Gate::policy(Role::class, \App\Policies\RolePolicy::class);
-        Gate::policy(\App\Models\Permission::class, \App\Policies\PermissionPolicy::class);
+        Gate::policy(Role::class, RolePolicy::class);
+        Gate::policy(Permission::class, PermissionPolicy::class);
 
-        $coursePolicy = \App\Policies\CoursePolicy::class;
+        $coursePolicy = CoursePolicy::class;
         Gate::policy(CourseCategory::class, $coursePolicy);
         Gate::policy(Course::class, $coursePolicy);
         Gate::policy(CourseSection::class, $coursePolicy);
         Gate::policy(Lesson::class, $coursePolicy);
         Gate::policy(LessonResource::class, $coursePolicy);
-        Gate::policy(Package::class, \App\Policies\PackagePolicy::class);
-        Gate::policy(ExamTest::class, \App\Policies\ExamPolicy::class);
-        Gate::policy(ReadingTest::class, \App\Policies\ExamPolicy::class);
-        Gate::policy(ReadingAttempt::class, \App\Policies\ReadingAttemptPolicy::class);
-        Gate::policy(QuestionBank::class, \App\Policies\QuestionBankPolicy::class);
+        Gate::policy(Package::class, PackagePolicy::class);
+        Gate::policy(ExamTest::class, ExamPolicy::class);
+        Gate::policy(ReadingTest::class, ExamPolicy::class);
+        Gate::policy(ListeningTest::class, ListeningTestPolicy::class);
+        Gate::policy(ReadingAttempt::class, ReadingAttemptPolicy::class);
+        Gate::policy(QuestionBank::class, QuestionBankPolicy::class);
 
         RateLimiter::for('reading-autosave', function (Request $request): Limit {
             $attempt = $request->route('attempt');

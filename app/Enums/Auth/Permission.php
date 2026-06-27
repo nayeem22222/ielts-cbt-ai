@@ -49,6 +49,14 @@ enum Permission: string
     case TestsUpdate = 'tests.update';
     case TestsDelete = 'tests.delete';
 
+    case ListeningTestsView = 'listening.tests.view';
+    case ListeningTestsCreate = 'listening.tests.create';
+    case ListeningTestsUpdate = 'listening.tests.update';
+    case ListeningTestsDelete = 'listening.tests.delete';
+    case ListeningTestsPublish = 'listening.tests.publish';
+    case ListeningTestsArchive = 'listening.tests.archive';
+    case ListeningTestsDuplicate = 'listening.tests.duplicate';
+
     case QuestionBanksView = 'question_banks.view';
     case QuestionBanksCreate = 'question_banks.create';
     case QuestionBanksUpdate = 'question_banks.update';
@@ -87,6 +95,13 @@ enum Permission: string
             self::TestsCreate => 'Create reading tests',
             self::TestsUpdate => 'Update reading tests',
             self::TestsDelete => 'Delete reading tests',
+            self::ListeningTestsView => 'View listening tests',
+            self::ListeningTestsCreate => 'Create listening tests',
+            self::ListeningTestsUpdate => 'Update listening tests',
+            self::ListeningTestsDelete => 'Delete listening tests',
+            self::ListeningTestsPublish => 'Publish listening tests',
+            self::ListeningTestsArchive => 'Archive listening tests',
+            self::ListeningTestsDuplicate => 'Duplicate listening tests',
             self::QuestionBanksView => 'View question banks',
             self::QuestionBanksCreate => 'Create question banks',
             self::QuestionBanksUpdate => 'Update question banks',
@@ -136,6 +151,14 @@ enum Permission: string
             self::TestsUpdate,
             self::TestsDelete => 'tests',
 
+            self::ListeningTestsView,
+            self::ListeningTestsCreate,
+            self::ListeningTestsUpdate,
+            self::ListeningTestsDelete,
+            self::ListeningTestsPublish,
+            self::ListeningTestsArchive,
+            self::ListeningTestsDuplicate => 'listening_tests',
+
             self::QuestionBanksView,
             self::QuestionBanksCreate,
             self::QuestionBanksUpdate,
@@ -181,6 +204,13 @@ enum Permission: string
                 self::TestsCreate,
                 self::TestsUpdate,
                 self::TestsDelete,
+                self::ListeningTestsView,
+                self::ListeningTestsCreate,
+                self::ListeningTestsUpdate,
+                self::ListeningTestsDelete,
+                self::ListeningTestsPublish,
+                self::ListeningTestsArchive,
+                self::ListeningTestsDuplicate,
                 self::QuestionBanksView,
                 self::QuestionBanksCreate,
                 self::QuestionBanksUpdate,

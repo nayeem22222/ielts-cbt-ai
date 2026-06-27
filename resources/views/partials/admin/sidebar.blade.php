@@ -40,6 +40,7 @@
             'label' => 'Test Builder',
             'items' => [
                 ['label' => 'Reading Tests', 'href' => route('admin.reading-tests.index'), 'icon' => 'reading-tests', 'active' => request()->routeIs('admin.reading-tests.*')],
+                ['label' => 'Listening Tests', 'href' => route('admin.listening.tests.index'), 'icon' => 'reading-tests', 'active' => request()->routeIs('admin.listening.tests.*')],
                 ['label' => 'Question Banks', 'href' => route('admin.question-banks.index'), 'icon' => 'question-banks', 'active' => request()->routeIs('admin.question-banks.*')],
                 ['label' => 'Reading Analytics', 'href' => route('admin.reading-analytics.index'), 'icon' => 'analytics', 'active' => request()->routeIs('admin.reading-analytics.*')],
                 ['label' => 'Reading Tickets', 'href' => route('admin.reading-tickets.index'), 'icon' => 'reading-tests', 'active' => request()->routeIs('admin.reading-tickets.*')],
