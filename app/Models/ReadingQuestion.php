@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\TouchesReadingTestCache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ReadingQuestion extends Model
 {
+    use TouchesReadingTestCache;
     protected $fillable = [
         'group_id',
         'question_number',
@@ -70,5 +72,11 @@ class ReadingQuestion extends Model
         static::deleting(function (ReadingQuestion $question): void {
             $question->answers()->delete();
         });
+    }
+
+    protected function touchReadingTestForCache(): void
+    {
+        $this->loadMissing('group.passage');
+        $this->touchReadingTestById($this->group?->passage?->reading_test_id);
     }
 }

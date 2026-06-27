@@ -4,13 +4,22 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Student;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Enums\Exam\TestAttemptStatus;
+use App\Models\ReadingNote;
 
-class UpdateReadingNoteRequest extends FormRequest
+class UpdateReadingNoteRequest extends ReadingAttemptScopedRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        if (! $this->ownsWritableAttempt()) {
+            return false;
+        }
+
+        $note = $this->route('note');
+
+        return $note instanceof ReadingNote
+            && $note->attempt_id === $this->attemptFromRoute()?->id
+            && $note->user_id === $this->user()?->id;
     }
 
     /**

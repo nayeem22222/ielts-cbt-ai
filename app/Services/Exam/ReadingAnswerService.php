@@ -13,6 +13,7 @@ use App\Models\ReadingQuestion;
 use App\Models\ReadingTest;
 use App\Services\Exam\ReadingTimerService;
 use App\Models\User;
+use App\Support\Reading\ReadingSecurityLogger;
 use Illuminate\Auth\Access\AuthorizationException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -39,7 +40,7 @@ class ReadingAnswerService
             return $existing;
         }
 
-        $test = $this->renderer->loadForRenderer($test);
+        $test = $this->renderer->cachedForRenderer($test);
         $firstPassage = $test->passages->first();
         $firstQuestion = $firstPassage
             ? $this->renderer->questionsForPassage($firstPassage)->first()
@@ -65,6 +66,7 @@ class ReadingAnswerService
         $user ??= auth()->user();
 
         if ($user === null || $attempt->user_id !== $user->id) {
+            ReadingSecurityLogger::ownershipDenied('writable_attempt', $user?->id, $attempt);
             throw new AuthorizationException('This attempt does not belong to you.');
         }
 
@@ -215,10 +217,14 @@ class ReadingAnswerService
      */
     public function buildNavigatorStatus(ReadingAttempt $attempt): array
     {
-        $attempt->loadMissing('test.passages.groups.questions');
-        $test = $this->renderer->loadForRenderer($attempt->test);
+        $attempt->loadMissing('test');
+        $test = $this->renderer->cachedForRenderer($attempt->test);
 
-        $saved = $this->loadSavedAnswers($attempt);
+        $saved = ReadingAnswer::query()
+            ->where('attempt_id', $attempt->id)
+            ->get()
+            ->keyBy('question_id');
+
         $questions = [];
         $parts = [];
         $answeredCount = 0;
@@ -231,9 +237,10 @@ class ReadingAnswerService
             foreach ($this->renderer->questionsForPassage($passage) as $question) {
                 $totalQuestions++;
                 $partTotal++;
-                $savedAnswer = $saved[$question->id] ?? null;
-                $answered = (bool) ($savedAnswer['answered'] ?? false);
-                $flagged = (bool) ($savedAnswer['flagged'] ?? false);
+                $answer = $saved->get($question->id);
+                $type = $question->group?->question_type;
+                $answered = $answer !== null && $this->isAnswered($type, $answer->answer, $answer->answer_json);
+                $flagged = (bool) ($answer?->flagged ?? false);
 
                 if ($answered) {
                     $answeredCount++;
@@ -271,7 +278,7 @@ class ReadingAnswerService
      */
     public function buildAttemptPayload(ReadingAttempt $attempt, ReadingTest $test): array
     {
-        $test = $this->renderer->loadForRenderer($test);
+        $test = $this->renderer->cachedForRenderer($test);
         $navigator = $this->buildNavigatorStatus($attempt);
         $savedAnswers = $this->loadSavedAnswers($attempt);
 
@@ -357,6 +364,7 @@ class ReadingAnswerService
             ->exists();
 
         if (! $belongs) {
+            ReadingSecurityLogger::invalidAnswerSave('question_not_in_test', auth()->id(), $attempt);
             abort(422, 'Question does not belong to this reading test.');
         }
     }
@@ -392,7 +400,7 @@ class ReadingAnswerService
      */
     private function buildSaveResponse(ReadingAttempt $attempt, int $questionNumber, ReadingAnswer $record): array
     {
-        $navigator = $this->buildNavigatorStatus($attempt->fresh());
+        $navigator = $this->buildNavigatorStatus($attempt);
         $questionStatus = $navigator['questions'][$questionNumber] ?? null;
 
         return [

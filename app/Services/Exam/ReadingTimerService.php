@@ -7,6 +7,7 @@ namespace App\Services\Exam;
 use App\Enums\Exam\TestAttemptStatus;
 use App\Models\ReadingAttempt;
 use Carbon\CarbonInterface;
+use App\Support\Reading\ReadingSecurityLogger;
 use Illuminate\Support\Carbon;
 
 class ReadingTimerService
@@ -53,10 +54,28 @@ class ReadingTimerService
         $remaining = $this->remainingSeconds($attempt);
 
         if ($attempt->status === TestAttemptStatus::InProgress) {
-            $attempt->update(['remaining_seconds' => $remaining]);
+            $stored = (int) $attempt->remaining_seconds;
+            if (abs($stored - $remaining) >= 5) {
+                $attempt->update(['remaining_seconds' => $remaining]);
+            }
         }
 
-        return $this->timerPayload($attempt->fresh(), $remaining);
+        return $this->timerSyncPayload($attempt, $remaining);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function timerSyncPayload(ReadingAttempt $attempt, ?int $remaining = null): array
+    {
+        $remaining ??= $this->remainingSeconds($attempt);
+
+        return [
+            'remaining_seconds' => $remaining,
+            'status' => $attempt->status?->value ?? TestAttemptStatus::InProgress->value,
+            'server_time' => now()->toIso8601String(),
+            'expired' => $remaining <= 0 && $attempt->status === TestAttemptStatus::InProgress,
+        ];
     }
 
     /**
@@ -67,20 +86,19 @@ class ReadingTimerService
         $attempt ??= new ReadingAttempt;
         $remaining ??= $this->remainingSeconds($attempt);
 
-        return [
-            'remaining_seconds' => $remaining,
-            'status' => $attempt->status?->value ?? TestAttemptStatus::InProgress->value,
+        return array_merge($this->timerSyncPayload($attempt, $remaining), [
             'ends_at' => $this->endsAt($attempt)->toIso8601String(),
-            'server_time' => now()->toIso8601String(),
             'duration_seconds' => $this->durationSeconds($attempt),
-            'expired' => $remaining <= 0 && $attempt->status === TestAttemptStatus::InProgress,
-        ];
+        ]);
     }
 
     public function assertOwnedByUser(ReadingAttempt $attempt, ?int $userId = null): void
     {
         $userId ??= auth()->id();
 
-        abort_unless($userId !== null && $attempt->user_id === $userId, 403);
+        if ($userId === null || $attempt->user_id !== $userId) {
+            ReadingSecurityLogger::ownershipDenied('attempt_access', $userId, $attempt);
+            abort(403);
+        }
     }
 }

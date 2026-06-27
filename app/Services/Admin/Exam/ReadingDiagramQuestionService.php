@@ -77,6 +77,13 @@ class ReadingDiagramQuestionService
     {
         $this->assertDiagramGroup($group);
 
+        $mime = (string) $file->getMimeType();
+        if (! in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+            throw ValidationException::withMessages([
+                'diagram_image' => 'Only JPG, PNG, and WebP diagram images are allowed.',
+            ]);
+        }
+
         return DB::transaction(function () use ($group, $file): ReadingQuestionGroup {
             $settings = $group->settings ?? [];
             $previousPath = $settings['diagram_image'] ?? null;

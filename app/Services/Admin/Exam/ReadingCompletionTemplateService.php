@@ -28,17 +28,20 @@ class ReadingCompletionTemplateService
      */
     public function parseTemplate(string $template): array
     {
-        $template = $this->normalizePlaceholderHtml($template);
-        $this->assertNoBrokenPlaceholderSyntax($template);
+        $original = $template;
+        $normalized = $this->normalizePlaceholderHtml($template);
+        $this->assertNoBrokenPlaceholderSyntax($normalized);
 
-        if (! preg_match_all(self::PLACEHOLDER_PATTERN, $template, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
+        if (! preg_match_all(self::PLACEHOLDER_PATTERN, $normalized, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
             return [];
         }
 
+        preg_match_all(self::PLACEHOLDER_PATTERN, $original, $originalMatches, PREG_SET_ORDER);
+
         $placeholders = [];
 
-        foreach ($matches as $match) {
-            $rawPlaceholder = $match[0][0];
+        foreach ($matches as $index => $match) {
+            $rawPlaceholder = $originalMatches[$index][0] ?? $match[0][0];
             $position = (int) $match[0][1];
 
             if (($match[1][0] ?? '') !== '') {
@@ -59,7 +62,7 @@ class ReadingCompletionTemplateService
             ];
         }
 
-        return $this->attachSurroundingText($template, $placeholders);
+        return $this->attachSurroundingText($normalized, $placeholders);
     }
 
     /**

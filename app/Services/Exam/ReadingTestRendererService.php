@@ -13,6 +13,11 @@ use Illuminate\Support\Collection as BaseCollection;
 
 class ReadingTestRendererService
 {
+    public function __construct(
+        private readonly ReadingTestPublicCacheService $cache,
+    ) {
+    }
+
     public function publishedTests(): Collection
     {
         return ReadingTest::query()
@@ -42,12 +47,22 @@ class ReadingTestRendererService
         ]);
     }
 
+    public function cachedForRenderer(ReadingTest $test): ReadingTest
+    {
+        return $this->cache->remember(
+            $test,
+            fn (ReadingTest $fresh): ReadingTest => $this->loadForRenderer($fresh),
+        );
+    }
+
     /**
      * @return array<string, mixed>
      */
     public function buildRendererState(ReadingTest $test): array
     {
-        $test = $this->loadForRenderer($test);
+        if (! $test->relationLoaded('passages')) {
+            $test = $this->cachedForRenderer($test);
+        }
 
         $passages = $test->passages->map(function (ReadingPassage $passage) use ($test): array {
             $groups = $passage->groups->map(fn (ReadingQuestionGroup $group): array => [

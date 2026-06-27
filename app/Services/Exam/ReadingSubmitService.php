@@ -7,6 +7,7 @@ namespace App\Services\Exam;
 use App\Enums\Exam\TestAttemptStatus;
 use App\Models\ReadingAttempt;
 use App\Models\ReadingQuestion;
+use App\Support\Reading\ReadingSecurityLogger;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -28,22 +29,28 @@ class ReadingSubmitService
         $this->timer->assertOwnedByUser($attempt);
 
         if ($attempt->status !== TestAttemptStatus::InProgress) {
+            ReadingSecurityLogger::repeatedSubmit(auth()->id(), $attempt);
             throw new ConflictHttpException('This attempt has already been submitted.');
         }
 
         $remaining = $this->timer->remainingSeconds($attempt);
 
         return DB::transaction(function () use ($attempt, $auto, $remaining): array {
-            $attempt->update([
+            $attempt->forceFill([
                 'status' => TestAttemptStatus::Submitted,
                 'submitted_at' => now(),
                 'remaining_seconds' => max(0, $remaining),
                 'metadata' => array_merge($attempt->metadata ?? [], [
                     'submitted_via' => $auto ? 'auto' : 'manual',
                 ]),
-            ]);
+            ])->save();
 
-            $evaluation = $this->evaluation->evaluateAttempt($attempt->fresh());
+            try {
+                $this->evaluation->evaluateAttempt($attempt->fresh());
+            } catch (\Throwable $exception) {
+                ReadingSecurityLogger::evaluationFailed($attempt->id, $exception->getMessage());
+                throw $exception;
+            }
 
             return [
                 'success' => true,
@@ -51,7 +58,6 @@ class ReadingSubmitService
                 'submitted_at' => $attempt->fresh()->submitted_at?->toIso8601String(),
                 'redirect_url' => route('reading-attempts.result', $attempt),
                 'auto' => $auto,
-                'evaluation' => $evaluation,
             ];
         });
     }

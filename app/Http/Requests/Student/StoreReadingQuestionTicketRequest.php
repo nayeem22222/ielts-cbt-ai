@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace App\Http\Requests\Student;
 
 use App\Enums\Exam\ReadingQuestionTicketIssueType;
-use Illuminate\Foundation\Http\FormRequest;
+use App\Enums\Exam\TestAttemptStatus;
 use Illuminate\Validation\Rule;
 
-class StoreReadingQuestionTicketRequest extends FormRequest
+class StoreReadingQuestionTicketRequest extends ReadingAttemptScopedRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        $attempt = $this->attemptFromRoute();
+
+        return $attempt !== null
+            && $this->user()?->id === $attempt->user_id
+            && in_array($attempt->status, [TestAttemptStatus::InProgress, TestAttemptStatus::Submitted, TestAttemptStatus::Completed], true);
     }
 
     /**

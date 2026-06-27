@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Requests\Student;
 
 use App\Enums\Exam\ReadingHighlightColor;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreReadingHighlightRequest extends FormRequest
+class StoreReadingHighlightRequest extends ReadingAttemptScopedRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        return $this->ownsWritableAttempt();
     }
 
     /**

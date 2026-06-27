@@ -13,10 +13,14 @@ use App\Models\Lesson;
 use App\Models\LessonResource;
 use App\Models\Package;
 use App\Models\QuestionBank;
+use App\Models\ReadingAttempt;
 use App\Models\ReadingTest;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -43,7 +47,29 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Package::class, \App\Policies\PackagePolicy::class);
         Gate::policy(ExamTest::class, \App\Policies\ExamPolicy::class);
         Gate::policy(ReadingTest::class, \App\Policies\ExamPolicy::class);
+        Gate::policy(ReadingAttempt::class, \App\Policies\ReadingAttemptPolicy::class);
         Gate::policy(QuestionBank::class, \App\Policies\QuestionBankPolicy::class);
+
+        RateLimiter::for('reading-autosave', function (Request $request): Limit {
+            $attempt = $request->route('attempt');
+            $attemptKey = $attempt instanceof ReadingAttempt ? $attempt->id : 'guest';
+
+            return Limit::perMinute(120)->by($request->user()?->id.'|'.$attemptKey);
+        });
+
+        RateLimiter::for('reading-timer', function (Request $request): Limit {
+            $attempt = $request->route('attempt');
+            $attemptKey = $attempt instanceof ReadingAttempt ? $attempt->id : 'guest';
+
+            return Limit::perMinute(30)->by($request->user()?->id.'|'.$attemptKey);
+        });
+
+        RateLimiter::for('reading-submit', function (Request $request): Limit {
+            $attempt = $request->route('attempt');
+            $attemptKey = $attempt instanceof ReadingAttempt ? $attempt->id : 'guest';
+
+            return Limit::perMinute(5)->by($request->user()?->id.'|'.$attemptKey);
+        });
 
         foreach (PermissionEnum::cases() as $permission) {
             Gate::define($permission->value, fn (User $user): bool => $user->hasPermission($permission));

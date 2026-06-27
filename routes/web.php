@@ -155,17 +155,31 @@ Route::middleware(['auth', 'verified', 'role:student'])->group(function (): void
         ->name('exam.reading.results');
 
     Route::prefix('reading-attempts')->name('reading-attempts.')->middleware('module:reading')->group(function (): void {
-        Route::get('/{attempt}/timer', [\App\Http\Controllers\Student\ReadingTimerController::class, 'show'])->name('timer');
+        Route::get('/{attempt}/timer', [\App\Http\Controllers\Student\ReadingTimerController::class, 'show'])
+            ->middleware('throttle:reading-timer')
+            ->name('timer');
         Route::get('/{attempt}/review', [\App\Http\Controllers\Student\ReadingReviewController::class, 'show'])->name('review');
         Route::get('/{attempt}/submitted', [\App\Http\Controllers\Student\ReadingSubmitController::class, 'submitted'])->name('submitted');
         Route::get('/{attempt}/result', [\App\Http\Controllers\Student\ReadingResultController::class, 'show'])->name('result');
         Route::get('/{attempt}/result/review', [\App\Http\Controllers\Student\ReadingResultController::class, 'review'])->name('result.review');
-        Route::post('/{attempt}/answers', [\App\Http\Controllers\Student\ReadingAnswerController::class, 'store'])->name('answers.store');
-        Route::post('/{attempt}/answers/{question}/flag', [\App\Http\Controllers\Student\ReadingAnswerController::class, 'toggleFlag'])->name('answers.flag');
-        Route::post('/{attempt}/position', [\App\Http\Controllers\Student\ReadingAttemptController::class, 'savePosition'])->name('position');
-        Route::post('/{attempt}/visited', [\App\Http\Controllers\Student\ReadingAttemptController::class, 'markVisited'])->name('visited');
-        Route::post('/{attempt}/submit', [\App\Http\Controllers\Student\ReadingSubmitController::class, 'submit'])->name('submit');
-        Route::post('/{attempt}/auto-submit', [\App\Http\Controllers\Student\ReadingSubmitController::class, 'autoSubmit'])->name('auto-submit');
+        Route::post('/{attempt}/answers', [\App\Http\Controllers\Student\ReadingAnswerController::class, 'store'])
+            ->middleware('throttle:reading-autosave')
+            ->name('answers.store');
+        Route::post('/{attempt}/answers/{question}/flag', [\App\Http\Controllers\Student\ReadingAnswerController::class, 'toggleFlag'])
+            ->middleware('throttle:reading-autosave')
+            ->name('answers.flag');
+        Route::post('/{attempt}/position', [\App\Http\Controllers\Student\ReadingAttemptController::class, 'savePosition'])
+            ->middleware('throttle:reading-autosave')
+            ->name('position');
+        Route::post('/{attempt}/visited', [\App\Http\Controllers\Student\ReadingAttemptController::class, 'markVisited'])
+            ->middleware('throttle:reading-autosave')
+            ->name('visited');
+        Route::post('/{attempt}/submit', [\App\Http\Controllers\Student\ReadingSubmitController::class, 'submit'])
+            ->middleware('throttle:reading-submit')
+            ->name('submit');
+        Route::post('/{attempt}/auto-submit', [\App\Http\Controllers\Student\ReadingSubmitController::class, 'autoSubmit'])
+            ->middleware('throttle:reading-submit')
+            ->name('auto-submit');
         Route::get('/{attempt}/highlights', [\App\Http\Controllers\Student\ReadingHighlightController::class, 'index'])->name('highlights.index');
         Route::post('/{attempt}/highlights', [\App\Http\Controllers\Student\ReadingHighlightController::class, 'store'])->name('highlights.store');
         Route::delete('/{attempt}/highlights/{highlight}', [\App\Http\Controllers\Student\ReadingHighlightController::class, 'destroy'])->name('highlights.destroy');

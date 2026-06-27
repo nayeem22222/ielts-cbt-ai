@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\Exam\OfficialReadingQuestionType;
 use App\Enums\Exam\PassageStatus;
+use App\Models\Concerns\TouchesReadingTestCache;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ReadingQuestionGroup extends Model
 {
+    use TouchesReadingTestCache;
     protected $fillable = [
         'passage_id',
         'title',
@@ -96,5 +98,11 @@ class ReadingQuestionGroup extends Model
     public function getStatusLabelAttribute(): string
     {
         return $this->status?->label() ?? PassageStatus::Draft->label();
+    }
+
+    protected function touchReadingTestForCache(): void
+    {
+        $this->loadMissing('passage');
+        $this->touchReadingTestById($this->passage?->reading_test_id);
     }
 }

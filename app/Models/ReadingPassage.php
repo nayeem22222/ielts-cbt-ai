@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\Exam\PassageStatus;
+use App\Models\Concerns\TouchesReadingTestCache;
+use App\Support\Reading\ReadingHtmlSanitizer;
 use App\Support\Reading\ReadingPassageContentRenderer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ReadingPassage extends Model
 {
+    use TouchesReadingTestCache;
     protected $fillable = [
         'reading_test_id',
         'part_number',
@@ -91,7 +94,9 @@ class ReadingPassage extends Model
 
     public function renderedContentHtml(): string
     {
-        $html = ReadingPassageContentRenderer::sanitizeReferenceMarkers($this->content_html ?? '');
+        $html = ReadingHtmlSanitizer::sanitize(
+            ReadingPassageContentRenderer::sanitizeReferenceMarkers($this->content_html ?? ''),
+        );
 
         if (! $this->auto_paragraph_labels) {
             return $html;
@@ -103,5 +108,10 @@ class ReadingPassage extends Model
     public function getStatusLabelAttribute(): string
     {
         return $this->status?->label() ?? PassageStatus::Draft->label();
+    }
+
+    protected function touchReadingTestForCache(): void
+    {
+        $this->touchReadingTestById($this->reading_test_id);
     }
 }

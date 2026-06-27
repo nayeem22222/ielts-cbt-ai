@@ -7,6 +7,7 @@ namespace App\Services\Admin\Exam;
 use App\Enums\Exam\PassageStatus;
 use App\Models\ReadingPassage;
 use App\Models\ReadingTest;
+use App\Support\Reading\ReadingHtmlSanitizer;
 use App\Support\Reading\ReadingPassageContentRenderer;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -66,7 +67,7 @@ class ReadingPassageBuilderService
             $settings = $passage->settings ?? [];
             $settings['auto_paragraph_labels'] = (bool) ($data['auto_paragraph_labels'] ?? false);
 
-            $contentHtml = (string) ($data['content_html'] ?? '');
+            $contentHtml = ReadingHtmlSanitizer::sanitize((string) ($data['content_html'] ?? ''));
 
             $passage->forceFill([
                 'title' => $data['title'],

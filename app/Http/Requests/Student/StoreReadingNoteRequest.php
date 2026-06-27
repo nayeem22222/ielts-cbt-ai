@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Student;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class StoreReadingNoteRequest extends FormRequest
+class StoreReadingNoteRequest extends ReadingAttemptScopedRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        return $this->ownsWritableAttempt();
     }
 
     /**

@@ -38,7 +38,7 @@ class ReadingTestRendererController extends Controller
     public function show(ReadingTest $readingTest): View|RedirectResponse
     {
         $test = $this->assertPublished($readingTest);
-        $test = $this->renderer->loadForRenderer($test);
+        $test = $this->renderer->cachedForRenderer($test);
         $user = $this->authenticatedUser();
 
         $attempts = ReadingAttempt::query()
@@ -64,7 +64,7 @@ class ReadingTestRendererController extends Controller
     public function start(ReadingTest $readingTest): View|RedirectResponse
     {
         $test = $this->assertPublished($readingTest);
-        $test = $this->renderer->loadForRenderer($test);
+        $test = $this->renderer->cachedForRenderer($test);
         $user = $this->authenticatedUser();
 
         $attempt = $this->answers->getOrCreateAttempt($user, $test);

@@ -17,6 +17,9 @@ class ReadingAttemptEvaluationController extends Controller
 
     public function reEvaluate(ReadingAttempt $attempt): RedirectResponse
     {
+        $attempt->loadMissing('test');
+        $this->authorize('update', $attempt->test);
+
         $this->evaluation->evaluateAttempt($attempt, force: true);
 
         return back()->with('status', 'Reading attempt re-evaluated successfully.');

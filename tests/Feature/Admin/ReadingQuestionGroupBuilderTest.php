@@ -158,7 +158,7 @@ it('opens group editor when question_group query key is malformed', function ():
 
     $group = ReadingQuestionGroup::query()->where('passage_id', $passage->id)->firstOrFail();
 
-    $this->get('/admin/reading-tests/'.$test->id.'/builder?passage='.$passage->id.'&ampcquestion_group='.$group->id)
+    $this->get('/admin/reading-tests/'.$test->slug.'/builder?passage='.$passage->id.'&ampcquestion_group='.$group->id)
         ->assertOk()
         ->assertSee('Question Group Editor')
         ->assertDontSee('id="content_html"', false);

@@ -53,6 +53,7 @@ abstract class DiagramScopedRequest extends FormRequest
             'file',
             'image',
             'mimes:jpg,jpeg,png,webp',
+            'mimetypes:image/jpeg,image/png,image/webp',
             'extensions:jpg,jpeg,png,webp',
             'max:'.($maxMb * 1024),
         ];

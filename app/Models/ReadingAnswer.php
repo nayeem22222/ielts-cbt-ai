@@ -15,10 +15,6 @@ class ReadingAnswer extends Model
         'answer',
         'answer_json',
         'flagged',
-        'is_correct',
-        'marks_awarded',
-        'evaluated_at',
-        'evaluation_json',
         'answered_at',
         'state',
     ];

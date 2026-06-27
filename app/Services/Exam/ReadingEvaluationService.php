@@ -43,11 +43,17 @@ class ReadingEvaluationService
 
         return DB::transaction(function () use ($attempt, $force): array {
             $attempt = $attempt->fresh(['test']);
-            $test = $this->renderer->loadForRenderer($attempt->test);
+            $test = $this->renderer->cachedForRenderer($attempt->test);
+            $test->load([
+                'passages.groups.questions.correctAnswers',
+                'passages.groups.questions.options',
+                'passages.groups.groupOptions',
+            ]);
             $attempt->setRelation('test', $test);
 
-            $savedAnswers = $attempt->answers()->with('question.group.passage')->get()->keyBy('question_id');
+            $savedAnswers = $attempt->answers()->get()->keyBy('question_id');
             $outcomes = [];
+            $answerUpdates = [];
             $rawScore = 0.0;
             $maxScore = 0.0;
             $correctCount = 0;
@@ -63,7 +69,6 @@ class ReadingEvaluationService
                     $maxMarks = (float) ($question->marks ?: 1);
                     $maxScore += $maxMarks;
 
-                    $question->loadMissing(['correctAnswers', 'options', 'group.groupOptions']);
                     $answer = $savedAnswers->get($question->id);
 
                     if ($answer === null) {
@@ -71,17 +76,19 @@ class ReadingEvaluationService
                             'attempt_id' => $attempt->id,
                             'question_id' => $question->id,
                         ]);
+                        $savedAnswers->put($question->id, $answer);
                     }
 
                     $outcome = $this->evaluateAnswer($answer, $question);
                     $outcomes[] = $outcome;
 
-                    $answer->forceFill([
+                    $answerUpdates[] = [
+                        'id' => $answer->id,
                         'is_correct' => $outcome['is_correct'],
                         'marks_awarded' => $outcome['marks_awarded'],
                         'evaluated_at' => $evaluatedAt,
                         'evaluation_json' => $outcome['evaluation_json'],
-                    ])->save();
+                    ];
 
                     $rawScore += (float) $outcome['marks_awarded'];
 
@@ -97,11 +104,20 @@ class ReadingEvaluationService
                 }
             }
 
+            foreach ($answerUpdates as $row) {
+                ReadingAnswer::query()->whereKey($row['id'])->update([
+                    'is_correct' => $row['is_correct'],
+                    'marks_awarded' => $row['marks_awarded'],
+                    'evaluated_at' => $row['evaluated_at'],
+                    'evaluation_json' => $row['evaluation_json'],
+                ]);
+            }
+
             $examType = $attempt->test?->exam_type?->value ?? ExamType::Academic->value;
             $band = $this->bands->getBandFromRatio($rawScore, max(1, $totalQuestions), $examType);
             $timeSpent = $this->calculateTimeSpent($attempt);
 
-            $attempt->update([
+            $attempt->forceFill([
                 'status' => TestAttemptStatus::Completed,
                 'score' => round($rawScore, 2),
                 'band' => $band,
@@ -120,7 +136,7 @@ class ReadingEvaluationService
                         'forced' => $force,
                     ],
                 ]),
-            ]);
+            ])->save();
 
             return $this->buildAttemptSummary($attempt->fresh(['test', 'answers.question.group.passage']), $outcomes);
         });
