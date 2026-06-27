@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Admin\Listening\ListeningSectionController;
 use App\Http\Controllers\Admin\Listening\ListeningTestController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,4 +21,17 @@ Route::middleware('permission:listening.tests.view')->prefix('listening/tests')-
     Route::post('/{id}/restore', [ListeningTestController::class, 'restore'])->name('restore')->whereNumber('id');
     Route::post('/{listeningTest}/duplicate', [ListeningTestController::class, 'duplicate'])->name('duplicate');
     Route::put('/{listeningTest}/settings', [ListeningTestController::class, 'updateSettings'])->name('settings.update');
+
+    Route::middleware('permission:listening.sections.view,listening.tests.view,listening.tests.update')->prefix('{listeningTest}/sections')->name('sections.')->group(function (): void {
+        Route::get('/', [ListeningSectionController::class, 'index'])->name('index');
+        Route::get('/create', [ListeningSectionController::class, 'create'])->name('create');
+        Route::post('/', [ListeningSectionController::class, 'store'])->name('store');
+        Route::post('/default', [ListeningSectionController::class, 'createDefaultSections'])->name('default');
+        Route::post('/reorder', [ListeningSectionController::class, 'reorder'])->name('reorder');
+        Route::get('/{section}', [ListeningSectionController::class, 'show'])->name('show');
+        Route::get('/{section}/edit', [ListeningSectionController::class, 'edit'])->name('edit');
+        Route::put('/{section}', [ListeningSectionController::class, 'update'])->name('update');
+        Route::delete('/{section}', [ListeningSectionController::class, 'destroy'])->name('destroy');
+        Route::post('/{sectionId}/restore', [ListeningSectionController::class, 'restore'])->name('restore')->whereNumber('sectionId');
+    });
 });

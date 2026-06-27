@@ -70,8 +70,10 @@
 
   <div class="mt-6 grid gap-6 lg:grid-cols-3">
     <x-ui.card title="Sections">
-      <p class="text-sm aa-muted">Section builder will be available in a later volume.</p>
-      <x-ui.button class="mt-4" variant="outline" disabled>Manage Sections</x-ui.button>
+      <p class="text-sm aa-muted">Manage the 4 official IELTS Listening sections for this test.</p>
+      @can('viewAny', [App\Models\Listening\ListeningSection::class, $listeningTest])
+        <x-ui.button class="mt-4" href="{{ route('admin.listening.tests.sections.index', $listeningTest) }}">Manage Sections</x-ui.button>
+      @endcan
     </x-ui.card>
     <x-ui.card title="Audio">
       <p class="text-sm aa-muted">Audio management will be available in a later volume.</p>

@@ -57,6 +57,13 @@ enum Permission: string
     case ListeningTestsArchive = 'listening.tests.archive';
     case ListeningTestsDuplicate = 'listening.tests.duplicate';
 
+    case ListeningSectionsView = 'listening.sections.view';
+    case ListeningSectionsCreate = 'listening.sections.create';
+    case ListeningSectionsUpdate = 'listening.sections.update';
+    case ListeningSectionsDelete = 'listening.sections.delete';
+    case ListeningSectionsRestore = 'listening.sections.restore';
+    case ListeningSectionsReorder = 'listening.sections.reorder';
+
     case QuestionBanksView = 'question_banks.view';
     case QuestionBanksCreate = 'question_banks.create';
     case QuestionBanksUpdate = 'question_banks.update';
@@ -102,6 +109,12 @@ enum Permission: string
             self::ListeningTestsPublish => 'Publish listening tests',
             self::ListeningTestsArchive => 'Archive listening tests',
             self::ListeningTestsDuplicate => 'Duplicate listening tests',
+            self::ListeningSectionsView => 'View listening sections',
+            self::ListeningSectionsCreate => 'Create listening sections',
+            self::ListeningSectionsUpdate => 'Update listening sections',
+            self::ListeningSectionsDelete => 'Delete listening sections',
+            self::ListeningSectionsRestore => 'Restore listening sections',
+            self::ListeningSectionsReorder => 'Reorder listening sections',
             self::QuestionBanksView => 'View question banks',
             self::QuestionBanksCreate => 'Create question banks',
             self::QuestionBanksUpdate => 'Update question banks',
@@ -159,6 +172,13 @@ enum Permission: string
             self::ListeningTestsArchive,
             self::ListeningTestsDuplicate => 'listening_tests',
 
+            self::ListeningSectionsView,
+            self::ListeningSectionsCreate,
+            self::ListeningSectionsUpdate,
+            self::ListeningSectionsDelete,
+            self::ListeningSectionsRestore,
+            self::ListeningSectionsReorder => 'listening_sections',
+
             self::QuestionBanksView,
             self::QuestionBanksCreate,
             self::QuestionBanksUpdate,
@@ -211,6 +231,12 @@ enum Permission: string
                 self::ListeningTestsPublish,
                 self::ListeningTestsArchive,
                 self::ListeningTestsDuplicate,
+                self::ListeningSectionsView,
+                self::ListeningSectionsCreate,
+                self::ListeningSectionsUpdate,
+                self::ListeningSectionsDelete,
+                self::ListeningSectionsRestore,
+                self::ListeningSectionsReorder,
                 self::QuestionBanksView,
                 self::QuestionBanksCreate,
                 self::QuestionBanksUpdate,
