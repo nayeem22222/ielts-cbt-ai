@@ -9,7 +9,7 @@ use App\Enums\Listening\ListeningDifficultyLevel;
 use App\Enums\Listening\ListeningSectionType;
 use App\Enums\Listening\ListeningTestStatus;
 use App\Enums\Listening\ListeningTestType;
-use App\Jobs\Listening\ProcessListeningAudioJob;
+use App\Jobs\Listening\Audio\ProcessListeningAudioPipelineJob;
 use App\Models\Listening\ListeningAudio;
 use App\Models\Listening\ListeningSection;
 use App\Models\Listening\ListeningTest;
@@ -108,7 +108,7 @@ it('creates audio record and dispatches processing job on valid upload', functio
         ->and($audio->original_name)->toBe('section-1.mp3')
         ->and($audio->processing_status)->toBe(ListeningAudioProcessingStatus::Pending);
 
-    Queue::assertPushed(ProcessListeningAudioJob::class, fn (ProcessListeningAudioJob $job): bool => $job->audioId === $audio->id);
+    Queue::assertPushed(ProcessListeningAudioPipelineJob::class, fn (ProcessListeningAudioPipelineJob $job): bool => $job->audioId === $audio->id);
 
     $response->assertRedirect(route('admin.listening.audios.show', $audio))
         ->assertSessionHas('status');
@@ -116,6 +116,7 @@ it('creates audio record and dispatches processing job on valid upload', functio
 
 it('marks processing completed and saves metadata after job runs', function (): void {
     Storage::fake('public');
+    Queue::fake();
     $admin = createListeningAudioAdmin();
 
     $this->actingAs($admin)
@@ -166,6 +167,7 @@ it('saves processing error when ffmpeg is unavailable', function (): void {
     );
 
     Storage::fake('public');
+    Queue::fake();
     $admin = createListeningAudioAdmin();
 
     $this->actingAs($admin)
@@ -209,6 +211,7 @@ it('increments retry count and enforces retry limit', function (): void {
 
 it('generates waveform json with valid structure', function (): void {
     Storage::fake('public');
+    Queue::fake();
     $admin = createListeningAudioAdmin();
 
     $this->actingAs($admin)

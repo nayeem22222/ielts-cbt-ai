@@ -7,7 +7,7 @@ namespace App\Services\Listening\Audio;
 use App\Enums\Listening\ListeningAudioProcessingStatus;
 use App\Enums\Listening\ListeningAudioValidationStatus;
 use App\Jobs\Listening\GenerateListeningWaveformJob;
-use App\Jobs\Listening\ProcessListeningAudioJob;
+use App\Services\Listening\Audio\Pipeline\ListeningAudioPipelineDispatcher;
 use App\Models\Listening\ListeningAudio;
 use App\Repositories\Listening\ListeningAudioRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -46,7 +46,7 @@ class ListeningAudioService
             ]);
         }
 
-        return DB::transaction(function () use ($file, $data, $uploadedBy): ListeningAudio {
+        $audio = DB::transaction(function () use ($file, $data, $uploadedBy): ListeningAudio {
             $stored = $this->uploads->storeOriginal($file);
             $existing = $this->audios->findByChecksum((string) $stored['checksum']);
 
@@ -56,14 +56,14 @@ class ListeningAudioService
                 ]);
             }
 
-            $audio = $this->audios->create(
+            return $this->audios->create(
                 $this->uploads->buildAudioRecordPayload($stored, $data, $uploadedBy),
             );
-
-            $this->dispatchProcessing($audio);
-
-            return $audio->refresh();
         });
+
+        $this->dispatchProcessing($audio);
+
+        return $audio->refresh();
     }
 
     /**
@@ -116,7 +116,7 @@ class ListeningAudioService
 
     public function dispatchProcessing(ListeningAudio $audio): void
     {
-        ProcessListeningAudioJob::dispatch($audio->id)->onQueue((string) config('listening.audio.queue', 'default'));
+        ListeningAudioPipelineDispatcher::dispatch($audio->id);
     }
 
     public function retryProcessing(ListeningAudio $audio, bool $force = false): void
@@ -155,10 +155,8 @@ class ListeningAudioService
     public function getAudioReadiness(ListeningAudio $audio): array
     {
         $missing = [];
-
-        if (! $this->storage->exists($audio)) {
-            $missing[] = 'Processed audio file is missing.';
-        }
+        $disk = \Illuminate\Support\Facades\Storage::disk($audio->disk ?: $this->storage->disk());
+        $playablePath = $audio->playablePath();
 
         if ($audio->processing_status !== ListeningAudioProcessingStatus::Completed) {
             $missing[] = 'Audio is not processed.';
@@ -168,11 +166,15 @@ class ListeningAudioService
             $missing[] = 'Audio is invalid.';
         }
 
+        if ($playablePath === null || ! $disk->exists($playablePath)) {
+            $missing[] = 'Audio playable file is missing.';
+        }
+
         if ($audio->duration_seconds === null) {
             $missing[] = 'Audio duration is missing.';
         }
 
-        if (blank($audio->waveform_json_path)) {
+        if (config('listening.publishing.require_waveform', false) && blank($audio->waveform_json_path)) {
             $missing[] = 'Audio waveform is missing.';
         }
 
@@ -183,6 +185,8 @@ class ListeningAudioService
             'audio_validation_valid' => $audio->validation_status === ListeningAudioValidationStatus::Valid,
             'waveform_available' => filled($audio->waveform_json_path),
             'duration_available' => $audio->duration_seconds !== null,
+            'playable_path' => $playablePath,
+            'playable_file_exists' => $playablePath !== null && $disk->exists($playablePath),
             'is_ready' => $missing === [],
             'missing' => $missing,
         ];

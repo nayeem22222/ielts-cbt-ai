@@ -12,6 +12,7 @@ use App\Models\Listening\ListeningAudio;
 use App\Models\User;
 use App\Services\Listening\Audio\ListeningAudioService;
 use App\Services\Listening\Audio\ListeningWaveformService;
+use App\Services\Listening\Audio\Pipeline\ListeningAudioPipelineDispatcher;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -72,6 +73,11 @@ class ListeningAudioController extends Controller
             'readiness' => $this->audios->getAudioReadiness($audio),
             'usage' => $this->audios->getSectionUsage($audio),
             'waveform' => $this->waveforms->loadWaveform($audio),
+            'pipelineQueue' => [
+                'pending_jobs' => ListeningAudioPipelineDispatcher::pendingJobCount(),
+                'has_job_for_audio' => ListeningAudioPipelineDispatcher::hasQueuedJobForAudio($audio->id),
+                'worker_command' => ListeningAudioPipelineDispatcher::workerCommand(),
+            ],
         ]));
     }
 

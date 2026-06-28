@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Admin\Listening;
 
 use App\Enums\Listening\ListeningSectionType;
+use App\Models\Listening\ListeningAudio;
 use App\Models\Listening\ListeningSection;
 use App\Models\Listening\ListeningTest;
 use App\Repositories\Listening\ListeningSectionRepository;
@@ -102,6 +103,27 @@ class UpdateListeningSectionRequest extends FormRequest
                     $validator->errors()->add('is_active', 'Maximum 4 sections are allowed.');
                 }
             }
+
+            $audioId = $this->integer('audio_id') ?: null;
+
+            if ($audioId !== null) {
+                $audio = ListeningAudio::query()->find($audioId);
+
+                if ($audio !== null && ! $this->audioIsReadyForSections($audio)) {
+                    $validator->errors()->add('audio_id', 'Selected audio is not ready. Upload and process audio first.');
+                }
+            }
         });
+    }
+
+    private function audioIsReadyForSections(ListeningAudio $audio): bool
+    {
+        $playablePath = $audio->playablePath();
+
+        return $audio->processing_status === \App\Enums\Listening\ListeningAudioProcessingStatus::Completed
+            && $audio->validation_status === \App\Enums\Listening\ListeningAudioValidationStatus::Valid
+            && $audio->duration_seconds !== null
+            && $playablePath !== null
+            && \Illuminate\Support\Facades\Storage::disk($audio->disk ?: (string) config('listening.audio.disk', 'public'))->exists($playablePath);
     }
 }

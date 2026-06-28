@@ -115,4 +115,90 @@ return [
         'require_processed_audio' => true,
         'require_waveform' => false,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Audio Pipeline (Volume 5A)
+    |--------------------------------------------------------------------------
+    |
+    | Production-grade queue pipeline settings.
+    |
+    | Recommended .env:
+    |   QUEUE_CONNECTION=redis
+    |   LISTENING_AUDIO_QUEUE_CONNECTION=database
+    |   LISTENING_AUDIO_QUEUE=listening-audio
+    |   FFMPEG_BINARY=ffmpeg
+    |   FFPROBE_BINARY=ffprobe
+    |
+    | Recommended worker:
+    |   php artisan queue:work redis --queue=listening-audio,default --timeout=900 --tries=3
+    |
+    | Database queue fallback:
+    |   php artisan queue:work database --queue=listening-audio,default --timeout=900 --tries=3
+    |
+    */
+    'audio_pipeline' => [
+        'version' => '1.0.0',
+
+        'queue' => env('LISTENING_AUDIO_QUEUE', 'listening-audio'),
+
+        'connection' => env('LISTENING_AUDIO_QUEUE_CONNECTION', env('QUEUE_CONNECTION', 'database')),
+
+        'lock_ttl_seconds' => 900,
+
+        'job_timeout_seconds' => 900,
+
+        'job_tries' => 3,
+
+        'backoff_seconds' => [60, 300, 900],
+
+        'retry_stuck_after_minutes' => 30,
+
+        'max_retry_count' => 3,
+
+        'ffmpeg' => [
+            'binary' => env('FFMPEG_BINARY', 'ffmpeg'),
+            'ffprobe_binary' => env('FFPROBE_BINARY', 'ffprobe'),
+            'timeout' => 600,
+            'threads' => 2,
+            'hide_banner' => true,
+        ],
+
+        'conversion' => [
+            'target_format' => 'mp3',
+            'codec' => 'libmp3lame',
+            'bitrate' => '128k',
+            'sample_rate' => 44100,
+            'channels' => 2,
+        ],
+
+        'normalization' => [
+            'enabled' => true,
+            'filter' => 'loudnorm',
+            'target_lufs' => -16,
+            'true_peak' => -1.5,
+            'lra' => 11,
+            'strict' => false,
+        ],
+
+        'silence_detection' => [
+            'enabled' => true,
+            'noise_threshold_db' => -35,
+            'min_silence_duration' => 2,
+            'warn_if_total_silence_percent_above' => 20,
+        ],
+
+        'waveform' => [
+            'enabled' => true,
+            'samples' => 1000,
+            'fallback_on_failure' => true,
+            'preview_image' => true,
+        ],
+
+        'storage' => [
+            'keep_original' => true,
+            'overwrite_processed' => false,
+            'version_processed_files' => true,
+        ],
+    ],
 ];

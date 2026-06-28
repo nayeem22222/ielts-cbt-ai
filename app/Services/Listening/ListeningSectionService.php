@@ -195,6 +195,13 @@ class ListeningSectionService
         $audioValidationValid = $audio?->validation_status === \App\Enums\Listening\ListeningAudioValidationStatus::Valid;
         $waveformAvailable = filled($audio?->waveform_json_path);
         $durationAvailable = $audio?->duration_seconds !== null;
+        $playablePath = $audio?->playablePath();
+        $playableFileExists = false;
+
+        if ($audio !== null && $playablePath !== null) {
+            $playableFileExists = \Illuminate\Support\Facades\Storage::disk($audio->disk ?: (string) config('listening.audio.disk', 'public'))
+                ->exists($playablePath);
+        }
         $hasTranscript = $section->transcript_id !== null;
         $hasTimestamped = $hasTranscript && is_array($section->transcript?->timestamped_transcript) && $section->transcript->timestamped_transcript !== [];
         $transcriptVisibility = $section->transcript?->visibility?->value;
@@ -223,6 +230,8 @@ class ListeningSectionService
             $missing[] = 'Audio is not processed.';
         } elseif (! $audioValidationValid) {
             $missing[] = 'Audio is invalid.';
+        } elseif (! $playableFileExists) {
+            $missing[] = 'Audio playable file is missing.';
         } elseif (! $durationAvailable) {
             $missing[] = 'Audio duration is missing.';
         } elseif (config('listening.publishing.require_waveform', false) && ! $waveformAvailable) {
@@ -251,6 +260,7 @@ class ListeningSectionService
             && $hasAudio
             && $audioProcessingCompleted
             && $audioValidationValid
+            && $playableFileExists
             && $durationAvailable
             && $questionsCount === $expectedQuestions
             && $missing === [];
@@ -261,6 +271,7 @@ class ListeningSectionService
             'audio_validation_valid' => $audioValidationValid,
             'waveform_available' => $waveformAvailable,
             'duration_available' => $durationAvailable,
+            'playable_file_exists' => $playableFileExists,
             'has_transcript' => $hasTranscript,
             'has_timestamped_transcript' => $hasTimestamped,
             'transcript_audio_matches' => $transcriptAudioMatches,

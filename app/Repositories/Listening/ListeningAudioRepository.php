@@ -117,6 +117,8 @@ class ListeningAudioRepository
             'processing_status',
             'validation_status',
             'format',
+            'disk',
+            'meta',
         ]);
     }
 }

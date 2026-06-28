@@ -41,6 +41,7 @@
             'items' => [
                 ['label' => 'Reading Tests', 'href' => route('admin.reading-tests.index'), 'icon' => 'reading-tests', 'active' => request()->routeIs('admin.reading-tests.*')],
                 ['label' => 'Listening Tests', 'href' => route('admin.listening.tests.index'), 'icon' => 'reading-tests', 'active' => request()->routeIs('admin.listening.tests.*')],
+                ['label' => 'Listening Audio', 'href' => route('admin.listening.audios.index'), 'icon' => 'audio', 'active' => request()->routeIs('admin.listening.audios.*')],
                 ['label' => 'Listening Transcripts', 'href' => route('admin.listening.transcripts.index'), 'icon' => 'reading-tests', 'active' => request()->routeIs('admin.listening.transcripts.*')],
                 ['label' => 'Question Banks', 'href' => route('admin.question-banks.index'), 'icon' => 'question-banks', 'active' => request()->routeIs('admin.question-banks.*')],
                 ['label' => 'Reading Analytics', 'href' => route('admin.reading-analytics.index'), 'icon' => 'analytics', 'active' => request()->routeIs('admin.reading-analytics.*')],
@@ -99,6 +100,7 @@
                   @case('packages') 📦 @break
                   @case('enrollments') 🎓 @break
                   @case('reading-tests') 📖 @break
+                  @case('audio') 🎧 @break
                   @case('question-banks') 🗃️ @break
                   @case('analytics') 📊 @break
                   @case('settings') ⚙️ @break

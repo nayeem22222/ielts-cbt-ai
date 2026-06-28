@@ -16,7 +16,20 @@ class ListeningAudioStorageService
 
     public function path(ListeningAudio $audio): string
     {
-        return (string) ($audio->normalized_path ?: $audio->processed_path ?: $audio->path);
+        $disk = Storage::disk($audio->disk ?: $this->disk());
+
+        foreach ([
+            $audio->playablePath(),
+            $audio->normalized_path,
+            $audio->processed_path,
+            $audio->path,
+        ] as $path) {
+            if (is_string($path) && $path !== '' && $disk->exists($path)) {
+                return $path;
+            }
+        }
+
+        return (string) ($audio->path ?: $audio->normalized_path ?: $audio->processed_path);
     }
 
     public function absolutePath(ListeningAudio $audio): string
@@ -32,13 +45,19 @@ class ListeningAudioStorageService
     public function url(ListeningAudio $audio): ?string
     {
         $disk = Storage::disk($audio->disk ?: $this->disk());
-        $path = $this->path($audio);
 
-        if (! $disk->exists($path)) {
-            return null;
+        foreach ([
+            $audio->playablePath(),
+            $audio->normalized_path,
+            $audio->processed_path,
+            $audio->path,
+        ] as $path) {
+            if (is_string($path) && $path !== '' && $disk->exists($path)) {
+                return $disk->url($path);
+            }
         }
 
-        return $disk->url($path);
+        return null;
     }
 
     public function exists(ListeningAudio $audio): bool

@@ -13,6 +13,7 @@ use App\Models\Listening\ListeningTest;
 use App\Models\Listening\ListeningTranscript;
 use App\Models\User;
 use App\Services\Listening\ListeningSectionService;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
     seedRbac();
@@ -344,14 +345,18 @@ it('denies unauthorized user from managing sections', function (): void {
 });
 
 it('can attach audio and transcript to section', function (): void {
+    Storage::fake('local');
     $admin = createListeningSectionAdmin();
     $test = createListeningTestForSections($admin);
+    Storage::disk('local')->put('listening/section-1.mp3', 'fake-audio-content');
 
     $audio = ListeningAudio::query()->create([
         'original_name' => 'section-1.mp3',
         'stored_name' => 'section-1.mp3',
         'disk' => 'local',
         'path' => 'listening/section-1.mp3',
+        'processed_path' => 'listening/section-1.mp3',
+        'duration_seconds' => 120,
         'processing_status' => 'completed',
         'validation_status' => 'valid',
         'uploaded_by' => $admin->id,

@@ -59,20 +59,43 @@ class PublishListeningTestAction
                 if ($audio === null) {
                     $errors[] = "Section {$section->section_number} references missing audio.";
                 } else {
+                    // Check processing completion
                     if (config('listening.publishing.require_processed_audio', true)
                         && $audio->processing_status !== ListeningAudioProcessingStatus::Completed) {
                         $errors[] = "Section {$section->section_number} audio is not processed.";
                     }
 
+                    // Check validation status
                     if (config('listening.publishing.require_valid_audio', true)
                         && $audio->validation_status !== ListeningAudioValidationStatus::Valid) {
-                        $errors[] = "Section {$section->section_number} audio is invalid.";
+                        $errors[] = "Section {$section->section_number} audio has failed validation.";
                     }
 
+                    // Check playable path (meta.audio.playable_path)
+                    $playablePath = null;
+                    if (is_array($audio->meta)) {
+                        $audioMeta = is_array($audio->meta['audio'] ?? null) ? $audio->meta['audio'] : [];
+                        $playablePath = is_string($audioMeta['playable_path'] ?? null) ? $audioMeta['playable_path'] : null;
+                    }
+
+                    if ($audio->processing_status === ListeningAudioProcessingStatus::Completed && $playablePath === null) {
+                        $errors[] = "Section {$section->section_number} audio playable file is missing.";
+                    }
+
+                    // Verify playable file exists on disk
+                    if ($playablePath !== null) {
+                        $disk = \Illuminate\Support\Facades\Storage::disk((string) config('listening.audio.disk', 'public'));
+                        if (! $disk->exists($playablePath)) {
+                            $errors[] = "Section {$section->section_number} audio playable file is missing from storage.";
+                        }
+                    }
+
+                    // Check duration
                     if ($audio->duration_seconds === null || (int) $audio->duration_seconds <= 0) {
                         $errors[] = "Section {$section->section_number} audio duration is missing.";
                     }
 
+                    // Check waveform
                     if (config('listening.publishing.require_waveform', false) && blank($audio->waveform_json_path)) {
                         $errors[] = "Section {$section->section_number} audio waveform is missing.";
                     }
