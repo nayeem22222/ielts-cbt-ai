@@ -83,6 +83,15 @@ enum Permission: string
     case ListeningQuestionsBulkCreate = 'listening.questions.bulk_create';
     case ListeningQuestionsReorder = 'listening.questions.reorder';
 
+    case ListeningAudiosView = 'listening.audios.view';
+    case ListeningAudiosCreate = 'listening.audios.create';
+    case ListeningAudiosUpdate = 'listening.audios.update';
+    case ListeningAudiosDelete = 'listening.audios.delete';
+    case ListeningAudiosProcess = 'listening.audios.process';
+    case ListeningAudiosRetry = 'listening.audios.retry';
+    case ListeningAudiosWaveform = 'listening.audios.waveform';
+    case ListeningAudiosValidate = 'listening.audios.validate';
+
     case QuestionBanksView = 'question_banks.view';
     case QuestionBanksCreate = 'question_banks.create';
     case QuestionBanksUpdate = 'question_banks.update';
@@ -153,6 +162,15 @@ enum Permission: string
             self::ListeningQuestionsDelete => 'Delete listening questions',
             self::ListeningQuestionsBulkCreate => 'Bulk create listening questions',
             self::ListeningQuestionsReorder => 'Reorder listening questions',
+
+            self::ListeningAudiosView => 'View listening audios',
+            self::ListeningAudiosCreate => 'Create listening audios',
+            self::ListeningAudiosUpdate => 'Update listening audios',
+            self::ListeningAudiosDelete => 'Delete listening audios',
+            self::ListeningAudiosProcess => 'Process listening audios',
+            self::ListeningAudiosRetry => 'Retry listening audio processing',
+            self::ListeningAudiosWaveform => 'Generate listening audio waveforms',
+            self::ListeningAudiosValidate => 'Validate listening audios',
 
             self::QuestionBanksView => 'View question banks',
             self::QuestionBanksCreate => 'Create question banks',
@@ -237,6 +255,15 @@ enum Permission: string
             self::ListeningQuestionsBulkCreate,
             self::ListeningQuestionsReorder => 'listening_questions',
 
+            self::ListeningAudiosView,
+            self::ListeningAudiosCreate,
+            self::ListeningAudiosUpdate,
+            self::ListeningAudiosDelete,
+            self::ListeningAudiosProcess,
+            self::ListeningAudiosRetry,
+            self::ListeningAudiosWaveform,
+            self::ListeningAudiosValidate => 'listening_audios',
+
             self::QuestionBanksView,
             self::QuestionBanksCreate,
             self::QuestionBanksUpdate,
@@ -311,6 +338,14 @@ enum Permission: string
                 self::ListeningQuestionsDelete,
                 self::ListeningQuestionsBulkCreate,
                 self::ListeningQuestionsReorder,
+                self::ListeningAudiosView,
+                self::ListeningAudiosCreate,
+                self::ListeningAudiosUpdate,
+                self::ListeningAudiosDelete,
+                self::ListeningAudiosProcess,
+                self::ListeningAudiosRetry,
+                self::ListeningAudiosWaveform,
+                self::ListeningAudiosValidate,
                 self::QuestionBanksView,
                 self::QuestionBanksCreate,
                 self::QuestionBanksUpdate,

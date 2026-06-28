@@ -189,6 +189,12 @@ class ListeningSectionService
         ]);
 
         $hasAudio = $section->audio_id !== null;
+        $section->loadMissing('audio');
+        $audio = $section->audio;
+        $audioProcessingCompleted = $audio?->processing_status === \App\Enums\Listening\ListeningAudioProcessingStatus::Completed;
+        $audioValidationValid = $audio?->validation_status === \App\Enums\Listening\ListeningAudioValidationStatus::Valid;
+        $waveformAvailable = filled($audio?->waveform_json_path);
+        $durationAvailable = $audio?->duration_seconds !== null;
         $hasTranscript = $section->transcript_id !== null;
         $hasTimestamped = $hasTranscript && is_array($section->transcript?->timestamped_transcript) && $section->transcript->timestamped_transcript !== [];
         $transcriptVisibility = $section->transcript?->visibility?->value;
@@ -212,7 +218,15 @@ class ListeningSectionService
         }
 
         if (! $hasAudio) {
-            $missing[] = 'Section audio is missing.';
+            $missing[] = 'Audio is missing.';
+        } elseif (! $audioProcessingCompleted) {
+            $missing[] = 'Audio is not processed.';
+        } elseif (! $audioValidationValid) {
+            $missing[] = 'Audio is invalid.';
+        } elseif (! $durationAvailable) {
+            $missing[] = 'Audio duration is missing.';
+        } elseif (config('listening.publishing.require_waveform', false) && ! $waveformAvailable) {
+            $missing[] = 'Audio waveform is missing.';
         }
 
         if ($questionsCount < $expectedQuestions) {
@@ -233,10 +247,20 @@ class ListeningSectionService
             $missing[] = 'Section transcript is missing.';
         }
 
-        $isReady = $hasValidRange && $hasAudio && $questionsCount === $expectedQuestions && $missing === [];
+        $isReady = $hasValidRange
+            && $hasAudio
+            && $audioProcessingCompleted
+            && $audioValidationValid
+            && $durationAvailable
+            && $questionsCount === $expectedQuestions
+            && $missing === [];
 
         return [
             'has_audio' => $hasAudio,
+            'audio_processing_completed' => $audioProcessingCompleted,
+            'audio_validation_valid' => $audioValidationValid,
+            'waveform_available' => $waveformAvailable,
+            'duration_available' => $durationAvailable,
             'has_transcript' => $hasTranscript,
             'has_timestamped_transcript' => $hasTimestamped,
             'transcript_audio_matches' => $transcriptAudioMatches,

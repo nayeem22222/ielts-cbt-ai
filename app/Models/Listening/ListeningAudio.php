@@ -24,6 +24,8 @@ class ListeningAudio extends Model
         'stored_name',
         'disk',
         'path',
+        'processed_path',
+        'normalized_path',
         'url',
         'mime_type',
         'extension',
@@ -35,9 +37,18 @@ class ListeningAudio extends Model
         'format',
         'waveform_path',
         'waveform_json_path',
+        'preview_waveform_path',
+        'peaks',
+        'loudness_lufs',
+        'peak_db',
+        'silence_report',
         'processing_status',
         'validation_status',
         'validation_errors',
+        'processing_started_at',
+        'processing_finished_at',
+        'processing_error',
+        'retry_count',
         'checksum',
         'uploaded_by',
         'meta',
@@ -51,11 +62,28 @@ class ListeningAudio extends Model
             'bitrate' => 'integer',
             'sample_rate' => 'integer',
             'channels' => 'integer',
+            'peaks' => 'array',
+            'loudness_lufs' => 'float',
+            'peak_db' => 'float',
+            'silence_report' => 'array',
+            'processing_started_at' => 'datetime',
+            'processing_finished_at' => 'datetime',
+            'retry_count' => 'integer',
             'processing_status' => ListeningAudioProcessingStatus::class,
             'validation_status' => ListeningAudioValidationStatus::class,
             'validation_errors' => 'array',
             'meta' => 'array',
         ];
+    }
+
+    public function title(): ?string
+    {
+        return is_array($this->meta) ? ($this->meta['title'] ?? null) : null;
+    }
+
+    public function description(): ?string
+    {
+        return is_array($this->meta) ? ($this->meta['description'] ?? null) : null;
     }
 
     public function sections(): HasMany

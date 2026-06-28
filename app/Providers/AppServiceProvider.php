@@ -11,6 +11,7 @@ use App\Models\CourseSection;
 use App\Models\ExamTest;
 use App\Models\Lesson;
 use App\Models\LessonResource;
+use App\Models\Listening\ListeningAudio;
 use App\Models\Listening\ListeningQuestion;
 use App\Models\Listening\ListeningQuestionGroup;
 use App\Models\Listening\ListeningSection;
@@ -23,8 +24,11 @@ use App\Models\ReadingAttempt;
 use App\Models\ReadingTest;
 use App\Models\Role;
 use App\Models\User;
-use App\Policies\CoursePolicy;
+use App\Services\Listening\Audio\FakeListeningFfmpegRunner;
+use App\Services\Listening\Audio\ListeningFfmpegRunner;
+use App\Services\Listening\Audio\ListeningFfmpegRunnerInterface;
 use App\Policies\ExamPolicy;
+use App\Policies\ListeningAudioPolicy;
 use App\Policies\ListeningQuestionGroupPolicy;
 use App\Policies\ListeningQuestionPolicy;
 use App\Policies\ListeningSectionPolicy;
@@ -45,6 +49,14 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(ListeningFfmpegRunnerInterface::class, function (): ListeningFfmpegRunnerInterface {
+            if ($this->app->environment('testing')) {
+                return new FakeListeningFfmpegRunner;
+            }
+
+            return new ListeningFfmpegRunner;
+        });
+
         if ($this->app->environment('local') && class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
             $this->app->register(TelescopeServiceProvider::class);
@@ -66,6 +78,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ExamTest::class, ExamPolicy::class);
         Gate::policy(ReadingTest::class, ExamPolicy::class);
         Gate::policy(ListeningTest::class, ListeningTestPolicy::class);
+        Gate::policy(ListeningAudio::class, ListeningAudioPolicy::class);
         Gate::policy(ListeningSection::class, ListeningSectionPolicy::class);
         Gate::policy(ListeningTranscript::class, ListeningTranscriptPolicy::class);
         Gate::policy(ListeningQuestionGroup::class, ListeningQuestionGroupPolicy::class);

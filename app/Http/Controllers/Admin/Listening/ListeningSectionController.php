@@ -9,9 +9,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Listening\ReorderListeningSectionRequest;
 use App\Http\Requests\Admin\Listening\StoreListeningSectionRequest;
 use App\Http\Requests\Admin\Listening\UpdateListeningSectionRequest;
-use App\Models\Listening\ListeningAudio;
 use App\Models\Listening\ListeningSection;
 use App\Models\Listening\ListeningTest;
+use App\Repositories\Listening\ListeningAudioRepository;
 use App\Repositories\Listening\ListeningSectionRepository;
 use App\Services\Listening\ListeningSectionService;
 use App\Services\Listening\ListeningTranscriptService;
@@ -27,6 +27,7 @@ class ListeningSectionController extends Controller
         private readonly ListeningSectionService $sections,
         private readonly ListeningSectionRepository $sectionRepository,
         private readonly ListeningTranscriptService $transcripts,
+        private readonly ListeningAudioRepository $audios,
     ) {}
 
     public function index(ListeningTest $listeningTest): View
@@ -241,8 +242,6 @@ class ListeningSectionController extends Controller
      */
     private function audioOptions()
     {
-        return ListeningAudio::query()
-            ->orderBy('original_name')
-            ->get(['id', 'original_name', 'duration_seconds', 'processing_status', 'validation_status']);
+        return $this->audios->selectableForSections(includeAll: true);
     }
 }

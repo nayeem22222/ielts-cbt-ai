@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Actions\Listening;
 
 use App\Actions\Listening\QuestionTypes\ValidateQuestionTypePayloadAction;
+use App\Enums\Listening\ListeningAudioProcessingStatus;
+use App\Enums\Listening\ListeningAudioValidationStatus;
 use App\Enums\Listening\ListeningConstants;
 use App\Enums\Listening\ListeningTestStatus;
 use App\Models\Listening\ListeningQuestionGroup;
@@ -25,6 +27,7 @@ class PublishListeningTestAction
         $test->loadMissing([
             'setting',
             'sections' => fn ($query) => $query->where('is_active', true),
+            'sections.audio',
             'questions' => fn ($query) => $query->where('is_active', true),
             'questionGroups' => fn ($query) => $query->where('is_active', true),
         ]);
@@ -50,6 +53,30 @@ class PublishListeningTestAction
         foreach ($activeSections as $section) {
             if ($section->audio_id === null) {
                 $errors[] = "Section {$section->section_number} is missing audio.";
+            } else {
+                $audio = $section->audio;
+
+                if ($audio === null) {
+                    $errors[] = "Section {$section->section_number} references missing audio.";
+                } else {
+                    if (config('listening.publishing.require_processed_audio', true)
+                        && $audio->processing_status !== ListeningAudioProcessingStatus::Completed) {
+                        $errors[] = "Section {$section->section_number} audio is not processed.";
+                    }
+
+                    if (config('listening.publishing.require_valid_audio', true)
+                        && $audio->validation_status !== ListeningAudioValidationStatus::Valid) {
+                        $errors[] = "Section {$section->section_number} audio is invalid.";
+                    }
+
+                    if ($audio->duration_seconds === null || (int) $audio->duration_seconds <= 0) {
+                        $errors[] = "Section {$section->section_number} audio duration is missing.";
+                    }
+
+                    if (config('listening.publishing.require_waveform', false) && blank($audio->waveform_json_path)) {
+                        $errors[] = "Section {$section->section_number} audio waveform is missing.";
+                    }
+                }
             }
 
             $sectionQuestionCount = $activeQuestions->where('listening_section_id', $section->id)->count();

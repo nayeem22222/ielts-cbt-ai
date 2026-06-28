@@ -327,7 +327,7 @@ it('shows missing audio in readiness summary', function (): void {
 
     expect($readiness['has_audio'])->toBeFalse();
     expect($readiness['is_ready'])->toBeFalse();
-    expect($readiness['missing'])->toContain('Section audio is missing.');
+    expect($readiness['missing'])->toContain('Audio is missing.');
 });
 
 it('denies unauthorized user from managing sections', function (): void {

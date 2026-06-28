@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\Listening\AdminListeningShortAnswerQuestionContro
 use App\Http\Controllers\Admin\Listening\ListeningQuestionBuilderController;
 use App\Http\Controllers\Admin\Listening\ListeningQuestionController;
 use App\Http\Controllers\Admin\Listening\ListeningQuestionGroupController;
+use App\Http\Controllers\Admin\Listening\ListeningAudioController;
+use App\Http\Controllers\Admin\Listening\ListeningAudioProcessingController;
 use App\Http\Controllers\Admin\Listening\ListeningSectionController;
 use App\Http\Controllers\Admin\Listening\ListeningSectionTranscriptController;
 use App\Http\Controllers\Admin\Listening\ListeningTestController;
@@ -145,6 +147,21 @@ Route::middleware('permission:listening.questions.update,listening.tests.update'
 
     Route::put('/listening-short-answer-questions/{question}', [AdminListeningShortAnswerQuestionController::class, 'update'])->name('listening-short-answer-questions.update')->whereNumber('question');
     Route::delete('/listening-short-answer-questions/{question}', [AdminListeningShortAnswerQuestionController::class, 'destroy'])->name('listening-short-answer-questions.destroy')->whereNumber('question');
+});
+
+Route::middleware('permission:listening.audios.view,listening.tests.view')->prefix('listening/audios')->name('listening.audios.')->group(function (): void {
+    Route::get('/', [ListeningAudioController::class, 'index'])->name('index');
+    Route::get('/create', [ListeningAudioController::class, 'create'])->middleware('permission:listening.audios.create')->name('create');
+    Route::post('/', [ListeningAudioController::class, 'store'])->middleware('permission:listening.audios.create')->name('store');
+    Route::get('/{audio}', [ListeningAudioController::class, 'show'])->name('show');
+    Route::get('/{audio}/edit', [ListeningAudioController::class, 'edit'])->middleware('permission:listening.audios.update')->name('edit');
+    Route::put('/{audio}', [ListeningAudioController::class, 'update'])->middleware('permission:listening.audios.update')->name('update');
+    Route::delete('/{audio}', [ListeningAudioController::class, 'destroy'])->middleware('permission:listening.audios.delete')->name('destroy');
+
+    Route::post('/{audio}/process', [ListeningAudioProcessingController::class, 'process'])->middleware('permission:listening.audios.process')->name('process');
+    Route::post('/{audio}/retry', [ListeningAudioProcessingController::class, 'retry'])->middleware('permission:listening.audios.retry')->name('retry');
+    Route::post('/{audio}/waveform', [ListeningAudioProcessingController::class, 'generateWaveform'])->middleware('permission:listening.audios.waveform')->name('waveform');
+    Route::post('/{audio}/validate', [ListeningAudioProcessingController::class, 'validateAudio'])->middleware('permission:listening.audios.validate')->name('validate');
 });
 
 Route::middleware('permission:listening.transcripts.view,listening.tests.view')->prefix('listening/transcripts')->name('listening.transcripts.')->group(function (): void {

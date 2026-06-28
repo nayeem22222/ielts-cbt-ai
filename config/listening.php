@@ -57,4 +57,62 @@ return [
             'allow_choice_reuse_default' => false,
         ],
     ],
+
+    'audio' => [
+        'disk' => env('LISTENING_AUDIO_DISK', 'public'),
+
+        'directories' => [
+            'original' => 'listening/audio/original',
+            'processed' => 'listening/audio/processed',
+            'normalized' => 'listening/audio/normalized',
+            'waveforms' => 'listening/audio/waveforms',
+            'previews' => 'listening/audio/previews',
+        ],
+
+        'allowed_mimes' => [
+            'audio/mpeg',
+            'audio/mp3',
+            'audio/wav',
+            'audio/x-wav',
+            'audio/mp4',
+            'audio/aac',
+            'audio/ogg',
+            'audio/x-m4a',
+        ],
+
+        'allowed_extensions' => ['mp3', 'wav', 'm4a', 'aac', 'ogg'],
+
+        'max_file_size_mb' => 100,
+
+        'min_duration_seconds' => 30,
+        'max_duration_seconds' => 3600,
+
+        'target_format' => 'mp3',
+        'target_bitrate' => '128k',
+        'target_sample_rate' => 44100,
+        'target_channels' => 2,
+
+        'normalize_audio' => true,
+        'target_loudness_lufs' => -16,
+
+        'generate_waveform' => true,
+        'waveform_samples' => 1000,
+
+        'queue' => env('LISTENING_AUDIO_QUEUE', 'default'),
+
+        'retry_limit' => 3,
+
+        'ffmpeg' => [
+            'enabled' => true,
+            'binary' => env('FFMPEG_BINARY', 'ffmpeg'),
+            'ffprobe_binary' => env('FFPROBE_BINARY', 'ffprobe'),
+            'timeout' => 300,
+        ],
+    ],
+
+    'publishing' => [
+        'require_valid_audio' => true,
+        'require_processed_audio' => true,
+        'require_waveform' => false,
+    ],
 ];
