@@ -219,6 +219,7 @@ class ListeningSectionController extends Controller
             'listeningTest' => $listeningTest,
             'routePrefix' => 'admin.listening.tests',
             'sectionsRoutePrefix' => 'admin.listening.tests.sections',
+            'groupsRoutePrefix' => 'admin.listening.tests.sections.groups',
             'sectionRangeMap' => ListeningSectionMap::sectionRangeMap(),
             'sectionTypes' => ListeningSectionType::cases(),
         ], $data);

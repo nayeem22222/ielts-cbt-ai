@@ -91,4 +91,35 @@ class ListeningQuestionGroup extends Model
     {
         return $query->where('is_active', true);
     }
+
+    public function getQuestionRangeLabelAttribute(): string
+    {
+        $start = (int) $this->start_question_number;
+        $end = (int) $this->end_question_number;
+
+        return $start === $end ? (string) $start : "{$start}–{$end}";
+    }
+
+    public function getQuestionCountLabelAttribute(): string
+    {
+        $expected = (int) $this->total_questions;
+        $filled = (int) ($this->questions_count ?? $this->questions()->count());
+
+        return "{$filled}/{$expected}";
+    }
+
+    public function getStartQuestionAttribute(): int
+    {
+        return (int) $this->start_question_number;
+    }
+
+    public function getEndQuestionAttribute(): int
+    {
+        return (int) $this->end_question_number;
+    }
+
+    public function getExpectedQuestionsCountAttribute(): int
+    {
+        return (int) $this->total_questions;
+    }
 }

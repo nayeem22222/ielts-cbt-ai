@@ -71,6 +71,18 @@ enum Permission: string
     case ListeningTranscriptsAttach = 'listening.transcripts.attach';
     case ListeningTranscriptsTimestampsUpdate = 'listening.transcripts.timestamps.update';
 
+    case ListeningQuestionGroupsView = 'listening.question_groups.view';
+    case ListeningQuestionGroupsCreate = 'listening.question_groups.create';
+    case ListeningQuestionGroupsUpdate = 'listening.question_groups.update';
+    case ListeningQuestionGroupsDelete = 'listening.question_groups.delete';
+
+    case ListeningQuestionsView = 'listening.questions.view';
+    case ListeningQuestionsCreate = 'listening.questions.create';
+    case ListeningQuestionsUpdate = 'listening.questions.update';
+    case ListeningQuestionsDelete = 'listening.questions.delete';
+    case ListeningQuestionsBulkCreate = 'listening.questions.bulk_create';
+    case ListeningQuestionsReorder = 'listening.questions.reorder';
+
     case QuestionBanksView = 'question_banks.view';
     case QuestionBanksCreate = 'question_banks.create';
     case QuestionBanksUpdate = 'question_banks.update';
@@ -129,6 +141,18 @@ enum Permission: string
             self::ListeningTranscriptsDelete => 'Delete listening transcripts',
             self::ListeningTranscriptsAttach => 'Attach listening transcripts',
             self::ListeningTranscriptsTimestampsUpdate => 'Update listening transcript timestamps',
+
+            self::ListeningQuestionGroupsView => 'View listening question groups',
+            self::ListeningQuestionGroupsCreate => 'Create listening question groups',
+            self::ListeningQuestionGroupsUpdate => 'Update listening question groups',
+            self::ListeningQuestionGroupsDelete => 'Delete listening question groups',
+
+            self::ListeningQuestionsView => 'View listening questions',
+            self::ListeningQuestionsCreate => 'Create listening questions',
+            self::ListeningQuestionsUpdate => 'Update listening questions',
+            self::ListeningQuestionsDelete => 'Delete listening questions',
+            self::ListeningQuestionsBulkCreate => 'Bulk create listening questions',
+            self::ListeningQuestionsReorder => 'Reorder listening questions',
 
             self::QuestionBanksView => 'View question banks',
             self::QuestionBanksCreate => 'Create question banks',
@@ -201,6 +225,18 @@ enum Permission: string
             self::ListeningTranscriptsAttach,
             self::ListeningTranscriptsTimestampsUpdate => 'listening_transcripts',
 
+            self::ListeningQuestionGroupsView,
+            self::ListeningQuestionGroupsCreate,
+            self::ListeningQuestionGroupsUpdate,
+            self::ListeningQuestionGroupsDelete => 'listening_question_groups',
+
+            self::ListeningQuestionsView,
+            self::ListeningQuestionsCreate,
+            self::ListeningQuestionsUpdate,
+            self::ListeningQuestionsDelete,
+            self::ListeningQuestionsBulkCreate,
+            self::ListeningQuestionsReorder => 'listening_questions',
+
             self::QuestionBanksView,
             self::QuestionBanksCreate,
             self::QuestionBanksUpdate,
@@ -265,6 +301,16 @@ enum Permission: string
                 self::ListeningTranscriptsDelete,
                 self::ListeningTranscriptsAttach,
                 self::ListeningTranscriptsTimestampsUpdate,
+                self::ListeningQuestionGroupsView,
+                self::ListeningQuestionGroupsCreate,
+                self::ListeningQuestionGroupsUpdate,
+                self::ListeningQuestionGroupsDelete,
+                self::ListeningQuestionsView,
+                self::ListeningQuestionsCreate,
+                self::ListeningQuestionsUpdate,
+                self::ListeningQuestionsDelete,
+                self::ListeningQuestionsBulkCreate,
+                self::ListeningQuestionsReorder,
                 self::QuestionBanksView,
                 self::QuestionBanksCreate,
                 self::QuestionBanksUpdate,

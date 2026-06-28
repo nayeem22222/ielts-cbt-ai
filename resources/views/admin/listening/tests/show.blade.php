@@ -80,8 +80,8 @@
       <x-ui.button class="mt-4" variant="outline" disabled>Manage Audio</x-ui.button>
     </x-ui.card>
     <x-ui.card title="Questions">
-      <p class="text-sm aa-muted">Question builder will be available in a later volume.</p>
-      <x-ui.button class="mt-4" variant="outline" disabled>Manage Questions</x-ui.button>
+      <p class="text-sm aa-muted">Build question groups and individual questions for all sections.</p>
+      <x-ui.button class="mt-4" href="{{ route('admin.listening.tests.builder.index', $listeningTest) }}">Question Builder</x-ui.button>
     </x-ui.card>
   </div>
 

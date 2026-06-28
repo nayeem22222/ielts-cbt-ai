@@ -1,0 +1,72 @@
+<x-ui.card title="Questions" subtitle="Edit, reorder, or delete short answer questions">
+    <form id="short-answer-question-reorder-form" method="POST" action="{{ route('admin.listening-question-groups.short-answer-questions.reorder', $group) }}">
+        @csrf
+        <div data-question-ids>
+            @foreach ($questions as $question)
+                <input type="hidden" name="question_ids[]" value="{{ $question->id }}">
+            @endforeach
+        </div>
+    </form>
+
+    <div id="short-answer-question-sortable" class="space-y-4">
+        @forelse ($questions as $question)
+            @php
+                $correct = $question->correctAnswers->first();
+                $primaryAnswer = $correct?->answer ?? '';
+                $alternatives = $question->alternativeAnswers;
+                $caseSensitive = $question->case_sensitive;
+            @endphp
+            <div data-question-item data-question-id="{{ $question->id }}" class="rounded-xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900">
+                <form method="POST" action="{{ route('admin.listening-short-answer-questions.update', $question->id) }}" class="space-y-3">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="grid gap-3 md:grid-cols-2">
+                        <x-ui.input name="question_number" type="number" label="Question #" :value="$question->question_number" :min="$group->start_question" :max="$group->end_question" required />
+                        <x-ui.select name="difficulty" label="Difficulty">
+                            @foreach (['easy', 'medium', 'hard'] as $level)
+                                <option value="{{ $level }}" @selected($question->difficulty === $level)>{{ ucfirst($level) }}</option>
+                            @endforeach
+                        </x-ui.select>
+                        <x-ui.textarea name="prompt" label="Question Text" class="md:col-span-2" rows="2" required>{{ $question->prompt }}</x-ui.textarea>
+                        <x-ui.input name="correct_answer" label="Correct Answer" :value="$primaryAnswer" required />
+                        <label class="flex items-center gap-2 text-sm md:self-end">
+                            <input type="hidden" name="case_sensitive" value="0">
+                            <input type="checkbox" name="case_sensitive" value="1" @checked($caseSensitive)>
+                            <span>Case sensitive</span>
+                        </label>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium">Alternative Answers</label>
+                            <div class="mt-2 space-y-2" x-data="{ alts: @js($alternatives) }">
+                                <template x-for="(alt, index) in alts" :key="index">
+                                    <div class="flex gap-2">
+                                        <input type="text" :name="'alternative_answers['+index+']'" x-model="alts[index]" class="w-full rounded-lg border border-neutral-300 px-2 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900">
+                                        <button type="button" class="rounded-lg border px-2 text-sm" @click="alts.splice(index, 1)">×</button>
+                                    </div>
+                                </template>
+                                <x-ui.button type="button" size="sm" variant="outline" @click="alts.push('')">Add Alternative</x-ui.button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <x-ui.textarea name="explanation" label="Explanation" rows="2">{{ $question->explanation }}</x-ui.textarea>
+
+                    @include('admin.listening.question-builders.partials.question-reference-fields', ['question' => $question])
+
+                    <div class="flex flex-wrap gap-2">
+                        <x-ui.button type="submit" size="sm">Save</x-ui.button>
+                        <x-ui.button type="button" size="sm" variant="outline" data-question-drag-handle>↕ Reorder</x-ui.button>
+                    </div>
+                </form>
+
+                <form method="POST" action="{{ route('admin.listening-short-answer-questions.destroy', $question->id) }}" class="mt-2" onsubmit="return confirm('Delete question {{ $question->question_number }}?')">
+                    @csrf
+                    @method('DELETE')
+                    <x-ui.button type="submit" size="sm" variant="danger">Delete</x-ui.button>
+                </form>
+            </div>
+        @empty
+            <x-ui.empty-state title="No questions yet">Add short answer questions within range Q{{ $group->question_range_label }}.</x-ui.empty-state>
+        @endforelse
+    </div>
+</x-ui.card>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Listening;
 
+use App\Actions\Listening\QuestionTypes\ValidateQuestionTypePayloadAction;
 use App\Enums\Listening\ListeningConstants;
 use App\Enums\Listening\ListeningTestStatus;
 use App\Models\Listening\ListeningQuestionGroup;
@@ -12,6 +13,10 @@ use Illuminate\Support\Facades\DB;
 
 class PublishListeningTestAction
 {
+    public function __construct(
+        private readonly ValidateQuestionTypePayloadAction $validateQuestionType,
+    ) {}
+
     /**
      * @return array{success: bool, errors: list<string>}
      */
@@ -45,6 +50,12 @@ class PublishListeningTestAction
         foreach ($activeSections as $section) {
             if ($section->audio_id === null) {
                 $errors[] = "Section {$section->section_number} is missing audio.";
+            }
+
+            $sectionQuestionCount = $activeQuestions->where('listening_section_id', $section->id)->count();
+
+            if ($sectionQuestionCount !== (int) $section->total_questions) {
+                $errors[] = "Section {$section->section_number} must have {$section->total_questions} active questions (currently {$sectionQuestionCount}).";
             }
 
             if (config('listening.transcript.require_for_publish', false) && $section->transcript_id === null) {
@@ -95,11 +106,75 @@ class PublishListeningTestAction
                 $errors[] = "Question group \"{$group->title}\" has an invalid question range.";
             }
 
+            $section = $activeSections->firstWhere('id', $group->listening_section_id);
+
+            if ($section !== null) {
+                if (
+                    (int) $group->start_question_number < (int) $section->start_question_number
+                    || (int) $group->end_question_number > (int) $section->end_question_number
+                ) {
+                    $errors[] = "Question group \"{$group->title}\" is outside section {$section->section_number} range.";
+                }
+            }
+
             if ($previous !== null && (int) $group->start_question_number <= (int) $previous->end_question_number) {
                 $errors[] = 'Overlapping question group ranges detected.';
             }
 
             $previous = $group;
+        }
+
+        foreach ($test->questionGroups as $group) {
+            $section = $activeSections->firstWhere('id', $group->listening_section_id);
+            $sectionLabel = $section ? "Section {$section->section_number}" : 'Section';
+            $type = $group->question_type;
+
+            if ($type === null) {
+                $errors[] = "{$sectionLabel}: Question group \"{$group->title}\" has no question type.";
+
+                continue;
+            }
+
+            $groupQuestions = $activeQuestions->where('listening_question_group_id', $group->id);
+            $groupErrors = $this->validateQuestionType->execute(
+                'group',
+                [
+                    'content' => $group->content,
+                    'options' => $group->options,
+                    'settings' => $group->settings,
+                    'image_path' => $group->image_path,
+                    'question_type' => $type->value,
+                ],
+                $type,
+                $group,
+                null,
+                $groupQuestions,
+            );
+
+            foreach ($groupErrors as $error) {
+                $errors[] = "{$sectionLabel}, Group \"{$group->title}\": {$error}";
+            }
+
+            foreach ($groupQuestions as $question) {
+                $questionErrors = $this->validateQuestionType->execute(
+                    'question',
+                    [
+                        'question_text' => $question->question_text,
+                        'word_limit' => $question->word_limit,
+                        'correct_answer' => $question->correct_answer,
+                        'options' => $question->options,
+                        'answer_format' => $question->answer_format?->value,
+                    ],
+                    $type,
+                    $group,
+                    $question,
+                    $groupQuestions,
+                );
+
+                foreach ($questionErrors as $error) {
+                    $errors[] = "{$sectionLabel}, Q{$question->question_number}: {$error}";
+                }
+            }
         }
 
         if ($test->setting === null) {

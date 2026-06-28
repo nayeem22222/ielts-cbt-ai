@@ -11,6 +11,8 @@ use App\Models\CourseSection;
 use App\Models\ExamTest;
 use App\Models\Lesson;
 use App\Models\LessonResource;
+use App\Models\Listening\ListeningQuestion;
+use App\Models\Listening\ListeningQuestionGroup;
 use App\Models\Listening\ListeningSection;
 use App\Models\Listening\ListeningTest;
 use App\Models\Listening\ListeningTranscript;
@@ -23,6 +25,8 @@ use App\Models\Role;
 use App\Models\User;
 use App\Policies\CoursePolicy;
 use App\Policies\ExamPolicy;
+use App\Policies\ListeningQuestionGroupPolicy;
+use App\Policies\ListeningQuestionPolicy;
 use App\Policies\ListeningSectionPolicy;
 use App\Policies\ListeningTestPolicy;
 use App\Policies\ListeningTranscriptPolicy;
@@ -64,6 +68,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ListeningTest::class, ListeningTestPolicy::class);
         Gate::policy(ListeningSection::class, ListeningSectionPolicy::class);
         Gate::policy(ListeningTranscript::class, ListeningTranscriptPolicy::class);
+        Gate::policy(ListeningQuestionGroup::class, ListeningQuestionGroupPolicy::class);
+        Gate::policy(ListeningQuestion::class, ListeningQuestionPolicy::class);
         Gate::policy(ReadingAttempt::class, ReadingAttemptPolicy::class);
         Gate::policy(QuestionBank::class, QuestionBankPolicy::class);
 

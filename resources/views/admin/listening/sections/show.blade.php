@@ -38,8 +38,14 @@
     </div>
 
     <div class="mt-6 grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
-        <x-ui.card title="Question Groups"><p class="text-sm aa-muted">Question group builder coming in a later volume.</p><x-ui.button class="mt-4" variant="outline" disabled>Manage Groups</x-ui.button></x-ui.card>
-        <x-ui.card title="Questions"><p class="text-sm aa-muted">Question builder coming in a later volume.</p><x-ui.button class="mt-4" variant="outline" disabled>Manage Questions</x-ui.button></x-ui.card>
+        <x-ui.card title="Question Groups">
+            <p class="text-sm aa-muted">Section {{ $section->section_number }} · Q{{ $section->start_question_number }}–Q{{ $section->end_question_number }}</p>
+            <div class="mt-4 flex flex-wrap gap-2">
+                @include('admin.listening.question-groups.partials.add-group-button', ['variant' => 'primary'])
+                <x-ui.button variant="outline" href="{{ route('admin.listening.tests.builder.index', ['listeningTest' => $listeningTest, 'section' => $section->id]) }}">Section Builder</x-ui.button>
+            </div>
+        </x-ui.card>
+        <x-ui.card title="Questions"><p class="text-sm aa-muted">Questions are managed inside question groups.</p><x-ui.button class="mt-4" variant="outline" href="{{ route('admin.listening.tests.builder.index', $listeningTest) }}">Question Builder</x-ui.button></x-ui.card>
         <x-ui.card title="Audio Timeline"><p class="text-sm aa-muted">Audio timeline coming in a later volume.</p></x-ui.card>
         <x-ui.card title="Student Preview"><p class="text-sm aa-muted">Student preview coming in a later volume.</p></x-ui.card>
     </div>

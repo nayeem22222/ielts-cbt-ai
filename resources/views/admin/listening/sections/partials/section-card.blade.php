@@ -26,7 +26,7 @@
     <dl class="mb-4 grid gap-2 text-sm sm:grid-cols-2">
         <div><dt class="aa-muted">Audio</dt><dd>{{ $hasAudio ? ($section->audio?->original_name ?? 'Attached') : 'Missing' }}</dd></div>
         <div><dt class="aa-muted">Transcript</dt><dd>{{ $hasTranscript ? ($section->transcript?->title ?? 'Attached') : 'None' }}</dd></div>
-        <div><dt class="aa-muted">Groups</dt><dd>{{ $section->question_groups_count ?? 0 }} (placeholder)</dd></div>
+        <div><dt class="aa-muted">Groups</dt><dd>{{ $section->question_groups_count ?? 0 }}</dd></div>
         <div><dt class="aa-muted">Questions</dt><dd>{{ $section->questions_count ?? 0 }}/{{ $section->total_questions }}</dd></div>
     </dl>
 
@@ -38,7 +38,10 @@
             <x-ui.button href="{{ route($sectionsRoutePrefix.'.edit', [$listeningTest, $section]) }}" size="sm" variant="outline">Edit</x-ui.button>
             <x-ui.button href="{{ route($sectionsRoutePrefix.'.show', [$listeningTest, $section]).'#transcript' }}" size="sm" variant="outline">Transcript</x-ui.button>
         @endcan
-        <x-ui.button size="sm" variant="outline" disabled>Manage Questions</x-ui.button>
+        @can('viewAny', [App\Models\Listening\ListeningQuestionGroup::class, $listeningTest, $section])
+            @include('admin.listening.question-groups.partials.add-group-button', ['size' => 'sm', 'variant' => 'outline'])
+            <x-ui.button href="{{ route('admin.listening.tests.builder.index', ['listeningTest' => $listeningTest, 'section' => $section->id]) }}" size="sm" variant="outline">Section Builder</x-ui.button>
+        @endcan
         @can('delete', $section)
             <form method="POST" action="{{ route($sectionsRoutePrefix.'.destroy', [$listeningTest, $section]) }}" onsubmit="return confirm('Delete this section?')">
                 @csrf @method('DELETE')

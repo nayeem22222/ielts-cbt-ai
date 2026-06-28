@@ -1,7 +1,3 @@
-@if (session('status'))
-    <x-ui.alert tone="green" class="mb-4">{{ session('status') }}</x-ui.alert>
-@endif
-
 @if (session('error'))
     <x-ui.alert tone="red" class="mb-4">{{ session('error') }}</x-ui.alert>
 @endif

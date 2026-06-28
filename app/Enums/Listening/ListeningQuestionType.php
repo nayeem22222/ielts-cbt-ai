@@ -24,6 +24,94 @@ enum ListeningQuestionType: string
     case SummaryCompletion = 'summary_completion';
     case ShortAnswer = 'short_answer';
 
+    public function isMatchingBuilderType(): bool
+    {
+        return $this === self::Matching;
+    }
+
+    public function isObjectiveBuilderType(): bool
+    {
+        return in_array($this, [self::MCQ, self::MultipleAnswer], true);
+    }
+
+    public function isLabellingBuilderType(): bool
+    {
+        return in_array($this, [self::MapLabelling, self::PlanLabelling, self::DiagramLabelling], true);
+    }
+
+    public function isCompletionBuilderType(): bool
+    {
+        return in_array($this, [
+            self::FormCompletion,
+            self::NoteCompletion,
+            self::TableCompletion,
+            self::FlowchartCompletion,
+            self::SentenceCompletion,
+            self::SummaryCompletion,
+        ], true);
+    }
+
+    public function isShortAnswerBuilderType(): bool
+    {
+        return $this === self::ShortAnswer;
+    }
+
+    public function questionBuilderRouteName(): string
+    {
+        return match (true) {
+            $this->isMatchingBuilderType() => 'admin.listening-question-groups.matching-questions.index',
+            $this->isObjectiveBuilderType() => 'admin.listening-question-groups.objective-questions.index',
+            $this->isLabellingBuilderType() => 'admin.listening-question-groups.labelling-questions.index',
+            $this->isShortAnswerBuilderType() => 'admin.listening-question-groups.short-answer-questions.index',
+            $this->isCompletionBuilderType() => 'admin.listening-question-groups.completion-questions.index',
+            default => 'admin.listening-question-groups.completion-questions.index',
+        };
+    }
+
+    public function questionBuilderFamilyLabel(): string
+    {
+        return match (true) {
+            $this->isMatchingBuilderType() => 'Matching',
+            $this->isObjectiveBuilderType() => 'Objective',
+            $this->isLabellingBuilderType() => 'Labelling',
+            $this->isShortAnswerBuilderType() => 'Short Answer',
+            $this->isCompletionBuilderType() => 'Completion',
+            default => 'Question',
+        };
+    }
+
+    public function usesPerQuestionOptions(): bool
+    {
+        return false;
+    }
+
+    public function allowsMultipleCorrectAnswers(): bool
+    {
+        return $this === self::MultipleAnswer;
+    }
+
+    public function usesRomanOptionKeys(): bool
+    {
+        return false;
+    }
+
+    public function usesCompletionTemplate(): bool
+    {
+        return in_array($this, [
+            self::FormCompletion,
+            self::SummaryCompletion,
+            self::SentenceCompletion,
+            self::NoteCompletion,
+            self::TableCompletion,
+            self::FlowchartCompletion,
+        ], true);
+    }
+
+    public function requiresParagraphReference(): bool
+    {
+        return false;
+    }
+
     public function label(): string
     {
         return match ($this) {
