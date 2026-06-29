@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\Listening;
 
+use App\Enums\Listening\ListeningAttemptPhase;
 use App\Enums\Listening\ListeningAttemptStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,9 +21,17 @@ class ListeningAttempt extends Model
         'user_id',
         'listening_test_id',
         'status',
+        'current_phase',
         'started_at',
         'submitted_at',
+        'auto_submitted_at',
         'expires_at',
+        'listening_started_at',
+        'listening_ended_at',
+        'transfer_started_at',
+        'transfer_ended_at',
+        'timer_started_at',
+        'last_timer_sync_at',
         'total_questions',
         'total_answered',
         'total_correct',
@@ -37,15 +46,24 @@ class ListeningAttempt extends Model
         'device_info',
         'security_flags',
         'result_meta',
+        'timer_meta',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => ListeningAttemptStatus::class,
+            'current_phase' => ListeningAttemptPhase::class,
             'started_at' => 'datetime',
             'submitted_at' => 'datetime',
+            'auto_submitted_at' => 'datetime',
             'expires_at' => 'datetime',
+            'listening_started_at' => 'datetime',
+            'listening_ended_at' => 'datetime',
+            'transfer_started_at' => 'datetime',
+            'transfer_ended_at' => 'datetime',
+            'timer_started_at' => 'datetime',
+            'last_timer_sync_at' => 'datetime',
             'total_questions' => 'integer',
             'total_answered' => 'integer',
             'total_correct' => 'integer',
@@ -59,6 +77,7 @@ class ListeningAttempt extends Model
             'device_info' => 'array',
             'security_flags' => 'array',
             'result_meta' => 'array',
+            'timer_meta' => 'array',
         ];
     }
 

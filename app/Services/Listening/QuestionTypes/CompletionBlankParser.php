@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Listening\QuestionTypes;
 
+use App\Support\Listening\ListeningContentRenderer;
 use Illuminate\Support\Collection;
 
 class CompletionBlankParser
@@ -117,6 +118,69 @@ class CompletionBlankParser
 
             return '<input type="text" name="answer_'.$number.'" class="inline-block w-32 border-b border-neutral-400 bg-transparent" placeholder="..." disabled />';
         }, $normalized);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $questionsByNumber
+     */
+    public function renderStudentInteractive(string $content, array $questionsByNumber): string
+    {
+        $normalized = ListeningContentRenderer::sanitizeEditorHtml(
+            $this->normalizePlaceholderHtml($content),
+        );
+
+        return (string) preg_replace_callback(self::PLACEHOLDER_PATTERN, function (array $matches) use ($questionsByNumber): string {
+            $number = (int) (($matches[1] ?? '') !== '' ? $matches[1] : $matches[3]);
+            $question = $questionsByNumber[$number] ?? null;
+
+            return $this->blankInputMarkup(
+                $number,
+                (int) ($question['id'] ?? 0),
+                $this->savedTextValue($question),
+            );
+        }, $normalized);
+    }
+
+    private function blankInputMarkup(int $number, int $questionId, string $value): string
+    {
+        $valueAttr = $value !== '' ? ' value="'.e($value).'"' : '';
+
+        return sprintf(
+            '<span class="listening-blank" data-question-number="%1$d"><span class="listening-blank-pill"><span class="listening-blank-number">%1$d</span><input type="text" class="listening-answer-input listening-blank-input" data-question-id="%2$d" data-question-number="%1$d" maxlength="120"%3$s /></span></span>',
+            $number,
+            $questionId,
+            $valueAttr,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $question
+     */
+    private function savedTextValue(?array $question): string
+    {
+        if ($question === null) {
+            return '';
+        }
+
+        $answers = $question['student_answer'] ?? null;
+
+        if (! is_array($answers)) {
+            return '';
+        }
+
+        foreach ($answers as $answer) {
+            if (! is_array($answer)) {
+                continue;
+            }
+
+            $value = trim((string) ($answer['value'] ?? ''));
+
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return '';
     }
 
     public function normalizePlaceholderHtml(string $content): string

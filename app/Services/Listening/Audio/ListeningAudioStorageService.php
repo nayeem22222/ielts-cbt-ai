@@ -20,9 +20,9 @@ class ListeningAudioStorageService
 
         foreach ([
             $audio->playablePath(),
-            $audio->normalized_path,
             $audio->processed_path,
             $audio->path,
+            $audio->normalized_path,
         ] as $path) {
             if (is_string($path) && $path !== '' && $disk->exists($path)) {
                 return $path;
@@ -48,9 +48,9 @@ class ListeningAudioStorageService
 
         foreach ([
             $audio->playablePath(),
-            $audio->normalized_path,
             $audio->processed_path,
             $audio->path,
+            $audio->normalized_path,
         ] as $path) {
             if (is_string($path) && $path !== '' && $disk->exists($path)) {
                 return $disk->url($path);

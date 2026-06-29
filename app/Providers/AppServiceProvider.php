@@ -15,6 +15,7 @@ use App\Models\Listening\ListeningAudio;
 use App\Models\Listening\ListeningQuestion;
 use App\Models\Listening\ListeningQuestionGroup;
 use App\Models\Listening\ListeningSection;
+use App\Models\Listening\ListeningAttempt;
 use App\Models\Listening\ListeningTest;
 use App\Models\Listening\ListeningTranscript;
 use App\Models\Package;
@@ -27,6 +28,7 @@ use App\Models\User;
 use App\Services\Listening\Audio\FakeListeningFfmpegRunner;
 use App\Services\Listening\Audio\ListeningFfmpegRunner;
 use App\Services\Listening\Audio\ListeningFfmpegRunnerInterface;
+use App\Policies\CoursePolicy;
 use App\Policies\ExamPolicy;
 use App\Policies\ListeningAudioPolicy;
 use App\Policies\ListeningQuestionGroupPolicy;
@@ -105,6 +107,27 @@ class AppServiceProvider extends ServiceProvider
             $attemptKey = $attempt instanceof ReadingAttempt ? $attempt->id : 'guest';
 
             return Limit::perMinute(5)->by($request->user()?->id.'|'.$attemptKey);
+        });
+
+        RateLimiter::for('listening-autosave', function (Request $request): Limit {
+            $attempt = $request->route('attempt');
+            $attemptKey = $attempt instanceof ListeningAttempt ? $attempt->id : 'guest';
+
+            return Limit::perMinute(120)->by($request->user()?->id.'|'.$attemptKey);
+        });
+
+        RateLimiter::for('listening-submit', function (Request $request): Limit {
+            $attempt = $request->route('attempt');
+            $attemptKey = $attempt instanceof ListeningAttempt ? $attempt->id : 'guest';
+
+            return Limit::perMinute(5)->by($request->user()?->id.'|'.$attemptKey);
+        });
+
+        RateLimiter::for('listening-timer', function (Request $request): Limit {
+            $attempt = $request->route('attempt');
+            $attemptKey = $attempt instanceof ListeningAttempt ? $attempt->id : 'guest';
+
+            return Limit::perMinute(30)->by($request->user()?->id.'|'.$attemptKey);
         });
 
         foreach (PermissionEnum::cases() as $permission) {

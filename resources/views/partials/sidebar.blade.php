@@ -9,6 +9,9 @@
 
     <nav class="space-y-1" aria-label="Student navigation">
         @php
+            use App\Enums\Commerce\IeltsModule;
+            use App\Services\Enrollment\PackageAccessService;
+
             $items = [
                 ['Overview', route('student.dashboard'), request()->routeIs('student.dashboard')],
                 ['My Courses', route('student.courses.index'), request()->routeIs('student.courses.*')],
@@ -19,7 +22,15 @@
                 ['Assignments', route('student.dashboard').'#assignments', false],
                 ['Certificates', route('student.dashboard').'#certificates', false],
             ];
-            $icons = ['🏠', '📚', '📦', '▶️', '🎥', '⬇️', '📝', '🏅'];
+
+            $canAccessListening = auth()->check()
+                && app(PackageAccessService::class)->canAccessModule(auth()->user(), IeltsModule::Listening);
+
+            if ($canAccessListening) {
+                $items[] = ['Listening Tests', route('student.listening.tests.index'), request()->routeIs('student.listening.*')];
+            }
+
+            $icons = ['🏠', '📚', '📦', '▶️', '🎥', '⬇️', '📝', '🏅', '🎧'];
         @endphp
 
         @foreach ($items as $index => $item)

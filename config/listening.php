@@ -201,4 +201,82 @@ return [
             'version_processed_files' => true,
         ],
     ],
+
+    'student_access' => [
+        'minimum_active_sections' => 1,
+        'minimum_active_questions' => 1,
+        'block_start_without_audio' => false,
+        'show_debug_unavailability' => env('APP_ENV') === 'local',
+    ],
+
+    'student_player' => [
+        'official_mode' => true,
+        'show_section_tabs' => true,
+        'show_question_palette' => false,
+        'auto_save_interval_seconds' => 10,
+        'auto_save_debounce_ms' => 700,
+        'allow_audio_replay' => false,
+        'allow_audio_seek' => false,
+        'allow_playback_speed_change' => false,
+        'allow_transcript_live' => false,
+        'confirm_submit' => true,
+        'mobile_palette_collapsible' => true,
+    ],
+
+    'audio_access' => [
+        'use_signed_routes' => true,
+        'signed_url_ttl_minutes' => 60,
+        'stream_audio_through_app' => true,
+        'prevent_download_headers' => true,
+    ],
+
+    'student_attempts' => [
+        'allow_multiple_in_progress_attempts' => false,
+        'resume_existing_attempt' => true,
+        'create_answer_rows_on_start' => true,
+    ],
+
+    'navigation' => [
+        'save_position_on_jump' => true,
+        'validate_section_question_match' => true,
+        'allow_jump_to_any_question' => true,
+        'allow_section_switch' => true,
+    ],
+
+    'autosave' => [
+        'enabled' => true,
+        'debounce_ms' => 700,
+        'bulk_interval_seconds' => 10,
+        'retry_attempts' => 3,
+        'retry_delay_ms' => 1500,
+        'use_local_storage_backup' => true,
+        'prevent_submit_when_unsynced' => true,
+        'answer_hashing' => true,
+    ],
+
+    'recovery' => [
+        'enabled' => true,
+        'show_recovery_modal' => true,
+        'prefer_newer_answer' => true,
+    ],
+
+    'official_flow' => [
+        'enabled' => true,
+        'default_listening_minutes' => 30,
+        'default_transfer_minutes' => 10,
+        'allow_transfer_time' => true,
+        'allow_answer_edit_during_transfer' => true,
+        'auto_enter_transfer_phase' => true,
+        'auto_submit_on_expiry' => true,
+        'server_timer_sync_interval_seconds' => 20,
+        'warning_thresholds_seconds' => [600, 300, 60],
+    ],
+
+    'official_audio' => [
+        'play_once' => true,
+        'disable_seek' => true,
+        'disable_replay' => true,
+        'disable_speed_change' => true,
+        'allow_audio_only_in_listening_phase' => true,
+    ],
 ];

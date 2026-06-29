@@ -209,7 +209,14 @@ Route::middleware(['auth', 'verified', 'role:student'])->group(function (): void
         Route::get('/{readingTest:slug}', [ReadingTestRendererController::class, 'show'])->name('show');
         Route::get('/{readingTest:slug}/start', [ReadingTestRendererController::class, 'start'])->name('start');
     });
-    Route::view('/exam/listening', 'pages.exams.listening')->middleware('module:listening')->name('exam.listening');
+
+    Route::prefix('listening')->name('student.listening.')->middleware('module:listening')->group(function (): void {
+        require __DIR__.'/student/listening.php';
+    });
+
+    Route::get('/exam/listening', fn () => redirect()->route('student.listening.tests.index'))
+        ->middleware('module:listening')
+        ->name('exam.listening');
     Route::view('/exam/writing', 'pages.exams.writing')->middleware('module:writing')->name('exam.writing');
     Route::view('/exam/speaking', 'pages.exams.speaking')->middleware('module:speaking')->name('exam.speaking');
 });

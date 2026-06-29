@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
             'module' => \App\Http\Middleware\EnsureModuleAccess::class,
             'course.access' => \App\Http\Middleware\EnsureCourseAccess::class,
+            'listening.attempt.active' => \App\Http\Middleware\EnsureListeningAttemptIsActive::class,
         ]);
 
         $middleware->redirectGuestsTo('/login');
