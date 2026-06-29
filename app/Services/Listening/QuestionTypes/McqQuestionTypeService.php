@@ -53,7 +53,7 @@ class McqQuestionTypeService extends BaseListeningQuestionTypeService
 
     public function validationRules(): array
     {
-        return ['options' => ['required', 'array', 'min:2']];
+        return ['options' => ['required', 'array', 'min:3']];
     }
 
     public function normalizePayload(array $payload, ?ListeningQuestionGroup $group = null, ?ListeningQuestion $question = null): array
@@ -85,7 +85,19 @@ class McqQuestionTypeService extends BaseListeningQuestionTypeService
                 ? $payload['options']
                 : [];
 
-            return $this->validateOptionKeys($options, 2);
+            return $this->validateOptionKeys($options, 3);
+        }
+
+        if ($question === null && $group !== null) {
+            $options = is_array($payload['options'] ?? null) && array_is_list($payload['options'] ?? [])
+                ? $payload['options']
+                : [];
+
+            if ($options !== []) {
+                return $this->validateOptionKeys($options, 3);
+            }
+
+            return [];
         }
 
         if ($question !== null) {

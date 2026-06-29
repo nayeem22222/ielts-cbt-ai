@@ -93,7 +93,8 @@ it('allows mcq group with valid options', function (): void {
             'layout_type' => ListeningLayoutType::Default->value,
             'options' => [
                 ['key' => 'A', 'text' => 'Library', 'is_correct' => false],
-                ['key' => 'B', 'text' => 'Pool', 'is_correct' => true],
+                ['key' => 'B', 'text' => 'Pool', 'is_correct' => false],
+                ['key' => 'C', 'text' => 'Gym', 'is_correct' => true],
             ],
             'is_active' => true,
         ])

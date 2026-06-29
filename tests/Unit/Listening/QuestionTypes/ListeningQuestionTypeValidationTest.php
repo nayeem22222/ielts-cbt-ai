@@ -9,13 +9,17 @@ it('validates mcq options', function (): void {
     $service = app(ListeningQuestionTypeRegistry::class)->serviceFor(ListeningQuestionType::MCQ);
 
     expect($service->validatePayload([
-        'options' => [['key' => 'A', 'text' => 'One']],
+        'options' => [
+            ['key' => 'A', 'text' => 'One'],
+            ['key' => 'B', 'text' => 'Two'],
+        ],
     ]))->not->toBeEmpty();
 
     expect($service->validatePayload([
         'options' => [
             ['key' => 'A', 'text' => 'One'],
             ['key' => 'B', 'text' => 'Two'],
+            ['key' => 'C', 'text' => 'Three'],
         ],
     ]))->toBeEmpty();
 });
