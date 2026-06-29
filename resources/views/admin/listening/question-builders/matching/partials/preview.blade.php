@@ -1,35 +1,15 @@
 @php
-    use App\Support\Reading\ReadingGroupInteraction;
+    use App\Support\Listening\ListeningGroupInteraction;
 
-    $dragDrop = ReadingGroupInteraction::usesDragDrop($group);
-    $settings = $group->settings ?? [];
+    $dragDrop = ListeningGroupInteraction::usesDragDrop($group);
 @endphp
 
 <x-ui.card title="Admin Preview — {{ $type->label() }}">
     @if ($dragDrop)
-        @push('head')
-            @vite(['resources/js/reading-drag-drop-preview.js'])
-        @endpush
+        <p class="mb-4 text-sm text-neutral-600 dark:text-neutral-300">Drag &amp; drop interaction is enabled. Full interaction is available in the student player; layout preview below.</p>
+    @endif
 
-        <p class="mb-4 text-sm text-neutral-600 dark:text-neutral-300">Interactive drag &amp; drop preview. Answers are not saved.</p>
-
-        <div class="ielts-reading-cbt reading-test-cbt rounded-2xl border border-neutral-200 p-4 dark:border-neutral-700" data-dnd-preview-root data-dnd-preview="1">
-            @php
-                $viewKey = $type->studentRendererViewKey();
-            @endphp
-
-            @include('components.reading-test.renderers.'.$viewKey, [
-                'test' => $listeningTest,
-                'section' => $section,
-                'group' => $group,
-                'type' => $type,
-                'questions' => $questions,
-                'options' => $options,
-                'settings' => $settings,
-                'renderer' => $renderer,
-            ])
-        </div>
-    @elseif ($type->value === 'matching_information')
+    @if ($type->value === 'matching_information')
         <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
                 <thead>
@@ -80,7 +60,7 @@
                 </ul>
             </div>
         </div>
-    @elseif (in_array($type->value, ['matching_features', 'matching_people', 'dropdown'], true))
+    @elseif (in_array($type->value, ['matching', 'matching_features', 'matching_people', 'dropdown'], true))
         <div class="grid gap-6 lg:grid-cols-2">
             <div>
                 <h4 class="mb-2 font-semibold">{{ $type->value === 'matching_people' ? 'People' : 'Options' }}</h4>

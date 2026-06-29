@@ -59,6 +59,139 @@ it('validates matching choices without requiring separate matching items', funct
     ]))->toContain('At least one matching option is required.');
 });
 
+it('allows duplicate matching choices when group settings enable reuse', function (): void {
+    $service = app(ListeningQuestionTypeRegistry::class)->serviceFor(ListeningQuestionType::Matching);
+
+    $group = new \App\Models\Listening\ListeningQuestionGroup([
+        'settings' => ['allow_reuse' => true],
+        'options' => [
+            'choices' => [
+                ['key' => 'A', 'text' => 'One'],
+                ['key' => 'B', 'text' => 'Two'],
+                ['key' => 'C', 'text' => 'Three'],
+            ],
+            'allow_choice_reuse' => false,
+        ],
+    ]);
+
+    $existing = new \App\Models\Listening\ListeningQuestion([
+        'question_number' => 17,
+        'question_text' => 'First statement',
+        'correct_answer' => [['value' => 'C', 'type' => 'letter']],
+    ]);
+    $existing->id = 1;
+
+    $question = new \App\Models\Listening\ListeningQuestion([
+        'question_number' => 18,
+        'question_text' => 'Second statement',
+    ]);
+    $question->id = 2;
+
+    $questions = new \Illuminate\Database\Eloquent\Collection([$existing, $question]);
+
+    $errors = $service->validatePayload([
+        'question_text' => 'Second statement',
+        'correct_answer' => [['value' => 'C', 'type' => 'letter']],
+        'options' => $group->options,
+    ], $group, $question, $questions);
+
+    expect($errors)->toBeEmpty();
+});
+
+it('rejects duplicate matching choices when reuse is disabled', function (): void {
+    $service = app(ListeningQuestionTypeRegistry::class)->serviceFor(ListeningQuestionType::Matching);
+
+    $group = new \App\Models\Listening\ListeningQuestionGroup([
+        'settings' => ['allow_reuse' => false],
+        'options' => [
+            'choices' => [
+                ['key' => 'A', 'text' => 'One'],
+                ['key' => 'B', 'text' => 'Two'],
+                ['key' => 'C', 'text' => 'Three'],
+            ],
+            'allow_choice_reuse' => false,
+        ],
+    ]);
+
+    $existing = new \App\Models\Listening\ListeningQuestion([
+        'question_number' => 17,
+        'question_text' => 'First statement',
+        'correct_answer' => [['value' => 'C', 'type' => 'letter']],
+    ]);
+    $existing->id = 1;
+
+    $question = new \App\Models\Listening\ListeningQuestion([
+        'question_number' => 18,
+        'question_text' => 'Second statement',
+    ]);
+    $question->id = 2;
+
+    $questions = new \Illuminate\Database\Eloquent\Collection([$existing, $question]);
+
+    $errors = $service->validatePayload([
+        'question_text' => 'Second statement',
+        'correct_answer' => [['value' => 'C', 'type' => 'letter']],
+        'options' => $group->options,
+    ], $group, $question, $questions);
+
+    expect($errors)->toContain('Choice "C" is already used and reuse is disabled.');
+});
+
+it('allows duplicate matching choices when group has more questions than options', function (): void {
+    $service = app(ListeningQuestionTypeRegistry::class)->serviceFor(ListeningQuestionType::Matching);
+
+    $group = new \App\Models\Listening\ListeningQuestionGroup([
+        'start_question_number' => 17,
+        'end_question_number' => 20,
+        'settings' => ['allow_reuse' => false],
+        'options' => [
+            'choices' => [
+                ['key' => 'A', 'text' => 'One'],
+                ['key' => 'B', 'text' => 'Two'],
+                ['key' => 'C', 'text' => 'Three'],
+            ],
+            'allow_choice_reuse' => false,
+        ],
+    ]);
+
+    $existing = new \App\Models\Listening\ListeningQuestion([
+        'question_number' => 17,
+        'question_text' => 'First statement',
+        'correct_answer' => [['value' => 'A', 'type' => 'letter']],
+    ]);
+    $existing->id = 1;
+
+    $second = new \App\Models\Listening\ListeningQuestion([
+        'question_number' => 18,
+        'question_text' => 'Second statement',
+        'correct_answer' => [['value' => 'B', 'type' => 'letter']],
+    ]);
+    $second->id = 2;
+
+    $third = new \App\Models\Listening\ListeningQuestion([
+        'question_number' => 19,
+        'question_text' => 'Third statement',
+        'correct_answer' => [['value' => 'C', 'type' => 'letter']],
+    ]);
+    $third->id = 3;
+
+    $question = new \App\Models\Listening\ListeningQuestion([
+        'question_number' => 20,
+        'question_text' => 'Fourth statement',
+    ]);
+    $question->id = 4;
+
+    $questions = new \Illuminate\Database\Eloquent\Collection([$existing, $second, $third, $question]);
+
+    $errors = $service->validatePayload([
+        'question_text' => 'Fourth statement',
+        'correct_answer' => [['value' => 'C', 'type' => 'letter']],
+        'options' => $group->options,
+    ], $group, $question, $questions);
+
+    expect($errors)->toBeEmpty();
+});
+
 it('validates map labelling requires image and points', function (): void {
     $service = app(ListeningQuestionTypeRegistry::class)->serviceFor(ListeningQuestionType::MapLabelling);
 

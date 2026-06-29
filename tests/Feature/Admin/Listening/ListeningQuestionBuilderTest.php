@@ -1155,3 +1155,110 @@ it('stores matching questions when choices exist without separate matching items
         ->assertSee('Option 1')
         ->assertSee('Blank 5');
 });
+
+it('renders matching builder preview without reading module dependencies', function (): void {
+    $admin = createQuestionBuilderAdmin();
+    $test = createListeningTestForQuestions($admin);
+    $section = createSectionForQuestionBuilder($test, 2);
+    $group = ListeningQuestionGroup::query()->create([
+        'listening_test_id' => $test->id,
+        'listening_section_id' => $section->id,
+        'title' => 'Questions 17–20',
+        'instruction' => 'Match each statement.',
+        'question_type' => ListeningQuestionType::Matching,
+        'start_question_number' => 17,
+        'end_question_number' => 20,
+        'total_questions' => 4,
+        'layout_type' => ListeningLayoutType::Default,
+        'options' => [
+            'choices' => [
+                ['key' => 'A', 'text' => 'being well-organised'],
+                ['key' => 'B', 'text' => 'working quickly'],
+                ['key' => 'C', 'text' => 'working carefully'],
+            ],
+            'items' => [],
+            'allow_choice_reuse' => false,
+        ],
+        'is_active' => true,
+    ]);
+
+    ListeningQuestion::query()->create([
+        'listening_test_id' => $test->id,
+        'listening_section_id' => $section->id,
+        'listening_question_group_id' => $group->id,
+        'question_number' => 17,
+        'question_type' => ListeningQuestionType::Matching,
+        'question_text' => 'Applying make-up',
+        'correct_answer' => [['value' => 'C', 'type' => 'letter']],
+        'answer_format' => ListeningAnswerFormat::Letter,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.listening-question-groups.matching-questions.index', ['group' => $group, 'preview' => 1]))
+        ->assertOk()
+        ->assertSee('Admin Preview')
+        ->assertSee('being well-organised')
+        ->assertSee('Applying make-up');
+});
+
+it('stores fourth matching question when group has more questions than options', function (): void {
+    $admin = createQuestionBuilderAdmin();
+    $test = createListeningTestForQuestions($admin);
+    $section = createSectionForQuestionBuilder($test, 2);
+    $group = ListeningQuestionGroup::query()->create([
+        'listening_test_id' => $test->id,
+        'listening_section_id' => $section->id,
+        'title' => 'Questions 17–20',
+        'instruction' => 'Match each statement.',
+        'question_type' => ListeningQuestionType::Matching,
+        'start_question_number' => 17,
+        'end_question_number' => 20,
+        'total_questions' => 4,
+        'layout_type' => ListeningLayoutType::Default,
+        'settings' => ['allow_reuse' => false],
+        'options' => [
+            'choices' => [
+                ['key' => 'A', 'text' => 'being well-organised'],
+                ['key' => 'B', 'text' => 'being flexible'],
+                ['key' => 'C', 'text' => 'working quickly'],
+            ],
+            'items' => [],
+            'allow_choice_reuse' => false,
+        ],
+        'is_active' => true,
+    ]);
+
+    foreach ([
+        [17, 'Statement 17', 'A'],
+        [18, 'Statement 18', 'B'],
+        [19, 'Statement 19', 'C'],
+    ] as [$number, $prompt, $answer]) {
+        $this->actingAs($admin)
+            ->post(route('admin.listening-question-groups.matching.questions.store', $group), [
+                'question_number' => $number,
+                'prompt' => $prompt,
+                'correct_answer' => $answer,
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+    }
+
+    $this->actingAs($admin)
+        ->post(route('admin.listening-question-groups.matching.questions.store', $group), [
+            'question_number' => 20,
+            'prompt' => 'Applying make-up',
+            'correct_answer' => 'C',
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('status');
+
+    $question = ListeningQuestion::query()
+        ->where('listening_question_group_id', $group->id)
+        ->where('question_number', 20)
+        ->firstOrFail();
+
+    expect($question->question_text)->toBe('Applying make-up')
+        ->and($question->correct_answer[0]['value'] ?? null)->toBe('C');
+});

@@ -122,9 +122,9 @@ class MatchingQuestionTypeService extends BaseListeningQuestionTypeService
             $errors[] = "Correct answer must be one of the saved option keys (".implode(', ', array_filter($choiceKeys)).').';
         }
 
-        if (! ($options['allow_choice_reuse'] ?? false) && $questions !== null && $value !== '') {
+        if ($this->shouldEnforceUniqueChoices($group, $options, $questions, count(array_filter($choiceKeys))) && $questions !== null && $value !== '') {
             $used = $questions
-                ->where('id', '!=', $question->id)
+                ->filter(fn (ListeningQuestion $q): bool => $this->isDifferentQuestion($q, $question))
                 ->flatMap(fn (ListeningQuestion $q) => $this->answerValues(is_array($q->correct_answer) ? $q->correct_answer : []))
                 ->map('strtoupper')
                 ->all();
@@ -164,12 +164,71 @@ class MatchingQuestionTypeService extends BaseListeningQuestionTypeService
             'choices' => ($payloadChoices !== null && $payloadChoices !== [])
                 ? $payloadChoices
                 : ($groupOptions['choices'] ?? []),
-            'allow_choice_reuse' => (bool) (
-                $payloadOptions['allow_choice_reuse']
-                ?? $groupOptions['allow_choice_reuse']
-                ?? config('listening.question_types.matching.allow_choice_reuse_default', false)
-            ),
+            'allow_choice_reuse' => $this->allowsChoiceReuse($group, [
+                'allow_choice_reuse' => $payloadOptions['allow_choice_reuse']
+                    ?? $groupOptions['allow_choice_reuse']
+                    ?? null,
+            ]),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     */
+    private function allowsChoiceReuse(?ListeningQuestionGroup $group, array $options): bool
+    {
+        $settings = is_array($group?->settings) ? $group->settings : [];
+
+        if (array_key_exists('allow_reuse', $settings)) {
+            return (bool) $settings['allow_reuse'];
+        }
+
+        return (bool) (
+            $options['allow_choice_reuse']
+            ?? config('listening.question_types.matching.allow_choice_reuse_default', false)
+        );
+    }
+
+    /**
+     * @param  Collection<int, ListeningQuestion>|null  $questions
+     */
+    private function shouldEnforceUniqueChoices(
+        ?ListeningQuestionGroup $group,
+        array $options,
+        ?Collection $questions,
+        int $choiceCount,
+    ): bool {
+        if ($this->allowsChoiceReuse($group, $options) || $choiceCount === 0) {
+            return false;
+        }
+
+        $requiredSlots = 0;
+
+        if ($group !== null) {
+            $start = (int) ($group->start_question_number ?? 0);
+            $end = (int) ($group->end_question_number ?? 0);
+
+            if ($start > 0 && $end >= $start) {
+                $requiredSlots = $end - $start + 1;
+            }
+        }
+
+        $questionCount = max($requiredSlots, $questions?->count() ?? 0);
+
+        return $questionCount <= $choiceCount;
+    }
+
+    private function isDifferentQuestion(ListeningQuestion $candidate, ListeningQuestion $current): bool
+    {
+        if ($current->id !== null && $candidate->id !== null) {
+            return (int) $candidate->id !== (int) $current->id;
+        }
+
+        if ($current->question_number > 0 && $candidate->question_number > 0) {
+            return (int) $candidate->question_number !== (int) $current->question_number;
+        }
+
+        return true;
     }
 
     /**
@@ -187,7 +246,7 @@ class MatchingQuestionTypeService extends BaseListeningQuestionTypeService
                 'key' => strtoupper(trim((string) ($choice['key'] ?? ''))),
                 'text' => trim((string) ($choice['text'] ?? $choice['label'] ?? '')),
             ], $options['choices'] ?? [])),
-            'allow_choice_reuse' => (bool) ($options['allow_choice_reuse'] ?? config('listening.question_types.matching.allow_choice_reuse_default', false)),
+            'allow_choice_reuse' => $this->allowsChoiceReuse($group, $options),
         ];
 
         if ($normalized['items'] === [] && $group !== null) {

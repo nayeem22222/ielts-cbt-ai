@@ -50,9 +50,6 @@
                 'options' => $options,
                 'questions' => $questions,
                 'group' => $group,
-                'test' => $listeningTest,
-                'section' => $section,
-                'renderer' => app(\App\Services\Exam\ReadingTestRendererService::class),
             ])
         @else
             @include('admin.listening.question-builders.partials.validation-errors')
