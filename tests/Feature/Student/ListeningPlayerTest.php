@@ -160,7 +160,8 @@ it('starts attempt and creates answer rows', function (): void {
 
     $this->actingAs($student)
         ->post(route('student.listening.tests.start', $test))
-        ->assertRedirect();
+        ->assertOk()
+        ->assertViewIs('student.listening.player.show');
 
     $attempt = ListeningAttempt::query()->where('user_id', $student->id)->first();
     expect($attempt)->not->toBeNull();
@@ -178,13 +179,34 @@ it('resumes existing in progress attempt', function (): void {
     expect(ListeningAttempt::query()->where('user_id', $student->id)->count())->toBe(1);
 });
 
+it('player uses slug start url without attempt id', function (): void {
+    $test = createPlayableListeningTest();
+    $student = listeningStudentWithAccess();
+
+    $this->actingAs($student)
+        ->get('/listening-tests/'.$test->slug.'/start')
+        ->assertOk()
+        ->assertViewIs('student.listening.player.show');
+});
+
+it('legacy player url redirects to slug start', function (): void {
+    $test = createPlayableListeningTest();
+    $student = listeningStudentWithAccess();
+    $this->actingAs($student)->post(route('student.listening.tests.start', $test));
+    $attempt = ListeningAttempt::query()->where('user_id', $student->id)->firstOrFail();
+
+    $this->actingAs($student)
+        ->get(route('student.listening.attempts.player', $attempt))
+        ->assertRedirect(route('student.listening.tests.start', $test));
+});
+
 it('player payload excludes sensitive fields', function (): void {
     $test = createPlayableListeningTest();
     $student = listeningStudentWithAccess();
     $this->actingAs($student)->post(route('student.listening.tests.start', $test));
     $attempt = ListeningAttempt::query()->where('user_id', $student->id)->firstOrFail();
 
-    $response = $this->actingAs($student)->get(route('student.listening.attempts.player', $attempt));
+    $response = $this->actingAs($student)->get(route('student.listening.tests.start', $test));
     $response->assertOk();
     $content = $response->getContent();
     expect($content)->not->toContain('correct_answer');
@@ -234,7 +256,7 @@ it('rejects saving answer for question outside attempt test', function (): void 
     $testB = createPlayableListeningTest();
     $student = listeningStudentWithAccess();
     $response = $this->actingAs($student)->post(route('student.listening.tests.start', $testA));
-    $response->assertRedirect();
+    $response->assertOk();
     $attempt = ListeningAttempt::query()
         ->where('user_id', $student->id)
         ->where('listening_test_id', $testA->id)
@@ -296,7 +318,7 @@ it('auto submits expired attempt via middleware', function (): void {
     $attempt->update(['expires_at' => now()->subMinute()]);
 
     $this->actingAs($student)
-        ->get(route('student.listening.attempts.player', $attempt))
+        ->get(route('student.listening.tests.start', $test))
         ->assertRedirect(route('student.listening.attempts.expired', $attempt));
 });
 
@@ -305,10 +327,14 @@ it('forbids another user from accessing attempt', function (): void {
     $owner = listeningStudentWithAccess();
     $other = listeningStudentWithAccess();
     $this->actingAs($owner)->post(route('student.listening.tests.start', $test));
-    $attempt = ListeningAttempt::query()->firstOrFail();
+    $attempt = ListeningAttempt::query()->where('user_id', $owner->id)->firstOrFail();
+    $question = $test->questions()->firstOrFail();
 
     $this->actingAs($other)
-        ->get(route('student.listening.attempts.player', $attempt))
+        ->postJson(route('student.listening.attempts.answers.save', $attempt), [
+            'question_id' => $question->id,
+            'student_answer' => [['value' => 'Hack', 'type' => 'text']],
+        ])
         ->assertForbidden();
 });
 
@@ -353,11 +379,11 @@ it('loads player with question renderers', function (): void {
     $attempt = ListeningAttempt::query()->firstOrFail();
 
     $this->actingAs($student)
-        ->get(route('student.listening.attempts.player', $attempt))
+        ->get(route('student.listening.tests.start', $test))
         ->assertOk()
         ->assertSee('Part 1', false)
         ->assertSee('listening-question-group', false)
-        ->assertSee('listening-blank-pill', false)
+        ->assertSee('listening-blank', false)
         ->assertSee('listening-part-footer', false);
 });
 
@@ -368,7 +394,7 @@ it('timer remaining is exposed in player payload', function (): void {
     $attempt = ListeningAttempt::query()->firstOrFail();
 
     $this->actingAs($student)
-        ->get(route('student.listening.attempts.player', $attempt))
+        ->get(route('student.listening.tests.start', $test))
         ->assertOk()
         ->assertSee('listening-official-timer', false)
         ->assertSee('listening-timer-display', false);
@@ -460,7 +486,8 @@ it('allows starting a partially configured published listening test', function (
 
     $this->actingAs($student)
         ->post(route('student.listening.tests.start', $test))
-        ->assertRedirect();
+        ->assertOk()
+        ->assertViewIs('student.listening.player.show');
 
     $attempt = ListeningAttempt::query()->where('listening_test_id', $test->id)->first();
     expect($attempt)->not->toBeNull()

@@ -137,7 +137,7 @@ function navPlayableListeningTest(): ListeningTest
 
 function navStartAttempt(User $student, ListeningTest $test): ListeningAttempt
 {
-    test()->actingAs($student)->post(route('student.listening.tests.start', $test))->assertRedirect();
+    test()->actingAs($student)->post(route('student.listening.tests.start', $test))->assertOk();
 
     return ListeningAttempt::query()->where('user_id', $student->id)->where('listening_test_id', $test->id)->firstOrFail();
 }
@@ -414,7 +414,7 @@ it('player includes unsynced submit warning UI elements', function (): void {
     $attempt = navStartAttempt($student, $test);
 
     $this->actingAs($student)
-        ->get(route('student.listening.attempts.player', $attempt))
+        ->get(route('student.listening.tests.start', $test))
         ->assertOk()
         ->assertSee('listening-submit-unsynced', false)
         ->assertSee('listening-recovery-modal', false)

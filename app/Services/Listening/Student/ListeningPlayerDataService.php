@@ -130,7 +130,7 @@ class ListeningPlayerDataService
             'autosave_bulk' => route('student.listening.attempts.autosave.bulk', $attempt),
             'navigation_update' => route('student.listening.attempts.navigation.update', $attempt),
             'state_sync' => route('student.listening.attempts.state.sync', $attempt),
-            'review' => route('student.listening.attempts.questions.review', ['attempt' => $attempt->id, 'question' => '__QUESTION__']),
+            'review_summary' => route('student.listening.attempts.review', $attempt),
             'submit' => route('student.listening.attempts.submit', $attempt),
             'submitted' => route('student.listening.attempts.submitted', $attempt),
             'expired' => route('student.listening.attempts.expired', $attempt),

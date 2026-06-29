@@ -146,7 +146,7 @@ class CompletionBlankParser
         $valueAttr = $value !== '' ? ' value="'.e($value).'"' : '';
 
         return sprintf(
-            '<span class="listening-blank" data-question-number="%1$d"><span class="listening-blank-pill"><span class="listening-blank-number">%1$d</span><input type="text" class="listening-answer-input listening-blank-input" data-question-id="%2$d" data-question-number="%1$d" maxlength="120"%3$s /></span></span>',
+            '<span class="listening-blank" data-question-number="%1$d"><span class="listening-blank-number" aria-hidden="true">%1$d</span><input type="text" class="listening-answer-input listening-blank-input" data-question-id="%2$d" data-question-number="%1$d" maxlength="120" autocomplete="off" spellcheck="false"%3$s /></span>',
             $number,
             $questionId,
             $valueAttr,

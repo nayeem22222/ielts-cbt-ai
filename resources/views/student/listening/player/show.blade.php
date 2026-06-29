@@ -28,6 +28,7 @@
         @include('student.listening.player.partials.part-navigator', ['payload' => $payload])
 
         @include('student.listening.player.partials.submit-modal', ['payload' => $payload])
+        @include('student.listening.player.partials.review-panel')
         @include('student.listening.player.partials.recovery-modal')
         @include('student.listening.player.partials.offline-banner')
         @include('student.listening.player.partials.time-warning-modal')

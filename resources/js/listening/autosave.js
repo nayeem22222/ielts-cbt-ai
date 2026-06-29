@@ -1,6 +1,6 @@
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
 
-export function createAutosave(state, ui, palette, offlineSync) {
+export function createAutosave(state, ui, palette, offlineSync, review = null) {
     const autosaveConfig = state.config?.autosave ?? {};
     const debounceMs = autosaveConfig.debounce_ms ?? state.config.auto_save_debounce_ms ?? 700;
     const intervalMs = (autosaveConfig.bulk_interval_seconds ?? state.config.auto_save_interval_seconds ?? 10) * 1000;
@@ -50,7 +50,10 @@ export function createAutosave(state, ui, palette, offlineSync) {
     };
 
     const applyResponse = (data) => {
-        if (data.palette) palette.update(data.palette);
+        if (data.palette) {
+            palette.update(data.palette);
+            review?.updateFromPalette(data.palette);
+        }
         if (data.navigation) {
             state.currentSection = data.navigation.current_section_number ?? state.currentSection;
             state.currentQuestion = data.navigation.current_question_number ?? state.currentQuestion;

@@ -138,7 +138,7 @@ function timerPlayableTest(array $overrides = [], ?int $transferMinutes = 10): L
 
 function timerStartAttempt(User $student, ListeningTest $test): ListeningAttempt
 {
-    test()->actingAs($student)->post(route('student.listening.tests.start', $test))->assertRedirect();
+    test()->actingAs($student)->post(route('student.listening.tests.start', $test))->assertOk();
 
     return ListeningAttempt::query()->where('user_id', $student->id)->where('listening_test_id', $test->id)->firstOrFail();
 }
@@ -234,7 +234,7 @@ it('middleware redirects expired attempt', function (): void {
     $attempt->update(['expires_at' => now()->subMinute()]);
 
     $this->actingAs($student)
-        ->get(route('student.listening.attempts.player', $attempt))
+        ->get(route('student.listening.tests.start', $test))
         ->assertRedirect(route('student.listening.attempts.expired', $attempt));
 });
 
@@ -355,7 +355,7 @@ it('player includes official timer UI elements', function (): void {
     $attempt = timerStartAttempt($student, $test);
 
     $this->actingAs($student)
-        ->get(route('student.listening.attempts.player', $attempt))
+        ->get(route('student.listening.tests.start', $test))
         ->assertOk()
         ->assertSee('listening-official-timer', false)
         ->assertSee('listening-phase-banner', false)

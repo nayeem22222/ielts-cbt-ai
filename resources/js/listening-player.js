@@ -8,6 +8,7 @@ import { createOfflineSync } from './listening/offline-sync';
 import { createTimer } from './listening/timer';
 import { createOfficialFlow } from './listening/official-flow';
 import { createAudioFlow } from './listening/audio-flow';
+import { createListeningReview } from './listening/review';
 
 function readPayload() {
     const root = document.querySelector('[data-listening-player]');
@@ -77,12 +78,16 @@ document.addEventListener('DOMContentLoaded', () => {
         },
     };
 
+    let review;
     const palette = createPalette(state);
     const offlineSync = createOfflineSync(state, ui);
-    const autosave = createAutosave(state, ui, palette, offlineSync);
+    const autosave = createAutosave(state, ui, palette, offlineSync, {
+        updateFromPalette: (items) => review?.updateFromPalette(items),
+    });
+    const navigation = createNavigation(state, ui, autosave, palette);
+    review = createListeningReview(state, navigation, palette);
     const officialFlow = createOfficialFlow(state, ui);
     const timer = createTimer(state, ui, autosave, officialFlow);
-    const navigation = createNavigation(state, ui, autosave, palette);
     const recovery = createRecovery(state, autosave, navigation);
     const audioFlow = createAudioFlow(state, ui);
     const audioEl = document.getElementById('listening-audio-element');
@@ -92,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     palette.bind();
     navigation.bind();
+    review.bind();
     navigation.showQuestion(state.currentQuestion, 'resume');
     recovery.init();
     timer.bind();
@@ -150,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!question) return;
 
         const flagged = !question.is_flagged;
-        const url = (state.routes.review ?? state.routes.flag).replace('__QUESTION__', String(questionId));
+        const url = state.routes.flag.replace('__QUESTION__', String(questionId));
 
         try {
             const res = await fetch(url, {
@@ -166,7 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
             question.is_flagged = flagged;
             button?.classList.toggle('is-flagged', flagged);
             button?.setAttribute('aria-pressed', flagged ? 'true' : 'false');
-            if (data.palette) palette.update(data.palette);
+            if (data.palette) {
+                palette.update(data.palette);
+                review.updateFromPalette(data.palette);
+            }
         } catch {
             ui.setSaveStatus('Offline');
         }

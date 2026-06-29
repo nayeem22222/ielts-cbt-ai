@@ -21,8 +21,8 @@ it('renders completion groups with inline numbered blanks instead of question ca
     expect($html)
         ->toContain('listening-completion-card')
         ->toContain('listening-completion-template')
-        ->toContain('listening-blank-pill')
-        ->toContain('listening-blank-number">1</')
+        ->toContain('listening-blank')
+        ->toContain('listening-blank-number" aria-hidden="true">1</')
         ->toContain('data-question-id="10"')
         ->toContain('value="Oxford"')
         ->not->toContain('Question 1');

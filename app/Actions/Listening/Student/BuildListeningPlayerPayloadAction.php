@@ -15,6 +15,7 @@ use App\Services\Listening\Student\ListeningOfficialTimerService;
 use App\Services\Listening\Student\ListeningPlayerDataService;
 use App\Services\Listening\Student\ListeningPlayerRecoveryService;
 use App\Services\Listening\Student\ListeningQuestionPaletteService;
+use App\Services\Listening\Student\ListeningReviewService;
 use App\Services\Listening\Student\ListeningTimerService;
 
 class BuildListeningPlayerPayloadAction
@@ -29,6 +30,7 @@ class BuildListeningPlayerPayloadAction
         private readonly ListeningOfficialTimerService $officialTimer,
         private readonly ListeningOfficialFlowService $officialFlow,
         private readonly ListeningAudioFlowService $audioFlow,
+        private readonly ListeningReviewService $review,
     ) {}
 
     public function execute(ListeningAttempt $attempt): ListeningPlayerPayloadData
@@ -90,6 +92,8 @@ class BuildListeningPlayerPayloadAction
             officialTimer: $officialTimer->toArray(),
             phase: $phaseState->toArray(),
             audioFlow: $this->audioFlow->getAudioState($attempt),
+            review: $this->review->buildReviewSummary($attempt),
+            testSlug: (string) ($test?->slug ?? ''),
         );
     }
 }

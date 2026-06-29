@@ -36,7 +36,7 @@ export function createNavigation(state, ui, autosave, palette) {
         });
 
         const target =
-            document.querySelector(`[data-question-number="${number}"] .listening-blank-pill`)
+            document.querySelector(`[data-question-number="${number}"] .listening-blank-input`)
             ?? document.querySelector(`[data-question-number="${number}"]`)
             ?? document.querySelector(`input[data-question-number="${number}"]`)?.closest(
                 '[data-question-number], .listening-question-card, .listening-group-shell, .listening-matching-row, .listening-short-answer-item',
@@ -150,11 +150,11 @@ export function createNavigation(state, ui, autosave, palette) {
             });
         });
 
-        document.getElementById('listening-review-current')?.addEventListener('click', async () => {
+        document.getElementById('listening-flag-current')?.addEventListener('click', async () => {
             const question = state.questions?.find((q) => q.question_number === state.currentQuestion);
             if (!question) return;
 
-            const url = (state.routes.review ?? state.routes.flag).replace('__QUESTION__', question.id);
+            const url = state.routes.flag.replace('__QUESTION__', question.id);
             const flagged = !question.is_flagged;
 
             await fetch(url, {
@@ -166,6 +166,7 @@ export function createNavigation(state, ui, autosave, palette) {
                 },
                 body: JSON.stringify({ flagged }),
             }).then((res) => res.json()).then((data) => {
+                question.is_flagged = flagged;
                 if (data.palette) palette.update(data.palette);
             });
         });

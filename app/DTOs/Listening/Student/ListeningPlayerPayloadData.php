@@ -37,6 +37,8 @@ final readonly class ListeningPlayerPayloadData
         public array $officialTimer = [],
         public array $phase = [],
         public array $audioFlow = [],
+        public array $review = [],
+        public string $testSlug = '',
     ) {}
 
     /**
@@ -62,6 +64,8 @@ final readonly class ListeningPlayerPayloadData
             'official_timer' => $this->officialTimer,
             'phase' => $this->phase,
             'audio_flow' => $this->audioFlow,
+            'review' => $this->review,
+            'test_slug' => $this->testSlug,
         ];
     }
 }

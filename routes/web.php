@@ -30,6 +30,7 @@ use App\Http\Controllers\Student\ReadingTestRendererController;
 use App\Http\Controllers\Student\ReadingTimerController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\TeacherDashboardController;
+use App\Http\Controllers\Student\Listening\ListeningAttemptController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'pages.landing')->name('home');
@@ -210,9 +211,20 @@ Route::middleware(['auth', 'verified', 'role:student'])->group(function (): void
         Route::get('/{readingTest:slug}/start', [ReadingTestRendererController::class, 'start'])->name('start');
     });
 
-    Route::prefix('listening')->name('student.listening.')->middleware('module:listening')->group(function (): void {
+    Route::prefix('listening-tests')->name('student.listening.')->middleware('module:listening')->group(function (): void {
         require __DIR__.'/student/listening.php';
     });
+
+    Route::prefix('listening-attempts')->name('student.listening.attempts.')->middleware('module:listening')->group(function (): void {
+        require __DIR__.'/student/listening-attempts.php';
+    });
+
+    Route::redirect('/listening/tests', '/listening-tests', 301)
+        ->middleware('module:listening');
+
+    Route::get('/listening/attempts/{attempt}/player', [ListeningAttemptController::class, 'legacyPlayer'])
+        ->middleware('module:listening')
+        ->name('student.listening.attempts.player');
 
     Route::get('/exam/listening', fn () => redirect()->route('student.listening.tests.index'))
         ->middleware('module:listening')

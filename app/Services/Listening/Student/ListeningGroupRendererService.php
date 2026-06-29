@@ -240,9 +240,9 @@ class ListeningGroupRendererService
                 $saved = $this->savedTextValue($question);
                 $valueAttr = $saved !== '' ? ' value="'.e($saved).'"' : '';
 
-                $html .= '<div class="listening-labelling-marker" data-question-number="'.$number.'" style="left:'.(float) ($point['x'] ?? 0).'%;top:'.(float) ($point['y'] ?? 0).'%;">';
-                $html .= '<span class="listening-blank-number">'.$number.'</span>';
-                $html .= '<input type="text" class="listening-answer-input listening-blank-input listening-labelling-input" data-question-id="'.$questionId.'" data-question-number="'.$number.'" maxlength="120"'.$valueAttr.'>';
+                $html .= '<div class="listening-labelling-marker listening-inline-field" data-question-number="'.$number.'" style="left:'.(float) ($point['x'] ?? 0).'%;top:'.(float) ($point['y'] ?? 0).'%;">';
+                $html .= '<span class="listening-blank-number" aria-hidden="true">'.$number.'</span>';
+                $html .= '<input type="text" class="listening-answer-input listening-blank-input listening-labelling-input" data-question-id="'.$questionId.'" data-question-number="'.$number.'" maxlength="120" autocomplete="off" spellcheck="false"'.$valueAttr.'>';
                 $html .= '</div>';
             }
 
@@ -263,9 +263,9 @@ class ListeningGroupRendererService
                 $saved = $this->savedTextValue($question);
                 $valueAttr = $saved !== '' ? ' value="'.e($saved).'"' : '';
 
-                $html .= '<div class="listening-labelling-list-item" data-question-number="'.$number.'" data-question-id="'.$questionId.'">';
-                $html .= '<span class="listening-blank-number">'.$number.'</span>';
-                $html .= '<input type="text" class="listening-answer-input listening-inline-input" data-question-id="'.$questionId.'" data-question-number="'.$number.'" maxlength="120" placeholder="Your answer"'.$valueAttr.'>';
+                $html .= '<div class="listening-labelling-list-item listening-inline-field" data-question-number="'.$number.'" data-question-id="'.$questionId.'">';
+                $html .= '<span class="listening-blank-number" aria-hidden="true">'.$number.'</span>';
+                $html .= '<input type="text" class="listening-answer-input listening-blank-input" data-question-id="'.$questionId.'" data-question-number="'.$number.'" maxlength="120" autocomplete="off" spellcheck="false"'.$valueAttr.'>';
                 $html .= '</div>';
             }
 
@@ -301,7 +301,10 @@ class ListeningGroupRendererService
 
             $html .= '<div class="listening-question-card listening-short-answer-item" data-question-number="'.$number.'" data-question-id="'.$questionId.'">';
             $html .= '<p class="listening-short-answer-stem"><span class="listening-question-prefix">'.$number.'.</span> '.e((string) ($question['question_text'] ?? '')).'</p>';
-            $html .= '<input type="text" class="listening-answer-input listening-inline-input" data-question-id="'.$questionId.'" data-question-number="'.$number.'" maxlength="120"'.$valueAttr.'>';
+            $html .= '<div class="listening-inline-field" data-question-number="'.$number.'">';
+            $html .= '<span class="listening-blank-number" aria-hidden="true">'.$number.'</span>';
+            $html .= '<input type="text" class="listening-answer-input listening-blank-input" data-question-id="'.$questionId.'" data-question-number="'.$number.'" maxlength="120" autocomplete="off" spellcheck="false"'.$valueAttr.'>';
+            $html .= '</div>';
             $html .= '</div>';
         }
 
