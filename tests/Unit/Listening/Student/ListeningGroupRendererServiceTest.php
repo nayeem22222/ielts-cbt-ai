@@ -130,3 +130,64 @@ it('renders matching groups with option columns and radio buttons', function ():
         ->not->toContain('<select')
         ->not->toContain('listening-matching-pill-select');
 });
+
+it('renders matching drag and drop groups with draggable tokens and drop zones', function (): void {
+    $renderer = app(ListeningGroupRendererService::class);
+
+    $html = $renderer->render([
+        'id' => 12,
+        'question_type' => 'matching',
+        'content' => '',
+        'settings' => ['interaction_mode' => 'drag_drop'],
+        'options' => [
+            'choices' => [
+                ['key' => 'A', 'text' => 'being well-organised'],
+                ['key' => 'B', 'text' => 'being flexible'],
+            ],
+            'items' => [
+                ['key' => '17', 'text' => 'Prepping an actor'],
+            ],
+        ],
+        'image_url' => null,
+    ], [
+        ['id' => 40, 'question_number' => 17, 'question_text' => 'Prepping an actor', 'student_answer' => [['item_key' => '17', 'value' => 'B', 'type' => 'matching']]],
+    ]);
+
+    expect($html)
+        ->toContain('listening-dnd-group')
+        ->toContain('listening-dnd-token')
+        ->toContain('listening-dnd-dropzone')
+        ->toContain('data-option-key="A"', false)
+        ->toContain('data-group-id="12"', false)
+        ->toContain('draggable="true"', false)
+        ->toContain('value="B"', false)
+        ->not->toContain('type="radio"', false)
+        ->not->toContain('<select');
+});
+
+it('renders completion drag and drop blanks when interaction mode is drag_drop', function (): void {
+    $renderer = app(ListeningGroupRendererService::class);
+
+    $html = $renderer->render([
+        'id' => 15,
+        'question_type' => 'summary_completion',
+        'content' => 'The answer is [blank:7] and [blank:8].',
+        'settings' => ['interaction_mode' => 'drag_drop'],
+        'options' => [
+            ['key' => 'A', 'text' => 'wood'],
+            ['key' => 'B', 'text' => 'steel'],
+        ],
+        'image_url' => null,
+    ], [
+        ['id' => 50, 'question_number' => 7, 'student_answer' => [['value' => 'A', 'type' => 'letter']]],
+        ['id' => 51, 'question_number' => 8, 'student_answer' => null],
+    ]);
+
+    expect($html)
+        ->toContain('listening-dnd-group')
+        ->toContain('listening-dnd-token')
+        ->toContain('listening-dnd-dropzone--inline')
+        ->toContain('data-question-number="7"', false)
+        ->toContain('value="A"', false)
+        ->not->toContain('listening-blank-input');
+});

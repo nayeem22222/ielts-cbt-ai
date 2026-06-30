@@ -227,6 +227,8 @@ class ListeningPlayerDataService
             'template_type',
             'word_limit',
             'partial_marking',
+            'interaction_mode',
+            'allow_reuse',
         ]);
     }
 

@@ -135,6 +135,15 @@ export function createAutosave(state, ui, palette, offlineSync, review = null) {
         );
     };
 
+    const saveNow = (questionId, answer) => {
+        pending.set(questionId, answer);
+        persistDraft();
+        clearTimeout(debounceTimers.get(questionId));
+        debounceTimers.delete(questionId);
+
+        return flushSingle(questionId, answer);
+    };
+
     const bulkFlush = async () => {
         if (pending.size === 0) return null;
 
@@ -188,5 +197,5 @@ export function createAutosave(state, ui, palette, offlineSync, review = null) {
 
     setInterval(bulkFlush, intervalMs);
 
-    return { queueSave, bulkFlush, flushBeforeNavigation, hasUnsynced, clearDraft, hashAnswer };
+    return { queueSave, saveNow, bulkFlush, flushBeforeNavigation, hasUnsynced, clearDraft, hashAnswer };
 }

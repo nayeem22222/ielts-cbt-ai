@@ -10,6 +10,7 @@ import { createOfficialFlow } from './listening/official-flow';
 import { createAudioFlow } from './listening/audio-flow';
 import { createListeningReview } from './listening/review';
 import { bindMultipleAnswerLimits } from './listening/multiple-answer';
+import { createListeningDragDrop } from './listening/drag-drop';
 
 function readPayload() {
     const root = document.querySelector('[data-listening-player]');
@@ -86,7 +87,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const autosave = createAutosave(state, ui, palette, offlineSync, {
         updateFromPalette: (items) => review?.updateFromPalette(items),
     });
-    const navigation = createNavigation(state, ui, autosave, palette);
+    const questionArea = document.getElementById('listening-question-area');
+    const dragDrop = createListeningDragDrop({
+        questionArea,
+        saveNow: autosave.saveNow,
+        palette,
+    });
+    const navigation = createNavigation(state, ui, autosave, palette, {
+        afterQuestionChange: () => dragDrop.restore(questionArea),
+    });
     review = createListeningReview(state, navigation, palette);
     const officialFlow = createOfficialFlow(state, ui);
     const timer = createTimer(state, ui, autosave, officialFlow);
@@ -97,10 +106,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     audioFlow.bindAudioElement(audioEl, () => state.currentSection);
 
+    bindMultipleAnswerLimits(questionArea ?? document);
+    dragDrop.bind(questionArea);
+
     palette.bind();
     navigation.bind();
     review.bind();
     navigation.showQuestion(state.activeQuestionNumber, 'resume');
+    dragDrop.restore(questionArea);
     recovery.init();
     timer.bind();
     officialFlow.applyPhase(state.official_timer ?? {}, state.phase ?? {});
@@ -131,10 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
         audio?.start();
         startBtn.disabled = true;
     });
-
-    const questionArea = document.getElementById('listening-question-area');
-
-    bindMultipleAnswerLimits(questionArea ?? document);
 
     const saveAnswerFromInput = (input) => {
         const questionId = Number(input.dataset.questionId);

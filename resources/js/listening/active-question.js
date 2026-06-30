@@ -34,6 +34,7 @@ export function resolveQuestionNumberFromTarget(target) {
     const host = target.closest(
         '[data-question-number].listening-question-card, '
         + '[data-question-number].listening-matching-row, '
+        + '[data-question-number].listening-dnd-dropzone, '
         + '[data-question-number].listening-blank, '
         + '[data-question-number].listening-inline-field, '
         + '[data-question-number].listening-short-answer-item',

@@ -125,10 +125,39 @@ export function createPalette(state) {
         updateBlankBadges(state.palette ?? [], questionNumber);
     };
 
+    const markAnswered = (questionNumber, answered = true) => {
+        if (!Array.isArray(state.palette)) {
+            return;
+        }
+
+        const items = state.palette.map((item) => {
+            const number = item.question_number ?? item.number;
+
+            if (number !== questionNumber) {
+                return item;
+            }
+
+            const next = {
+                ...item,
+                is_answered: answered,
+            };
+
+            if (answered) {
+                next.status = item.is_flagged || item.status === 'flagged' ? 'flagged' : 'answered';
+            } else {
+                next.status = item.is_flagged || item.status === 'flagged' ? 'flagged' : 'unanswered';
+            }
+
+            return next;
+        });
+
+        update(items);
+    };
+
     const bind = () => {
         updatePartSummaries(state.palette ?? []);
         updatePartBoxes(state.currentSection ?? state.current_section_number ?? 1);
     };
 
-    return { update, setCurrent, bind, updatePartBoxes };
+    return { update, setCurrent, bind, updatePartBoxes, markAnswered };
 }

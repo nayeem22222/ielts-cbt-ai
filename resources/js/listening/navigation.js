@@ -6,7 +6,7 @@ import {
 
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
 
-export function createNavigation(state, ui, autosave, palette) {
+export function createNavigation(state, ui, autosave, palette, hooks = {}) {
     let navigating = false;
 
     const maxQuestion = () => {
@@ -42,7 +42,7 @@ export function createNavigation(state, ui, autosave, palette) {
         });
 
         document.querySelectorAll(
-            '.listening-question-card.is-focused, .listening-matching-row.is-focused, .listening-blank.is-focused, .listening-inline-field.is-focused',
+            '.listening-question-card.is-focused, .listening-matching-row.is-focused, .listening-dnd-dropzone.is-focused, .listening-blank.is-focused, .listening-inline-field.is-focused',
         ).forEach((el) => {
             el.classList.remove('is-focused');
         });
@@ -54,6 +54,7 @@ export function createNavigation(state, ui, autosave, palette) {
         const target =
             document.querySelector(`[data-question-number="${number}"].listening-question-card`)
             ?? document.querySelector(`[data-question-number="${number}"].listening-matching-question-row`)
+            ?? document.querySelector(`.listening-dnd-dropzone[data-question-number="${number}"]`)
             ?? document.querySelector(`[data-question-number="${number}"].listening-short-answer-item`)
             ?? document.querySelector(`.listening-blank[data-question-number="${number}"]`)
             ?? document.querySelector(`.listening-inline-field[data-question-number="${number}"]`)
@@ -83,11 +84,12 @@ export function createNavigation(state, ui, autosave, palette) {
         const target =
             document.querySelector(`[data-question-number="${number}"] .listening-blank-input`)
             ?? document.querySelector(`.listening-blank[data-question-number="${number}"]`)
+            ?? document.querySelector(`.listening-dnd-dropzone[data-question-number="${number}"]`)
             ?? document.querySelector(`[data-question-number="${number}"].listening-question-card`)
             ?? document.querySelector(`[data-question-number="${number}"].listening-matching-question-row`)
             ?? document.querySelector(`[data-question-number="${number}"]`)
             ?? document.querySelector(`input[data-question-number="${number}"]`)?.closest(
-                '[data-question-number], .listening-question-card, .listening-group-shell, .listening-matching-row, .listening-short-answer-item, .listening-blank, .listening-inline-field',
+                '[data-question-number], .listening-question-card, .listening-group-shell, .listening-matching-row, .listening-short-answer-item, .listening-dnd-dropzone, .listening-blank, .listening-inline-field',
             );
 
         if (target) {
@@ -128,6 +130,8 @@ export function createNavigation(state, ui, autosave, palette) {
         highlightQuestion(resolved);
         await persistPosition(direction);
 
+        hooks.afterQuestionChange?.();
+
         navigating = false;
     };
 
@@ -146,6 +150,8 @@ export function createNavigation(state, ui, autosave, palette) {
         palette.setCurrent(firstQuestion);
         highlightQuestion(firstQuestion);
         await persistPosition(direction);
+
+        hooks.afterQuestionChange?.();
 
         navigating = false;
     };
@@ -233,12 +239,24 @@ export function createNavigation(state, ui, autosave, palette) {
             document.querySelectorAll(`[data-question-id="${question.id}"]`).forEach((input) => {
                 if (input.type === 'checkbox' || input.type === 'radio') {
                     input.checked = false;
-                } else {
-                    input.value = '';
+                    return;
                 }
+
+                if (input.classList.contains('listening-dnd-input')) {
+                    const zone = input.closest('.listening-dnd-dropzone');
+                    input.value = '';
+                    zone?.querySelector('.listening-dnd-dropzone__placeholder')?.removeAttribute('hidden');
+                    zone?.querySelector('.listening-dnd-dropzone__filled')?.setAttribute('hidden', '');
+                    zone?.classList.remove('listening-dnd-dropzone--filled');
+                    zone?.classList.add('listening-dnd-dropzone--empty');
+                    return;
+                }
+
+                input.value = '';
             });
 
             autosave.queueSave(question.id, null);
+            hooks.afterQuestionChange?.();
         });
     };
 

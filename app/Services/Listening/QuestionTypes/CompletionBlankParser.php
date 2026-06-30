@@ -123,22 +123,51 @@ class CompletionBlankParser
     /**
      * @param  array<int, array<string, mixed>>  $questionsByNumber
      */
-    public function renderStudentInteractive(string $content, array $questionsByNumber): string
-    {
+    public function renderStudentInteractive(
+        string $content,
+        array $questionsByNumber,
+        string $interactionMode = 'input',
+        int $groupId = 0,
+    ): string {
         $normalized = ListeningContentRenderer::sanitizeEditorHtml(
             $this->normalizePlaceholderHtml($content),
         );
 
-        return (string) preg_replace_callback(self::PLACEHOLDER_PATTERN, function (array $matches) use ($questionsByNumber): string {
+        return (string) preg_replace_callback(self::PLACEHOLDER_PATTERN, function (array $matches) use ($questionsByNumber, $interactionMode, $groupId): string {
             $number = (int) (($matches[1] ?? '') !== '' ? $matches[1] : $matches[3]);
             $question = $questionsByNumber[$number] ?? null;
+            $questionId = (int) ($question['id'] ?? 0);
+            $saved = $this->savedTextValue($question);
 
-            return $this->blankInputMarkup(
-                $number,
-                (int) ($question['id'] ?? 0),
-                $this->savedTextValue($question),
-            );
+            if ($interactionMode === 'drag_drop') {
+                return $this->blankDropzoneMarkup($number, $questionId, $groupId, $saved);
+            }
+
+            return $this->blankInputMarkup($number, $questionId, $saved);
         }, $normalized);
+    }
+
+    private function blankDropzoneMarkup(int $number, int $questionId, int $groupId, string $savedKey): string
+    {
+        $valueAttr = $savedKey !== '' ? ' value="'.e($savedKey).'"' : '';
+        $stateClass = $savedKey !== '' ? 'listening-dnd-dropzone--filled' : 'listening-dnd-dropzone--empty';
+
+        return sprintf(
+            '<span class="listening-dnd-dropzone listening-dnd-dropzone--inline %5$s" data-question-number="%1$d" data-question-id="%2$d" data-group-id="%3$d" tabindex="0" role="button" aria-label="Answer for question %1$d">'
+            .'<span class="listening-blank-number" aria-hidden="true">%1$d</span>'
+            .'<input type="hidden" class="listening-answer-input listening-dnd-input" data-question-id="%2$d" data-question-number="%1$d" data-group-id="%3$d" data-answer-type="letter"%4$s />'
+            .'<span class="listening-dnd-dropzone__placeholder">Drop answer here</span>'
+            .'<span class="listening-dnd-dropzone__filled" hidden>'
+            .'<span class="listening-dnd-dropzone__key"></span>'
+            .'<button type="button" class="listening-dnd-dropzone__clear" aria-label="Remove answer for question %1$d">&times;</button>'
+            .'</span>'
+            .'</span>',
+            $number,
+            $questionId,
+            $groupId,
+            $valueAttr,
+            $stateClass,
+        );
     }
 
     private function blankInputMarkup(int $number, int $questionId, string $value): string
