@@ -18,6 +18,11 @@
     id="question-group-{{ $group->id }}"
     data-group-id="{{ $group->id }}"
     data-question-type="{{ $type?->value }}"
+    @if ($type?->allowsMultipleCorrectAnswers() && $group->start_question !== null && $group->end_question !== null)
+        data-mcq-range-start="{{ $group->start_question }}"
+        data-mcq-range-end="{{ $group->end_question }}"
+        data-passage-id="{{ $passage->id }}"
+    @endif
 >
     @if ($group->title)
         <h3 class="reading-test-group-title">{{ $group->title }}</h3>

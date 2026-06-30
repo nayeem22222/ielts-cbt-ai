@@ -53,6 +53,151 @@ function enforceMcqMultipleLimit(input) {
     applyMcqMultipleLimitState(questionId);
 }
 
+function mapHasAnswered(answeredMap, number) {
+    const key = Number(number);
+
+    if (Object.prototype.hasOwnProperty.call(answeredMap, key)) {
+        return Boolean(answeredMap[key]);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(answeredMap, String(key))) {
+        return Boolean(answeredMap[String(key)]);
+    }
+
+    return null;
+}
+
+function resolveQuestionStatus(answered, flagged) {
+    if (answered && flagged) {
+        return 'answered-flagged';
+    }
+
+    if (flagged) {
+        return 'flagged';
+    }
+
+    if (answered) {
+        return 'answered';
+    }
+
+    return 'unanswered';
+}
+
+function syncMcqMultipleNavigator(component) {
+    const answered = {
+        ...(component.navigator?.answered_questions ?? {}),
+    };
+    const questions = {
+        ...(component.navigator?.questions ?? {}),
+    };
+
+    const applyRange = ({
+        start,
+        end,
+        groupId,
+        passageId,
+        boxes,
+    }) => {
+        if (!Number.isFinite(start) || !Number.isFinite(end) || start <= 0 || end < start) {
+            return;
+        }
+
+        const required = end - start + 1;
+        const selected = [...boxes].filter((box) => box.checked).length;
+        const complete = selected > 0 && selected === required;
+        const anchor = boxes[0];
+        const questionId = anchor ? Number(anchor.dataset.questionId ?? 0) : 0;
+        const existingSlot = questions[start] ?? questions[String(start)] ?? {};
+        const flagged = Boolean(existingSlot.flagged);
+
+        for (let number = start; number <= end; number += 1) {
+            answered[number] = complete;
+
+            const previous = questions[number] ?? questions[String(number)] ?? {};
+
+            questions[number] = {
+                ...previous,
+                question_id: questionId || previous.question_id || null,
+                question_number: number,
+                passage_id: passageId,
+                group_id: groupId,
+                answered: complete,
+                flagged,
+                status: resolveQuestionStatus(complete, flagged),
+            };
+        }
+    };
+
+    document.querySelectorAll('.reading-test-group[data-mcq-range-start][data-mcq-range-end]').forEach((groupEl) => {
+        const start = Number(groupEl.dataset.mcqRangeStart);
+        const end = Number(groupEl.dataset.mcqRangeEnd);
+        const groupId = Number(groupEl.dataset.groupId ?? 0);
+        const passageId = Number(groupEl.dataset.passageId ?? 0);
+        const boxes = groupEl.querySelectorAll('[data-question-type="multiple_choice_multiple"][type="checkbox"]');
+
+        applyRange({
+            start,
+            end,
+            groupId,
+            passageId,
+            boxes,
+        });
+    });
+
+    (component.passages ?? []).forEach((passage) => {
+        (passage.groups ?? []).forEach((group) => {
+            if (group.type !== 'multiple_choice_multiple') {
+                return;
+            }
+
+            const start = Number(group.question_from ?? 0);
+            const end = Number(group.question_to ?? start);
+
+            if (!Number.isFinite(start) || !Number.isFinite(end) || start <= 0 || end < start) {
+                return;
+            }
+
+            const boxes = document.querySelectorAll(
+                `[data-group-id="${group.id}"][data-question-type="multiple_choice_multiple"][type="checkbox"]`,
+            );
+
+            applyRange({
+                start,
+                end,
+                groupId: Number(group.id),
+                passageId: Number(passage.id),
+                boxes,
+            });
+        });
+    });
+
+    const parts = { ...(component.navigator?.parts ?? {}) };
+
+    (component.passages ?? []).forEach((passage) => {
+        const numbers = (passage.questions ?? []).map((item) => Number(item.number));
+        const total = numbers.length;
+        const answeredCount = numbers.filter((number) => mapHasAnswered(answered, number) === true).length;
+
+        parts[passage.id] = {
+            ...(parts[passage.id] ?? {}),
+            passage_id: passage.id,
+            answered: answeredCount,
+            total,
+            label: `${answeredCount} of ${total} answered`,
+        };
+    });
+
+    const answeredCount = Object.entries(answered).filter(([, value]) => value === true).length;
+
+    component.navigator = {
+        ...(component.navigator ?? {}),
+        answered_questions: answered,
+        questions,
+        parts,
+        answered_count: answeredCount,
+    };
+}
+
 export function createReadingTestAutosave(component) {
     const debounceTimers = new Map();
     const unsavedQuestions = new Set();
@@ -69,7 +214,20 @@ export function createReadingTestAutosave(component) {
             return;
         }
 
-        component.navigator = navigator;
+        component.navigator = {
+            ...navigator,
+            answered_questions: {
+                ...(navigator.answered_questions ?? {}),
+            },
+            questions: {
+                ...(navigator.questions ?? {}),
+            },
+            parts: {
+                ...(navigator.parts ?? {}),
+            },
+        };
+
+        syncMcqMultipleNavigator(component);
     };
 
     const questionRecord = (questionId) => component.savedAnswers?.[questionId] ?? null;
@@ -140,6 +298,7 @@ export function createReadingTestAutosave(component) {
             .forEach((input) => applyMcqMultipleLimitState(input.dataset.questionId));
 
         applyNavigator(component.navigator);
+        syncMcqMultipleNavigator(component);
     };
 
     const collectPayload = (input) => {
@@ -304,6 +463,7 @@ export function createReadingTestAutosave(component) {
                 input.addEventListener('change', () => {
                     if (input.type === 'checkbox') {
                         enforceMcqMultipleLimit(input);
+                        syncMcqMultipleNavigator(component);
                     }
 
                     queueSave(input, true);

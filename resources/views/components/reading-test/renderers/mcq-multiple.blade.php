@@ -10,11 +10,16 @@
         }
 
         $maxSelections = max(1, (int) ($maxSelections ?? 2));
+        $questionHeading = ($group->start_question !== null
+            && $group->end_question !== null
+            && (int) $group->start_question !== (int) $group->end_question)
+            ? 'Questions '.$group->question_range_label
+            : null;
     @endphp
     @foreach ($questions as $question)
         <div class="reading-test-question-row rounded-lg border border-neutral-200 bg-neutral-50 p-4" data-question-number="{{ $question->question_number }}">
             <div class="flex items-start justify-between gap-2">
-                <p class="text-sm font-semibold text-brand-700">Question {{ $question->question_number }}</p>
+                <p class="text-sm font-semibold text-brand-700">{{ $questionHeading ?? 'Question '.$question->question_number }}</p>
                 <div class="flex items-center gap-1">
                     <x-reading-test.flag-button :question="$question" />
                     <x-reading-test.report-question-button :question="$question" />

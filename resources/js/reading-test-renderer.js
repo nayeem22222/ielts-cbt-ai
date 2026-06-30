@@ -259,7 +259,17 @@ export function readingTestRenderer(initialState = {}) {
         },
 
         scrollToQuestion(number) {
-            const row = document.querySelector(`[data-question-number="${number}"]`);
+            let row = document.querySelector(`[data-question-number="${number}"]`);
+
+            if (!row) {
+                const question = this.questions.find((item) => item.number === number);
+
+                if (question?.group_id) {
+                    row = document.querySelector(`#question-group-${question.group_id} .reading-test-question-row`)
+                        ?? document.querySelector(`#question-group-${question.group_id}`);
+                }
+            }
+
             if (!row) {
                 return;
             }
@@ -298,7 +308,15 @@ export function readingTestRenderer(initialState = {}) {
 
             const current = document.querySelector(
                 `.reading-test-question-row[data-question-number="${this.currentQuestionNumber}"]`,
-            );
+            ) ?? (() => {
+                const question = this.questions.find((item) => item.number === this.currentQuestionNumber);
+
+                if (!question?.group_id) {
+                    return null;
+                }
+
+                return document.querySelector(`#question-group-${question.group_id} .reading-test-question-row`);
+            })();
             current?.classList.add('is-current');
         },
 
@@ -326,7 +344,33 @@ export function readingTestRenderer(initialState = {}) {
         },
 
         questionNavClass(number) {
-            const status = this.navigator?.questions?.[number]?.status ?? 'unanswered';
+            const key = Number(number);
+            const answeredMap = this.navigator?.answered_questions ?? {};
+            const navQuestion = this.navigator?.questions?.[key] ?? this.navigator?.questions?.[String(key)];
+            const flagged = Boolean(navQuestion?.flagged);
+
+            let answered = null;
+
+            if (Object.prototype.hasOwnProperty.call(answeredMap, key)) {
+                answered = Boolean(answeredMap[key]);
+            } else if (Object.prototype.hasOwnProperty.call(answeredMap, String(key))) {
+                answered = Boolean(answeredMap[String(key)]);
+            } else {
+                answered = Boolean(navQuestion?.answered);
+            }
+
+            let status = 'unanswered';
+
+            if (answered && flagged) {
+                status = 'answered-flagged';
+            } else if (flagged) {
+                status = 'flagged';
+            } else if (answered) {
+                status = 'answered';
+            } else if (navQuestion?.status) {
+                status = navQuestion.status;
+            }
+
             const classes = [`is-${status}`];
 
             if (number === this.currentQuestionNumber) {

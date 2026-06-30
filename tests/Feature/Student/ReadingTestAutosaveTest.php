@@ -199,17 +199,18 @@ it('saves mcq multiple answers as json array', function (): void {
         'part_number' => 1,
         'title' => 'Passage',
         'start_question' => 1,
-        'end_question' => 1,
+        'end_question' => 2,
         'content_html' => '<p>Body</p>',
         'status' => PassageStatus::Published,
         'sort_order' => 1,
     ]);
 
     $group = $passage->groups()->create([
-        'title' => 'Q1',
+        'title' => 'Q1-2',
+        'instruction' => 'Choose TWO letters, A-E.',
         'question_type' => OfficialReadingQuestionType::MultipleChoiceMultiple,
         'start_question' => 1,
-        'end_question' => 1,
+        'end_question' => 2,
         'sort_order' => 1,
         'status' => PassageStatus::Published,
     ]);
@@ -231,11 +232,145 @@ it('saves mcq multiple answers as json array', function (): void {
         'group_id' => $group->id,
         'answer_json' => ['A', 'C'],
     ])->assertOk()
-        ->assertJsonPath('data.answered_status', 'answered');
+        ->assertJsonPath('data.answered_count', 2)
+        ->assertJsonPath('data.navigator_status.questions.1.answered', true)
+        ->assertJsonPath('data.navigator_status.questions.2.answered', true);
 
     $saved = ReadingAnswer::query()->where('attempt_id', $attempt->id)->where('question_id', $question->id)->first();
     expect($saved?->answer_json)->toBe(['A', 'C']);
     expect($saved?->answer)->toBeNull();
+});
+
+it('counts partial mcq multiple selections as unanswered until required count is met', function (): void {
+    $student = autosaveStudent();
+    $admin = createUserWithRole(UserRole::SuperAdmin, ['email_verified_at' => now()]);
+
+    $test = ReadingTest::query()->create([
+        'title' => 'MCQ Multiple Partial',
+        'slug' => 'mcq-multiple-partial-'.uniqid(),
+        'exam_type' => ExamType::Academic,
+        'duration_minutes' => 60,
+        'status' => PublishStatus::Published,
+        'published_at' => now(),
+        'created_by' => $admin->id,
+        'updated_by' => $admin->id,
+    ]);
+
+    $passage = $test->passages()->create([
+        'part_number' => 1,
+        'title' => 'Passage',
+        'start_question' => 1,
+        'end_question' => 2,
+        'content_html' => '<p>Body</p>',
+        'status' => PassageStatus::Published,
+        'sort_order' => 1,
+    ]);
+
+    $group = $passage->groups()->create([
+        'title' => 'Q1-2',
+        'instruction' => 'Choose TWO letters, A-E.',
+        'question_type' => OfficialReadingQuestionType::MultipleChoiceMultiple,
+        'start_question' => 1,
+        'end_question' => 2,
+        'sort_order' => 1,
+        'status' => PassageStatus::Published,
+    ]);
+
+    $question = $group->questions()->create([
+        'question_number' => 1,
+        'prompt' => 'Choose two',
+        'marks' => 1,
+        'sort_order' => 1,
+    ]);
+
+    $attempt = startAutosaveAttempt($student, $test);
+
+    $this->actingAs($student)->postJson(route('reading-attempts.answers.store', $attempt), [
+        'question_id' => $question->id,
+        'question_number' => 1,
+        'question_type' => OfficialReadingQuestionType::MultipleChoiceMultiple->value,
+        'passage_id' => $passage->id,
+        'group_id' => $group->id,
+        'answer_json' => ['A'],
+    ])->assertOk()
+        ->assertJsonPath('data.answered_count', 0)
+        ->assertJsonPath('data.navigator_status.questions.1.answered', false)
+        ->assertJsonPath('data.navigator_status.questions.2.answered', false)
+        ->assertJsonPath('data.answered_status', 'unanswered');
+});
+
+it('marks every number in each mcq multiple group answered when selections are complete', function (): void {
+    $student = autosaveStudent();
+    $admin = createUserWithRole(UserRole::SuperAdmin, ['email_verified_at' => now()]);
+
+    $test = ReadingTest::query()->create([
+        'title' => 'MCQ Multiple Dual Groups',
+        'slug' => 'mcq-multiple-dual-'.uniqid(),
+        'exam_type' => ExamType::Academic,
+        'duration_minutes' => 60,
+        'status' => PublishStatus::Published,
+        'published_at' => now(),
+        'created_by' => $admin->id,
+        'updated_by' => $admin->id,
+    ]);
+
+    $passage = $test->passages()->create([
+        'part_number' => 1,
+        'title' => 'Passage',
+        'start_question' => 1,
+        'end_question' => 4,
+        'content_html' => '<p>Body</p>',
+        'status' => PassageStatus::Published,
+        'sort_order' => 1,
+    ]);
+
+    foreach ([
+        ['start' => 1, 'end' => 2, 'number' => 2, 'answers' => ['A', 'B']],
+        ['start' => 3, 'end' => 4, 'number' => 4, 'answers' => ['C', 'E']],
+    ] as $config) {
+        $group = $passage->groups()->create([
+            'title' => "Q{$config['start']}-{$config['end']}",
+            'instruction' => 'Choose TWO letters, A-E.',
+            'question_type' => OfficialReadingQuestionType::MultipleChoiceMultiple,
+            'start_question' => $config['start'],
+            'end_question' => $config['end'],
+            'sort_order' => $config['start'],
+            'status' => PassageStatus::Published,
+        ]);
+
+        $group->questions()->create([
+            'question_number' => $config['number'],
+            'prompt' => 'Choose two',
+            'marks' => 1,
+            'sort_order' => 1,
+        ]);
+    }
+
+    $attempt = startAutosaveAttempt($student, $test);
+
+    foreach ([2 => ['A', 'B'], 4 => ['C', 'E']] as $questionNumber => $answers) {
+        $question = $test->questions()->where('question_number', $questionNumber)->firstOrFail();
+
+        $this->actingAs($student)->postJson(route('reading-attempts.answers.store', $attempt), [
+            'question_id' => $question->id,
+            'question_number' => $questionNumber,
+            'question_type' => OfficialReadingQuestionType::MultipleChoiceMultiple->value,
+            'passage_id' => $passage->id,
+            'group_id' => $question->group_id,
+            'answer_json' => $answers,
+        ])->assertOk();
+    }
+
+    $navigator = app(\App\Services\Exam\ReadingAnswerService::class)
+        ->buildNavigatorStatus($attempt->fresh());
+
+    expect($navigator['answered_questions'])->toMatchArray([
+        1 => true,
+        2 => true,
+        3 => true,
+        4 => true,
+    ]);
+    expect($navigator['answered_count'])->toBe(4);
 });
 
 it('saves and restores position across refresh', function (): void {

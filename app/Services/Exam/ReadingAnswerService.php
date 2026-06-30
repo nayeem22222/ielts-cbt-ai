@@ -10,9 +10,10 @@ use App\Models\ReadingAnswer;
 use App\Models\ReadingAttempt;
 use App\Models\ReadingPassage;
 use App\Models\ReadingQuestion;
+use App\Models\ReadingQuestionGroup;
 use App\Models\ReadingTest;
-use App\Services\Exam\ReadingTimerService;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use App\Support\Reading\ReadingSecurityLogger;
 use Illuminate\Auth\Access\AuthorizationException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -22,6 +23,7 @@ class ReadingAnswerService
     public function __construct(
         private readonly ReadingTestRendererService $renderer,
         private readonly ReadingTimerService $timer,
+        private readonly ReadingMultipleChoiceMultipleCountingService $mcqMultipleCounting,
     ) {
     }
 
@@ -110,7 +112,7 @@ class ReadingAnswerService
         }
 
         $type = $question->group?->question_type;
-        $isAnswered = $this->isAnswered($type, $answerText, $answerJson);
+        $isAnswered = $this->hasStoredAnswer($type, $answerText, $answerJson);
 
         $record = ReadingAnswer::query()->updateOrCreate(
             [
@@ -201,11 +203,7 @@ class ReadingAnswerService
                 'answer' => $answer->answer,
                 'answer_json' => $answer->answer_json,
                 'flagged' => (bool) $answer->flagged,
-                'answered' => $this->isAnswered(
-                    $question->group?->question_type,
-                    $answer->answer,
-                    $answer->answer_json,
-                ),
+                'answered' => $this->resolveSavedAnswerStatus($question, $answer),
             ];
         }
 
@@ -226,50 +224,69 @@ class ReadingAnswerService
             ->keyBy('question_id');
 
         $questions = [];
-        $parts = [];
-        $answeredCount = 0;
         $totalQuestions = 0;
 
         foreach ($test->passages as $passage) {
-            $partAnswered = 0;
-            $partTotal = 0;
+            $processedMcqGroups = [];
+            $reservedNumbers = $this->mcqMultipleCounting->reservedQuestionNumbersForPassage($passage);
 
-            foreach ($this->renderer->questionsForPassage($passage) as $question) {
-                $totalQuestions++;
-                $partTotal++;
-                $answer = $saved->get($question->id);
-                $type = $question->group?->question_type;
-                $answered = $answer !== null && $this->isAnswered($type, $answer->answer, $answer->answer_json);
-                $flagged = (bool) ($answer?->flagged ?? false);
-
-                if ($answered) {
-                    $answeredCount++;
-                    $partAnswered++;
+            foreach ($passage->groups as $group) {
+                if ($this->mcqMultipleCounting->isMcqMultipleGroup($group)) {
+                    continue;
                 }
 
-                $questions[$question->question_number] = [
-                    'question_id' => $question->id,
-                    'question_number' => $question->question_number,
-                    'passage_id' => $passage->id,
-                    'answered' => $answered,
-                    'flagged' => $flagged,
-                    'status' => $this->questionStatus($answered, $flagged),
-                ];
+                foreach ($group->questions as $question) {
+                    $number = (int) $question->question_number;
+
+                    if ($number <= 0 || isset($reservedNumbers[$number])) {
+                        continue;
+                    }
+
+                    $totalQuestions++;
+                    $answered = $this->resolveStandardQuestionAnswered($question, $saved);
+
+                    $questions[$number] = $this->navigatorQuestionEntry(
+                        $question,
+                        $passage->id,
+                        $answered,
+                        $saved,
+                    );
+                }
             }
 
-            $parts[$passage->id] = [
-                'passage_id' => $passage->id,
-                'answered' => $partAnswered,
-                'total' => $partTotal,
-                'label' => "{$partAnswered} of {$partTotal} answered",
-            ];
+            foreach ($passage->groups as $group) {
+                if (! $this->mcqMultipleCounting->isMcqMultipleGroup($group)) {
+                    continue;
+                }
+
+                $groupId = (int) $group->id;
+
+                if (isset($processedMcqGroups[$groupId])) {
+                    continue;
+                }
+
+                $processedMcqGroups[$groupId] = true;
+                [, $groupTotal] = $this->appendMcqMultipleNavigatorSlots(
+                    $questions,
+                    $passage,
+                    $group,
+                    $saved,
+                );
+
+                $totalQuestions += $groupTotal;
+            }
+
+            $this->finalizeMcqMultipleNavigatorSlots($questions, $passage, $saved);
         }
 
+        $summary = $this->summarizeNavigatorCounts($test, $questions);
+
         return [
-            'answered_count' => $answeredCount,
+            'answered_count' => $summary['answered_count'],
             'total_questions' => $totalQuestions,
             'questions' => $questions,
-            'parts' => $parts,
+            'answered_questions' => $this->mcqMultipleCounting->buildAnsweredQuestionsMap($questions),
+            'parts' => $summary['parts'],
         ];
     }
 
@@ -369,13 +386,189 @@ class ReadingAnswerService
         }
     }
 
-    private function isAnswered(?OfficialReadingQuestionType $type, ?string $answer, ?array $answerJson): bool
+    private function hasStoredAnswer(?OfficialReadingQuestionType $type, ?string $answer, ?array $answerJson): bool
     {
         if ($type === OfficialReadingQuestionType::MultipleChoiceMultiple) {
             return is_array($answerJson) && $answerJson !== [];
         }
 
         return trim((string) $answer) !== '';
+    }
+
+    private function resolveSavedAnswerStatus(ReadingQuestion $question, ReadingAnswer $answer): bool
+    {
+        $group = $question->group;
+
+        if ($this->mcqMultipleCounting->isMcqMultipleGroup($group)) {
+            $saved = collect([$answer->question_id => $answer]);
+
+            return $this->mcqMultipleCounting->isQuestionNumberAnsweredInGroup(
+                (int) $question->question_number,
+                $group,
+                $answer,
+            );
+        }
+
+        return $this->isAnswered(
+            $group?->question_type,
+            $answer->answer,
+            $answer->answer_json,
+        );
+    }
+
+    private function isAnswered(?OfficialReadingQuestionType $type, ?string $answer, ?array $answerJson): bool
+    {
+        if ($type === OfficialReadingQuestionType::MultipleChoiceMultiple) {
+            return false;
+        }
+
+        return trim((string) $answer) !== '';
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $questions
+     * @return array{0: int, 1: int}
+     */
+    private function appendMcqMultipleNavigatorSlots(
+        array &$questions,
+        ReadingPassage $passage,
+        ReadingQuestionGroup $group,
+        Collection $saved,
+    ): array {
+        $primaryAnswer = $this->mcqMultipleCounting->resolvePrimaryAnswer($group, $saved);
+        $primaryQuestion = $this->mcqMultipleCounting->resolvePrimaryQuestion($group);
+        $flagged = (bool) ($primaryAnswer?->flagged ?? false);
+        $answeredCount = 0;
+        $total = 0;
+
+        foreach ($this->mcqMultipleCounting->groupQuestionNumbers($group) as $number) {
+            $total++;
+            $answered = $this->mcqMultipleCounting->isQuestionNumberAnsweredInGroup(
+                $number,
+                $group,
+                $primaryAnswer,
+            );
+
+            if ($answered) {
+                $answeredCount++;
+            }
+
+            $questions[$number] = [
+                'question_id' => $primaryQuestion?->id,
+                'question_number' => $number,
+                'passage_id' => $passage->id,
+                'group_id' => $group->id,
+                'answered' => $answered,
+                'flagged' => $flagged,
+                'status' => $this->questionStatus($answered, $flagged),
+            ];
+        }
+
+        return [$answeredCount, $total];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $questions
+     */
+    private function finalizeMcqMultipleNavigatorSlots(
+        array &$questions,
+        ReadingPassage $passage,
+        Collection $saved,
+    ): void {
+        foreach ($passage->groups as $group) {
+            if (! $this->mcqMultipleCounting->isMcqMultipleGroup($group)) {
+                continue;
+            }
+
+            $primaryAnswer = $this->mcqMultipleCounting->resolvePrimaryAnswer($group, $saved);
+            $primaryQuestion = $this->mcqMultipleCounting->resolvePrimaryQuestion($group);
+            $flagged = (bool) ($primaryAnswer?->flagged ?? false);
+
+            foreach ($this->mcqMultipleCounting->answeredStateByQuestionNumber($group, $primaryAnswer) as $number => $answered) {
+                $questions[$number] = [
+                    'question_id' => $primaryQuestion?->id,
+                    'question_number' => $number,
+                    'passage_id' => $passage->id,
+                    'group_id' => $group->id,
+                    'answered' => $answered,
+                    'flagged' => $flagged,
+                    'status' => $this->questionStatus($answered, $flagged),
+                ];
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $questions
+     * @return array{answered_count: int, parts: array<int, array<string, mixed>>}
+     */
+    private function summarizeNavigatorCounts(ReadingTest $test, array $questions): array
+    {
+        $answeredCount = 0;
+        $parts = [];
+
+        foreach ($test->passages as $passage) {
+            $partAnswered = 0;
+            $partTotal = 0;
+
+            foreach ($this->renderer->navigatorQuestionsForPassage($passage) as $item) {
+                $number = (int) $item['number'];
+                $partTotal++;
+                $answered = (bool) ($questions[$number]['answered'] ?? false);
+
+                if ($answered) {
+                    $answeredCount++;
+                    $partAnswered++;
+                }
+            }
+
+            $parts[$passage->id] = [
+                'passage_id' => $passage->id,
+                'answered' => $partAnswered,
+                'total' => $partTotal,
+                'label' => "{$partAnswered} of {$partTotal} answered",
+            ];
+        }
+
+        return [
+            'answered_count' => $answeredCount,
+            'parts' => $parts,
+        ];
+    }
+
+    /**
+     * @param  Collection<int, ReadingAnswer>  $saved
+     */
+    private function resolveStandardQuestionAnswered(ReadingQuestion $question, Collection $saved): bool
+    {
+        $answer = $saved->get($question->id);
+        $type = $question->group?->question_type;
+
+        return $answer !== null && $this->isAnswered($type, $answer->answer, $answer->answer_json);
+    }
+
+    /**
+     * @param  Collection<int, ReadingAnswer>  $saved
+     * @return array<string, mixed>
+     */
+    private function navigatorQuestionEntry(
+        ReadingQuestion $question,
+        int $passageId,
+        bool $answered,
+        Collection $saved,
+    ): array {
+        $answer = $saved->get($question->id);
+        $flagged = (bool) ($answer?->flagged ?? false);
+
+        return [
+            'question_id' => $question->id,
+            'question_number' => (int) $question->question_number,
+            'passage_id' => $passageId,
+            'group_id' => $question->group_id,
+            'answered' => $answered,
+            'flagged' => $flagged,
+            'status' => $this->questionStatus($answered, $flagged),
+        ];
     }
 
     private function questionStatus(bool $answered, bool $flagged): string

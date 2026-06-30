@@ -34,14 +34,24 @@ class ReadingReviewService
         foreach ($test->passages as $passage) {
             $partQuestions = [];
 
-            foreach ($this->renderer->questionsForPassage($passage) as $question) {
-                $number = $question->question_number;
+            $numbers = collect($navigator['questions'] ?? [])
+                ->filter(fn (array $item): bool => (int) ($item['passage_id'] ?? 0) === (int) $passage->id)
+                ->keys()
+                ->map(fn ($number): int => (int) $number)
+                ->sort()
+                ->values();
+
+            foreach ($numbers as $number) {
                 $nav = $navigator['questions'][$number] ?? [];
-                $isAnswered = (bool) ($nav['answered'] ?? false);
+                $isAnswered = (bool) ($navigator['answered_questions'][$number]
+                    ?? $navigator['answered_questions'][(string) $number]
+                    ?? $nav['answered']
+                    ?? false);
                 $isFlagged = (bool) ($nav['flagged'] ?? false);
+                $questionId = (int) ($nav['question_id'] ?? 0);
                 $isVisited = in_array($number, $visited, true)
                     || $isAnswered
-                    || $attempt->current_question_id === $question->id;
+                    || $attempt->current_question_id === $questionId;
 
                 if ($isAnswered) {
                     $answered++;
@@ -63,12 +73,13 @@ class ReadingReviewService
                 }
 
                 $partQuestions[] = [
-                    'question_id' => $question->id,
+                    'question_id' => $questionId,
                     'question_number' => $number,
                     'answered' => $isAnswered,
                     'flagged' => $isFlagged,
                     'visited' => $isVisited,
-                    'current' => $attempt->current_question_id === $question->id,
+                    'current' => $attempt->current_question_id === $questionId
+                        && (int) ($attempt->currentQuestion?->question_number ?? 0) === $number,
                     'status' => $status,
                     'passage_id' => $passage->id,
                 ];
@@ -86,10 +97,18 @@ class ReadingReviewService
         $unansweredNumbers = [];
         $flaggedNumbers = [];
 
+        $answeredMap = $navigator['answered_questions'] ?? [];
+
         foreach ($navigator['questions'] as $number => $item) {
-            if (! ($item['answered'] ?? false)) {
+            $isAnswered = (bool) ($answeredMap[$number]
+                ?? $answeredMap[(string) $number]
+                ?? $item['answered']
+                ?? false);
+
+            if (! $isAnswered) {
                 $unansweredNumbers[] = (int) $number;
             }
+
             if ($item['flagged'] ?? false) {
                 $flaggedNumbers[] = (int) $number;
             }

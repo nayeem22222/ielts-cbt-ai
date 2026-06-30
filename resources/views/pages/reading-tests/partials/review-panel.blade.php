@@ -36,7 +36,7 @@
                     <div class="mb-6">
                         <h3 class="mb-2 text-sm font-bold text-brand-700" x-text="part.part_label + ': ' + (part.title || '')"></h3>
                         <div class="flex flex-wrap gap-2">
-                            <template x-for="question in part.questions ?? []" :key="'review-q-'+question.question_id">
+                            <template x-for="question in part.questions ?? []" :key="'review-q-'+question.question_number">
                                 <button
                                     type="button"
                                     class="reading-test-review-q"

@@ -324,7 +324,7 @@
 
                         <div class="reading-test-part-tab__questions flex flex-wrap justify-center gap-1" x-show="expandedPartId === passage.id" x-cloak @click.stop>
 
-                            <template x-for="question in passage.questions" :key="'nav-'+question.id">
+                            <template x-for="question in passage.questions" :key="'nav-'+question.number">
 
                                 <button
 

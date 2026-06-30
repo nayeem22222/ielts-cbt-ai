@@ -15,6 +15,7 @@ class ReadingTestRendererService
 {
     public function __construct(
         private readonly ReadingTestPublicCacheService $cache,
+        private readonly ReadingMultipleChoiceMultipleCountingService $mcqMultipleCounting,
     ) {
     }
 
@@ -75,7 +76,7 @@ class ReadingTestRendererService
                 'question_range' => $group->question_range_label,
             ])->values()->all();
 
-            $questions = $this->questionsForPassage($passage);
+            $questions = $this->navigatorQuestionsForPassage($passage);
 
             return [
                 'id' => $passage->id,
@@ -86,27 +87,27 @@ class ReadingTestRendererService
                 'instruction' => $passage->instruction,
                 'question_from' => $passage->start_question,
                 'question_to' => $passage->end_question,
-                'question_range' => $this->questionRangeLabel($questions, $passage),
+                'question_range' => $this->questionRangeLabelFromNumbers($questions, $passage),
                 'question_range_configured' => $passage->question_range_label,
                 'question_count' => $questions->count(),
                 'groups' => $groups,
-                'questions' => $questions->map(fn (ReadingQuestion $question): array => [
-                    'id' => $question->id,
-                    'number' => $question->question_number,
-                    'group_id' => $question->group_id,
+                'questions' => $questions->map(fn (array $question): array => [
+                    'id' => $question['id'],
+                    'number' => $question['number'],
+                    'group_id' => $question['group_id'],
                 ])->values()->all(),
             ];
         })->values()->all();
 
         $allQuestions = $test->passages
-            ->flatMap(fn (ReadingPassage $passage) => $this->questionsForPassage($passage))
-            ->sortBy('question_number')
+            ->flatMap(fn (ReadingPassage $passage) => $this->navigatorQuestionsForPassage($passage))
+            ->sortBy('number')
             ->values()
-            ->map(fn (ReadingQuestion $question): array => [
-                'id' => $question->id,
-                'number' => $question->question_number,
-                'passage_id' => $question->group?->passage_id,
-                'group_id' => $question->group_id,
+            ->map(fn (array $question): array => [
+                'id' => $question['id'],
+                'number' => $question['number'],
+                'passage_id' => $question['passage_id'],
+                'group_id' => $question['group_id'],
             ])
             ->all();
 
@@ -159,6 +160,81 @@ class ReadingTestRendererService
         }
 
         return route('reading-tests.groups.diagram-image', $group);
+    }
+
+    /**
+     * @return BaseCollection<int, array{id: int|null, number: int, group_id: int, passage_id: int}>
+     */
+    public function navigatorQuestionsForPassage(ReadingPassage $passage): BaseCollection
+    {
+        $items = collect();
+        $processedMcqGroups = [];
+        $seenNumbers = [];
+        $reservedNumbers = $this->mcqMultipleCounting->reservedQuestionNumbersForPassage($passage);
+
+        foreach ($passage->groups as $group) {
+            if ($this->mcqMultipleCounting->isMcqMultipleGroup($group)) {
+                $groupId = (int) $group->id;
+
+                if (isset($processedMcqGroups[$groupId])) {
+                    continue;
+                }
+
+                $processedMcqGroups[$groupId] = true;
+                $primary = $this->mcqMultipleCounting->resolvePrimaryQuestion($group);
+
+                foreach ($this->mcqMultipleCounting->groupQuestionNumbers($group) as $number) {
+                    $seenNumbers[$number] = true;
+                    $items->push([
+                        'id' => $primary?->id,
+                        'number' => $number,
+                        'group_id' => $groupId,
+                        'passage_id' => $passage->id,
+                    ]);
+                }
+
+                continue;
+            }
+
+            foreach ($group->questions as $question) {
+                $number = (int) $question->question_number;
+
+                if ($number <= 0 || isset($reservedNumbers[$number]) || isset($seenNumbers[$number])) {
+                    continue;
+                }
+
+                $seenNumbers[$number] = true;
+                $items->push([
+                    'id' => $question->id,
+                    'number' => $number,
+                    'group_id' => (int) $group->id,
+                    'passage_id' => $passage->id,
+                ]);
+            }
+        }
+
+        return $items->sortBy('number')->values();
+    }
+
+    /**
+     * @param  BaseCollection<int, array{number: int}>  $questions
+     */
+    public function questionRangeLabelFromNumbers(BaseCollection $questions, ReadingPassage $passage): string
+    {
+        $numbers = $questions
+            ->pluck('number')
+            ->filter(fn (int $number): bool => $number > 0)
+            ->sort()
+            ->values();
+
+        if ($numbers->isEmpty()) {
+            return $passage->question_range_label ?? '—';
+        }
+
+        $min = (int) $numbers->first();
+        $max = (int) $numbers->last();
+
+        return $min === $max ? (string) $min : "{$min}-{$max}";
     }
 
     /**
