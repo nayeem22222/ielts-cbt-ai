@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const state = {
         ...payload,
+        activeQuestionNumber: payload.current_question_number ?? 1,
         currentQuestion: payload.current_question_number ?? 1,
         currentSection: payload.current_section_number ?? 1,
     };
@@ -98,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
     palette.bind();
     navigation.bind();
     review.bind();
-    navigation.showQuestion(state.currentQuestion, 'resume');
+    navigation.showQuestion(state.activeQuestionNumber, 'resume');
     recovery.init();
     timer.bind();
     officialFlow.applyPhase(state.official_timer ?? {}, state.phase ?? {});
@@ -130,26 +131,45 @@ document.addEventListener('DOMContentLoaded', () => {
         startBtn.disabled = true;
     });
 
-    document.querySelectorAll('.listening-answer-input').forEach((input) => {
-        const handler = () => {
-            const questionId = Number(input.dataset.questionId);
-            let answer = input.value;
-            if (input.type === 'checkbox') {
-                answer = [...document.querySelectorAll(`input[data-question-id="${questionId}"]:checked`)].map((el) => ({
-                    value: el.value,
-                    type: 'letter',
-                }));
-            } else if (input.dataset.itemKey) {
-                answer = [{ item_key: input.dataset.itemKey, value: input.value, type: 'matching' }];
-            } else {
-                answer = [{ value: input.value, type: 'text' }];
-            }
-            autosave.queueSave(questionId, answer);
-        };
-        input.addEventListener('input', handler);
-        input.addEventListener('change', handler);
-        input.addEventListener('blur', handler);
+    const questionArea = document.getElementById('listening-question-area');
+
+    const saveAnswerFromInput = (input) => {
+        const questionId = Number(input.dataset.questionId);
+        let answer = input.value;
+
+        if (input.type === 'checkbox') {
+            answer = [...document.querySelectorAll(`input[data-question-id="${questionId}"]:checked`)].map((el) => ({
+                value: el.value,
+                type: 'letter',
+            }));
+        } else if (input.dataset.itemKey) {
+            answer = [{ item_key: input.dataset.itemKey, value: input.value, type: 'matching' }];
+        } else if (input.type === 'radio' || input.dataset.answerType === 'letter') {
+            answer = [{ value: input.value, type: 'letter' }];
+        } else {
+            answer = [{ value: input.value, type: 'text' }];
+        }
+
+        autosave.queueSave(questionId, answer);
+    };
+
+    questionArea?.addEventListener('input', (event) => {
+        const input = event.target.closest('.listening-answer-input');
+        if (!input) return;
+        saveAnswerFromInput(input);
     });
+
+    questionArea?.addEventListener('change', (event) => {
+        const input = event.target.closest('.listening-answer-input');
+        if (!input) return;
+        saveAnswerFromInput(input);
+    });
+
+    questionArea?.addEventListener('blur', (event) => {
+        const input = event.target.closest('.listening-answer-input');
+        if (!input) return;
+        saveAnswerFromInput(input);
+    }, true);
 
     const toggleQuestionFlag = async (questionId, button) => {
         const question = state.questions?.find((q) => Number(q.id) === Number(questionId));
@@ -185,16 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', (event) => {
             event.stopPropagation();
             toggleQuestionFlag(Number(button.dataset.questionId), button);
-        });
-    });
-
-    document.querySelectorAll('.listening-question-card, .listening-matching-row').forEach((block) => {
-        block.querySelectorAll('input, select, textarea').forEach((field) => {
-            field.addEventListener('focus', () => {
-                document.querySelectorAll('.is-focused').forEach((el) => el.classList.remove('is-focused'));
-                block.classList.add('is-focused');
-            });
-            field.addEventListener('blur', () => block.classList.remove('is-focused'));
         });
     });
 

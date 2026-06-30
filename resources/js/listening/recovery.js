@@ -40,7 +40,7 @@ export function createRecovery(state, autosave, navigation) {
             },
             body: JSON.stringify({
                 current_section_number: state.currentSection,
-                current_question_number: state.currentQuestion,
+                current_question_number: state.activeQuestionNumber ?? state.currentQuestion,
                 recover_answers: answers,
             }),
         });
@@ -64,7 +64,7 @@ export function createRecovery(state, autosave, navigation) {
                 },
                 body: JSON.stringify({
                     current_section_number: state.currentSection,
-                    current_question_number: state.currentQuestion,
+                    current_question_number: state.activeQuestionNumber ?? state.currentQuestion,
                     client_draft: draft,
                 }),
             });

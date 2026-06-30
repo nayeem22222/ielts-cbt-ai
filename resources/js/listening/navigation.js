@@ -1,3 +1,9 @@
+import {
+    assignActiveQuestionNumber,
+    bindActiveQuestionInteractions,
+    getActiveQuestionNumber,
+} from './active-question';
+
 const csrf = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '';
 
 export function createNavigation(state, ui, autosave, palette) {
@@ -30,20 +36,61 @@ export function createNavigation(state, ui, autosave, palette) {
         palette.updatePartBoxes(sectionNumber);
     };
 
-    const highlightQuestion = (number) => {
+    const setActiveQuestionVisual = (number) => {
         document.querySelectorAll('.listening-target-highlight').forEach((el) => {
             el.classList.remove('listening-target-highlight');
         });
 
+        document.querySelectorAll(
+            '.listening-question-card.is-focused, .listening-matching-row.is-focused, .listening-blank.is-focused, .listening-inline-field.is-focused',
+        ).forEach((el) => {
+            el.classList.remove('is-focused');
+        });
+
+        if (!number) {
+            return;
+        }
+
+        const target =
+            document.querySelector(`[data-question-number="${number}"].listening-question-card`)
+            ?? document.querySelector(`[data-question-number="${number}"].listening-matching-question-row`)
+            ?? document.querySelector(`[data-question-number="${number}"].listening-short-answer-item`)
+            ?? document.querySelector(`.listening-blank[data-question-number="${number}"]`)
+            ?? document.querySelector(`.listening-inline-field[data-question-number="${number}"]`)
+            ?? document.querySelector(`[data-question-number="${number}"]`);
+
+        if (!target) {
+            return;
+        }
+
+        target.classList.add('listening-target-highlight', 'is-focused');
+    };
+
+    const setActiveQuestionNumber = (number) => {
+        const resolved = assignActiveQuestionNumber(state, number);
+
+        if (!resolved) {
+            return;
+        }
+
+        palette.setCurrent(resolved);
+        setActiveQuestionVisual(resolved);
+    };
+
+    const highlightQuestion = (number) => {
+        setActiveQuestionNumber(number);
+
         const target =
             document.querySelector(`[data-question-number="${number}"] .listening-blank-input`)
+            ?? document.querySelector(`.listening-blank[data-question-number="${number}"]`)
+            ?? document.querySelector(`[data-question-number="${number}"].listening-question-card`)
+            ?? document.querySelector(`[data-question-number="${number}"].listening-matching-question-row`)
             ?? document.querySelector(`[data-question-number="${number}"]`)
             ?? document.querySelector(`input[data-question-number="${number}"]`)?.closest(
-                '[data-question-number], .listening-question-card, .listening-group-shell, .listening-matching-row, .listening-short-answer-item',
+                '[data-question-number], .listening-question-card, .listening-group-shell, .listening-matching-row, .listening-short-answer-item, .listening-blank, .listening-inline-field',
             );
 
         if (target) {
-            target.classList.add('listening-target-highlight');
             target.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     };
@@ -59,7 +106,7 @@ export function createNavigation(state, ui, autosave, palette) {
                 },
                 body: JSON.stringify({
                     current_section_number: state.currentSection,
-                    current_question_number: state.currentQuestion,
+                    current_question_number: getActiveQuestionNumber(state),
                     direction,
                 }),
             });
@@ -74,11 +121,11 @@ export function createNavigation(state, ui, autosave, palette) {
 
         await autosave.flushBeforeNavigation();
 
-        state.currentQuestion = number;
-        const sectionNumber = sectionForQuestion(number);
+        const resolved = assignActiveQuestionNumber(state, number);
+        const sectionNumber = sectionForQuestion(resolved);
         showSection(sectionNumber);
-        palette.setCurrent(number);
-        highlightQuestion(number);
+        palette.setCurrent(resolved);
+        highlightQuestion(resolved);
         await persistPosition(direction);
 
         navigating = false;
@@ -94,7 +141,7 @@ export function createNavigation(state, ui, autosave, palette) {
         const firstQuestion = section?.start_question_number ?? [1, 11, 21, 31][sectionNumber - 1] ?? 1;
 
         state.currentSection = sectionNumber;
-        state.currentQuestion = firstQuestion;
+        assignActiveQuestionNumber(state, firstQuestion);
         showSection(sectionNumber);
         palette.setCurrent(firstQuestion);
         highlightQuestion(firstQuestion);
@@ -104,6 +151,11 @@ export function createNavigation(state, ui, autosave, palette) {
     };
 
     const bind = () => {
+        bindActiveQuestionInteractions(
+            document.getElementById('listening-question-area'),
+            setActiveQuestionNumber,
+        );
+
         document.getElementById('listening-prev')?.addEventListener('click', () => {
             const prevSection = Math.max(1, state.currentSection - 1);
             if (prevSection !== state.currentSection) {
@@ -111,19 +163,20 @@ export function createNavigation(state, ui, autosave, palette) {
                 return;
             }
 
-            showQuestion(Math.max(1, state.currentQuestion - 1), 'previous');
+            showQuestion(Math.max(1, getActiveQuestionNumber(state) - 1), 'previous');
         });
 
         document.getElementById('listening-next')?.addEventListener('click', () => {
             const nextSection = Math.min(4, state.currentSection + 1);
             const sectionEnd = state.sections?.find((item) => item.number === state.currentSection)?.end_question_number ?? maxQuestion();
+            const activeQuestion = getActiveQuestionNumber(state);
 
-            if (state.currentQuestion >= sectionEnd && nextSection !== state.currentSection) {
+            if (activeQuestion >= sectionEnd && nextSection !== state.currentSection) {
                 showSectionOnly(nextSection, 'next');
                 return;
             }
 
-            showQuestion(Math.min(maxQuestion(), state.currentQuestion + 1), 'next');
+            showQuestion(Math.min(maxQuestion(), activeQuestion + 1), 'next');
         });
 
         document.querySelectorAll('.listening-palette-item').forEach((btn) => {
@@ -151,7 +204,8 @@ export function createNavigation(state, ui, autosave, palette) {
         });
 
         document.getElementById('listening-flag-current')?.addEventListener('click', async () => {
-            const question = state.questions?.find((q) => q.question_number === state.currentQuestion);
+            const activeQuestion = getActiveQuestionNumber(state);
+            const question = state.questions?.find((q) => q.question_number === activeQuestion);
             if (!question) return;
 
             const url = state.routes.flag.replace('__QUESTION__', question.id);
@@ -172,7 +226,8 @@ export function createNavigation(state, ui, autosave, palette) {
         });
 
         document.getElementById('listening-clear-current')?.addEventListener('click', () => {
-            const question = state.questions?.find((q) => q.question_number === state.currentQuestion);
+            const activeQuestion = getActiveQuestionNumber(state);
+            const question = state.questions?.find((q) => q.question_number === activeQuestion);
             if (!question) return;
 
             document.querySelectorAll(`[data-question-id="${question.id}"]`).forEach((input) => {
@@ -187,5 +242,14 @@ export function createNavigation(state, ui, autosave, palette) {
         });
     };
 
-    return { showQuestion, showSection, showSectionOnly, bind, sectionForQuestion };
+    return {
+        showQuestion,
+        showSection,
+        showSectionOnly,
+        bind,
+        sectionForQuestion,
+        getActiveQuestionNumber: () => getActiveQuestionNumber(state),
+        setActiveQuestionNumber,
+        syncQuestionSelector: setActiveQuestionNumber,
+    };
 }

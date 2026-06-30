@@ -85,9 +85,8 @@ class ListeningGroupRendererService
                 $checked = $saved !== '' && strtoupper($saved) === strtoupper($key) ? ' checked' : '';
 
                 $html .= '<label class="listening-mcq-option">';
-                $html .= '<span class="listening-option-letter">'.e($key).'</span>';
-                $html .= '<input type="radio" name="listening_q_'.$number.'" value="'.e($key).'" class="listening-answer-input" data-question-id="'.$questionId.'" data-question-number="'.$number.'"'.$checked.'>';
-                $html .= '<span class="listening-option-text">'.e((string) ($option['text'] ?? '')).'</span>';
+                $html .= '<input type="radio" name="listening_q_'.$number.'" value="'.e($key).'" class="listening-answer-input listening-mcq-radio" data-question-id="'.$questionId.'" data-question-number="'.$number.'" data-answer-type="letter"'.$checked.'>';
+                $html .= '<span class="listening-mcq-option-label"><span class="listening-mcq-option-key">'.e($key).'.</span> '.e((string) ($option['text'] ?? '')).'</span>';
                 $html .= '</label>';
             }
 

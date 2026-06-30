@@ -34,7 +34,7 @@ export function createAutosave(state, ui, palette, offlineSync, review = null) {
                 attempt_id: state.attempt_id,
                 updated_at: new Date().toISOString(),
                 current_section_number: state.currentSection,
-                current_question_number: state.currentQuestion,
+                current_question_number: state.activeQuestionNumber ?? state.currentQuestion,
                 answers,
                 pending_sync: [...pending.keys()],
             }),
@@ -56,7 +56,11 @@ export function createAutosave(state, ui, palette, offlineSync, review = null) {
         }
         if (data.navigation) {
             state.currentSection = data.navigation.current_section_number ?? state.currentSection;
-            state.currentQuestion = data.navigation.current_question_number ?? state.currentQuestion;
+            const questionNumber = data.navigation.current_question_number
+                ?? state.activeQuestionNumber
+                ?? state.currentQuestion;
+            state.activeQuestionNumber = questionNumber;
+            state.currentQuestion = questionNumber;
         }
         state.total_answered = data.total_answered ?? state.total_answered;
     };
@@ -148,7 +152,7 @@ export function createAutosave(state, ui, palette, offlineSync, review = null) {
             const data = await requestWithRetry(state.routes.autosave_bulk ?? state.routes.bulk_save, {
                 answers,
                 current_section_number: state.currentSection,
-                current_question_number: state.currentQuestion,
+                current_question_number: state.activeQuestionNumber ?? state.currentQuestion,
             });
 
             pending.clear();
