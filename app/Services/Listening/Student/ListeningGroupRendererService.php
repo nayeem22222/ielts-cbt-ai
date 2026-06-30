@@ -105,6 +105,7 @@ class ListeningGroupRendererService
         $options = $this->resolveOptionList($group['options'] ?? null);
         $settings = is_array($group['settings'] ?? null) ? $group['settings'] : [];
         $requiredAnswers = max(1, (int) ($settings['required_answers'] ?? 2));
+        $rangeLabel = $this->formatGroupQuestionRangeLabel($group);
         $html = '<div class="listening-multiple-answer-group">';
 
         foreach ($questions as $question) {
@@ -115,7 +116,7 @@ class ListeningGroupRendererService
             $html .= '<div class="listening-question-card listening-mcq-item" data-question-number="'.$number.'" data-question-id="'.$questionId.'">';
 
             if (trim((string) ($question['question_text'] ?? '')) !== '') {
-                $html .= '<p class="listening-mcq-stem"><span class="listening-question-prefix">'.$number.'.</span> '.e((string) $question['question_text']).'</p>';
+                $html .= '<p class="listening-mcq-stem"><span class="listening-question-prefix">'.e($rangeLabel).'.</span> '.e((string) $question['question_text']).'</p>';
             }
 
             $html .= '<div class="listening-mcq-options" data-required-answers="'.$requiredAnswers.'">';
@@ -434,5 +435,24 @@ class ListeningGroupRendererService
         }
 
         return $values;
+    }
+
+    /**
+     * @param  array<string, mixed>  $group
+     */
+    private function formatGroupQuestionRangeLabel(array $group): string
+    {
+        $start = (int) ($group['start_question_number'] ?? 0);
+        $end = (int) ($group['end_question_number'] ?? $start);
+
+        if ($start <= 0) {
+            return '';
+        }
+
+        if ($end <= $start) {
+            return (string) $start;
+        }
+
+        return $start.'–'.$end;
     }
 }

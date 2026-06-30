@@ -63,6 +63,8 @@ it('renders multiple answer groups with visible checkboxes and required answer l
 
     $html = $renderer->render([
         'question_type' => 'multiple_answer',
+        'start_question_number' => 21,
+        'end_question_number' => 22,
         'content' => '',
         'options' => [
             ['key' => 'A', 'text' => 'Hotel'],
@@ -71,7 +73,7 @@ it('renders multiple answer groups with visible checkboxes and required answer l
         'settings' => ['required_answers' => 2],
         'image_url' => null,
     ], [
-        ['id' => 21, 'question_number' => 12, 'question_text' => 'Choose two places.', 'student_answer' => null],
+        ['id' => 21, 'question_number' => 21, 'question_text' => 'Choose two places.', 'student_answer' => null],
     ]);
 
     expect($html)
@@ -79,6 +81,7 @@ it('renders multiple answer groups with visible checkboxes and required answer l
         ->toContain('listening-multiple-answer-checkbox')
         ->toContain('listening-multiple-answer-option-key')
         ->toContain('data-required-answers="2"')
+        ->toContain('listening-question-prefix">21–22.</span>')
         ->toContain('A.')
         ->toContain('Hotel')
         ->toContain('type="checkbox"')

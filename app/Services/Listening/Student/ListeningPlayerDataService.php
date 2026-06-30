@@ -42,6 +42,13 @@ class ListeningPlayerDataService
             'section_number' => (int) ($group->section?->section_number ?? $this->navigation->sectionForQuestionNumber((int) $group->start_question_number)),
         ];
 
+        if ($group->question_type?->value === 'multiple_answer') {
+            $sanitized['required_answers_count'] = max(
+                1,
+                (int) $group->end_question_number - (int) $group->start_question_number + 1,
+            );
+        }
+
         $sanitized['rendered_html'] = $this->groupRenderer->render($sanitized, $groupQuestions);
 
         return $sanitized;
@@ -215,6 +222,7 @@ class ListeningPlayerDataService
 
         return Arr::only($settings, [
             'required_answers',
+            'required_answers_count',
             'display_instruction',
             'template_type',
             'word_limit',

@@ -7,6 +7,7 @@ namespace App\Services\Listening\Student;
 use App\Actions\Listening\NormalizeListeningAnswerDataAction;
 use App\DTOs\Listening\Student\AutoSaveResultData;
 use App\Enums\Listening\ListeningAnswerStatus;
+use App\Enums\Listening\ListeningQuestionType;
 use App\Models\Listening\ListeningAttempt;
 use App\Models\Listening\ListeningAttemptAnswer;
 use App\Models\Listening\ListeningQuestion;
@@ -23,6 +24,7 @@ class ListeningAutoSaveService
         private readonly NormalizeListeningAnswerDataAction $normalizeAnswer,
         private readonly ListeningQuestionPaletteService $palette,
         private readonly ListeningNavigationStateService $navigationState,
+        private readonly ListeningMultipleAnswerCountingService $multipleAnswerCounting,
     ) {}
 
     /**
@@ -39,7 +41,7 @@ class ListeningAutoSaveService
         $defaultType = $question->answer_format?->value ?? 'text';
         $normalized = $this->normalizeStudentAnswer($answer, $defaultType);
         $hash = $this->calculateAnswerHash($normalized);
-        $isAnswered = ! $this->isAnswerEmpty($answer, $normalized);
+        [$isAnswered, $shouldPersistAnswer] = $this->resolveAnswerPersistence($question, $answer, $normalized);
 
         return DB::transaction(function () use (
             $attempt,
@@ -47,6 +49,7 @@ class ListeningAutoSaveService
             $normalized,
             $hash,
             $isAnswered,
+            $shouldPersistAnswer,
             $meta,
         ): AutoSaveResultData {
             $row = $this->answers->findForAttemptQuestion($attempt, $question->id);
@@ -69,8 +72,8 @@ class ListeningAutoSaveService
                     'listening_test_id' => $attempt->listening_test_id,
                     'listening_question_id' => $question->id,
                     'question_number' => $question->question_number,
-                    'student_answer' => $isAnswered ? $normalized : null,
-                    'normalized_answer' => $isAnswered ? $normalized : null,
+                    'student_answer' => $shouldPersistAnswer ? $normalized : null,
+                    'normalized_answer' => $shouldPersistAnswer ? $normalized : null,
                     'answer_status' => $this->resolveStatus($isAnswered, $isFlagged),
                     'answered_at' => $isAnswered ? now() : null,
                     'time_spent_seconds' => isset($meta['time_spent_seconds']) ? (int) $meta['time_spent_seconds'] : null,
@@ -78,8 +81,8 @@ class ListeningAutoSaveService
                 ]);
             } else {
                 $row->fill([
-                    'student_answer' => $isAnswered ? $normalized : null,
-                    'normalized_answer' => $isAnswered ? $normalized : null,
+                    'student_answer' => $shouldPersistAnswer ? $normalized : null,
+                    'normalized_answer' => $shouldPersistAnswer ? $normalized : null,
                     'answer_status' => $this->resolveStatus($isAnswered, $isFlagged),
                     'answered_at' => $isAnswered ? now() : null,
                     'time_spent_seconds' => isset($meta['time_spent_seconds'])
@@ -87,6 +90,10 @@ class ListeningAutoSaveService
                         : $row->time_spent_seconds,
                     'meta' => array_merge($existingMeta, ['autosave' => $autosaveMeta]),
                 ])->save();
+            }
+
+            if ($question->question_type === ListeningQuestionType::MultipleAnswer) {
+                $this->multipleAnswerCounting->syncGroupAnswerStatuses($attempt, $question, $normalized);
             }
 
             $this->updateAttemptAnsweredCount($attempt);
@@ -287,6 +294,34 @@ class ListeningAutoSaveService
         $incomingSeq = (int) ($meta['client_sequence'] ?? 0);
 
         return $incomingSeq > 0 && $incomingSeq <= $existingSeq;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $normalized
+     * @return array{0: bool, 1: bool}
+     */
+    private function resolveAnswerPersistence(
+        ListeningQuestion $question,
+        mixed $answer,
+        array $normalized,
+    ): array {
+        if ($question->question_type === ListeningQuestionType::MultipleAnswer) {
+            $question->loadMissing('group');
+
+            if ($question->group !== null) {
+                $questionCount = $this->multipleAnswerCounting->groupQuestionCount($question->group);
+                $selected = $this->multipleAnswerCounting->countSelectedFromNormalized($normalized);
+
+                return [
+                    $this->multipleAnswerCounting->groupIsComplete($selected, $questionCount),
+                    $selected > 0,
+                ];
+            }
+        }
+
+        $isAnswered = ! $this->isAnswerEmpty($answer, $normalized);
+
+        return [$isAnswered, $isAnswered];
     }
 
     private function resolveStatus(bool $isAnswered, bool $isFlagged): ListeningAnswerStatus
