@@ -120,7 +120,7 @@ class ReadingPlayerService extends Service
 
         $module = $attempt->module ?? $this->builder->readingModule($attempt->test);
         $sections = $module->sections()
-            ->with(['testQuestions.question.options'])
+            ->with(['testQuestions.question.options', 'testQuestions.question.correctAnswer'])
             ->orderBy('sort_order')
             ->get();
 
@@ -147,6 +147,9 @@ class ReadingPlayerService extends Service
                         'label' => $option->label,
                         'text' => $option->option_text,
                     ])->values()->all(),
+                    'max_selections' => $question->type === ReadingQuestionType::MultipleChoiceMultiple
+                        ? $this->resolveMultipleChoiceMaxSelections($question)
+                        : null,
                     'answer_text' => $saved?->answer_text ?? '',
                     'selected_options' => $saved?->selected_options ?? [],
                     'is_flagged' => (bool) ($saved?->is_flagged ?? false),
@@ -290,5 +293,22 @@ class ReadingPlayerService extends Service
         }
 
         return $question->type->uiPattern();
+    }
+
+    private function resolveMultipleChoiceMaxSelections(Question $question): int
+    {
+        $answerJson = $question->correctAnswer?->answer_json;
+
+        if (is_array($answerJson) && $answerJson !== []) {
+            return count($answerJson);
+        }
+
+        $answerValue = $question->correctAnswer?->answer_value;
+
+        if (is_string($answerValue) && trim($answerValue) !== '') {
+            return count(array_filter(array_map('trim', explode(',', $answerValue))));
+        }
+
+        return 2;
     }
 }

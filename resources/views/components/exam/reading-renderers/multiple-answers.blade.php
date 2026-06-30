@@ -23,6 +23,7 @@
                                     type="checkbox"
                                     class="mt-1 accent-[#2D6A4F]"
                                     :checked="isMultiSelected(question.id, option.text)"
+                                    :disabled="isMultiAnswerOptionDisabled(question.id, option.text)"
                                     @change.stop="selectQuestion(question.id); toggleMultiAnswer(question.id, option.text)"
                                 >
                                 <span><strong x-text="option.label + '. '"></strong><span x-text="option.text"></span></span>

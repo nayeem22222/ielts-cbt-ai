@@ -49,9 +49,17 @@ export function readingPlayer(initialState) {
                 this.questionVisits[question.id] = 0;
 
                 if (question.type === 'multiple_choice_multiple') {
-                    this.multiAnswers[question.id] = Array.isArray(question.selected_options)
+                    let selected = Array.isArray(question.selected_options)
                         ? [...question.selected_options]
                         : (question.answer_text ? question.answer_text.split(',').map((v) => v.trim()).filter(Boolean) : []);
+                    const limit = Number(question.max_selections ?? 0);
+
+                    if (Number.isFinite(limit) && limit > 0 && selected.length > limit) {
+                        selected = selected.slice(0, limit);
+                    }
+
+                    this.multiAnswers[question.id] = selected;
+                    this.answers[question.id] = selected.join(', ');
                 }
             });
 
@@ -306,13 +314,99 @@ export function readingPlayer(initialState) {
             return (this.multiAnswers[questionId] ?? []).includes(value);
         },
 
+        multiAnswerMaxSelections(questionId) {
+            const question = this.questions.find((item) => item.id === questionId);
+
+            if (!question) {
+                return 2;
+            }
+
+            const section = this.sections.find((item) => item.id === question.section_id);
+            const group = section
+                ? this.questionGroups(section).find((entry) => entry.questions.some((item) => item.id === questionId))
+                : null;
+
+            const instructionSources = [
+                group?.instruction ?? '',
+                section?.instructions ?? '',
+                question.prompt ?? '',
+            ];
+
+            for (const text of instructionSources) {
+                const parsed = this.parseMaxSelectionsFromText(text);
+                if (parsed) {
+                    return parsed;
+                }
+            }
+
+            const configured = Number(question.max_selections ?? 0);
+
+            if (Number.isFinite(configured) && configured > 0) {
+                return configured;
+            }
+
+            return 2;
+        },
+
+        parseMaxSelectionsFromText(text) {
+            if (!text) {
+                return null;
+            }
+
+            const words = {
+                one: 1,
+                two: 2,
+                three: 3,
+                four: 4,
+                five: 5,
+                six: 6,
+            };
+
+            const match = text.match(/\b(?:choose|select)\s+(one|two|three|four|five|six|\d+)\b/i);
+
+            if (!match) {
+                return null;
+            }
+
+            const token = match[1].toLowerCase();
+
+            if (words[token]) {
+                return words[token];
+            }
+
+            const numeric = Number.parseInt(token, 10);
+
+            return Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+        },
+
+        isMultiAnswerOptionDisabled(questionId, value) {
+            const limit = this.multiAnswerMaxSelections(questionId);
+
+            if (!Number.isFinite(limit) || limit <= 0) {
+                return false;
+            }
+
+            const selected = this.multiAnswers[questionId] ?? [];
+
+            if (selected.includes(value)) {
+                return false;
+            }
+
+            return selected.length >= limit;
+        },
+
         toggleMultiAnswer(questionId, value) {
             const current = [...(this.multiAnswers[questionId] ?? [])];
             const index = current.indexOf(value);
+            const limit = this.multiAnswerMaxSelections(questionId);
 
             if (index >= 0) {
                 current.splice(index, 1);
             } else {
+                if (Number.isFinite(limit) && limit > 0 && current.length >= limit) {
+                    return;
+                }
+
                 current.push(value);
             }
 

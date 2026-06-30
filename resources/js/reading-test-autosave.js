@@ -1,6 +1,58 @@
 const TEXT_DEBOUNCE_MS = 500;
 const MAX_RETRIES = 3;
 
+function mcqMultipleLimitForQuestion(questionId) {
+    const first = document.querySelector(
+        `[data-question-id="${questionId}"][type="checkbox"]`,
+    );
+    const container = first?.closest('[data-required-selections]');
+    const limit = Number(container?.dataset.requiredSelections ?? 0);
+
+    return Number.isFinite(limit) && limit > 0 ? limit : 0;
+}
+
+function applyMcqMultipleLimitState(questionId) {
+    const limit = mcqMultipleLimitForQuestion(questionId);
+
+    if (limit <= 0) {
+        return;
+    }
+
+    const boxes = document.querySelectorAll(
+        `[data-question-id="${questionId}"][type="checkbox"]`,
+    );
+    const checkedCount = [...boxes].filter((box) => box.checked).length;
+
+    boxes.forEach((box) => {
+        box.disabled = !box.checked && checkedCount >= limit;
+    });
+}
+
+function enforceMcqMultipleLimit(input) {
+    const questionId = input.dataset.questionId;
+
+    if (!questionId) {
+        return;
+    }
+
+    const limit = mcqMultipleLimitForQuestion(questionId);
+
+    if (limit <= 0) {
+        return;
+    }
+
+    const boxes = document.querySelectorAll(
+        `[data-question-id="${questionId}"][type="checkbox"]`,
+    );
+    const checked = [...boxes].filter((box) => box.checked);
+
+    if (checked.length > limit) {
+        input.checked = false;
+    }
+
+    applyMcqMultipleLimitState(questionId);
+}
+
 export function createReadingTestAutosave(component) {
     const debounceTimers = new Map();
     const unsavedQuestions = new Set();
@@ -66,7 +118,26 @@ export function createReadingTestAutosave(component) {
                     input.value = record.answer ?? '';
                 }
             });
+
+            const limit = mcqMultipleLimitForQuestion(record.question_id);
+
+            if (limit > 0) {
+                const boxes = document.querySelectorAll(
+                    `[data-question-id="${record.question_id}"][type="checkbox"]`,
+                );
+                const checked = [...boxes].filter((box) => box.checked);
+
+                if (checked.length > limit) {
+                    checked.slice(limit).forEach((box) => {
+                        box.checked = false;
+                    });
+                }
+            }
         });
+
+        document
+            .querySelectorAll('[data-question-id][type="checkbox"]')
+            .forEach((input) => applyMcqMultipleLimitState(input.dataset.questionId));
 
         applyNavigator(component.navigator);
     };
@@ -230,7 +301,13 @@ export function createReadingTestAutosave(component) {
             input.dataset.autosaveBound = '1';
 
             if (input.type === 'radio' || input.type === 'checkbox' || input.tagName === 'SELECT' || input.type === 'hidden') {
-                input.addEventListener('change', () => queueSave(input, true));
+                input.addEventListener('change', () => {
+                    if (input.type === 'checkbox') {
+                        enforceMcqMultipleLimit(input);
+                    }
+
+                    queueSave(input, true);
+                });
                 return;
             }
 
