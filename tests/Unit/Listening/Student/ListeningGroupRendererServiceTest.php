@@ -58,7 +58,7 @@ it('renders mcq groups with grouped stems and options', function (): void {
         ->not->toContain('<h3');
 });
 
-it('renders multiple answer groups with checkbox letter badges', function (): void {
+it('renders multiple answer groups with visible checkboxes and required answer limit metadata', function (): void {
     $renderer = app(ListeningGroupRendererService::class);
 
     $html = $renderer->render([
@@ -68,7 +68,7 @@ it('renders multiple answer groups with checkbox letter badges', function (): vo
             ['key' => 'A', 'text' => 'Hotel'],
             ['key' => 'B', 'text' => 'Museum'],
         ],
-        'settings' => null,
+        'settings' => ['required_answers' => 2],
         'image_url' => null,
     ], [
         ['id' => 21, 'question_number' => 12, 'question_text' => 'Choose two places.', 'student_answer' => null],
@@ -76,7 +76,12 @@ it('renders multiple answer groups with checkbox letter badges', function (): vo
 
     expect($html)
         ->toContain('listening-multiple-answer-group')
+        ->toContain('listening-multiple-answer-checkbox')
+        ->toContain('listening-multiple-answer-option-key')
+        ->toContain('data-required-answers="2"')
+        ->toContain('A.')
+        ->toContain('Hotel')
         ->toContain('type="checkbox"')
-        ->toContain('listening-option-letter')
+        ->not->toContain('listening-option-letter')
         ->not->toContain('listening-mcq-radio');
 });

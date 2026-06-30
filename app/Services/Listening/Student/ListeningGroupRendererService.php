@@ -103,6 +103,8 @@ class ListeningGroupRendererService
     private function renderMultipleAnswer(array $group, array $questions): string
     {
         $options = $this->resolveOptionList($group['options'] ?? null);
+        $settings = is_array($group['settings'] ?? null) ? $group['settings'] : [];
+        $requiredAnswers = max(1, (int) ($settings['required_answers'] ?? 2));
         $html = '<div class="listening-multiple-answer-group">';
 
         foreach ($questions as $question) {
@@ -116,16 +118,15 @@ class ListeningGroupRendererService
                 $html .= '<p class="listening-mcq-stem"><span class="listening-question-prefix">'.$number.'.</span> '.e((string) $question['question_text']).'</p>';
             }
 
-            $html .= '<div class="listening-mcq-options">';
+            $html .= '<div class="listening-mcq-options" data-required-answers="'.$requiredAnswers.'">';
 
             foreach ($options as $option) {
                 $key = (string) ($option['key'] ?? '');
                 $checked = in_array(strtoupper($key), array_map('strtoupper', $saved), true) ? ' checked' : '';
 
-                $html .= '<label class="listening-mcq-option">';
-                $html .= '<span class="listening-option-letter">'.e($key).'</span>';
-                $html .= '<input type="checkbox" name="listening_q_'.$number.'[]" value="'.e($key).'" class="listening-answer-input" data-question-id="'.$questionId.'" data-question-number="'.$number.'"'.$checked.'>';
-                $html .= '<span class="listening-option-text">'.e((string) ($option['text'] ?? '')).'</span>';
+                $html .= '<label class="listening-multiple-answer-option">';
+                $html .= '<input type="checkbox" name="listening_q_'.$number.'[]" value="'.e($key).'" class="listening-answer-input listening-multiple-answer-checkbox" data-question-id="'.$questionId.'" data-question-number="'.$number.'" data-answer-type="letter"'.$checked.'>';
+                $html .= '<span class="listening-multiple-answer-option-label"><span class="listening-multiple-answer-option-key">'.e($key).'.</span> '.e((string) ($option['text'] ?? '')).'</span>';
                 $html .= '</label>';
             }
 

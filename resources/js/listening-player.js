@@ -9,6 +9,7 @@ import { createTimer } from './listening/timer';
 import { createOfficialFlow } from './listening/official-flow';
 import { createAudioFlow } from './listening/audio-flow';
 import { createListeningReview } from './listening/review';
+import { bindMultipleAnswerLimits } from './listening/multiple-answer';
 
 function readPayload() {
     const root = document.querySelector('[data-listening-player]');
@@ -132,6 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const questionArea = document.getElementById('listening-question-area');
+
+    bindMultipleAnswerLimits(questionArea ?? document);
 
     const saveAnswerFromInput = (input) => {
         const questionId = Number(input.dataset.questionId);
