@@ -88,3 +88,45 @@ it('renders multiple answer groups with visible checkboxes and required answer l
         ->not->toContain('listening-option-letter')
         ->not->toContain('listening-mcq-radio');
 });
+
+it('renders matching groups with option columns and radio buttons', function (): void {
+    $renderer = app(ListeningGroupRendererService::class);
+
+    $html = $renderer->render([
+        'question_type' => 'matching',
+        'content' => '',
+        'options' => [
+            'choices' => [
+                ['key' => 'A', 'text' => 'being well-organised'],
+                ['key' => 'B', 'text' => 'being flexible'],
+                ['key' => 'C', 'text' => 'working quickly'],
+            ],
+            'items' => [
+                ['key' => '17', 'text' => 'Prepping an actor'],
+                ['key' => '18', 'text' => 'Continuity'],
+            ],
+        ],
+        'settings' => null,
+        'image_url' => null,
+    ], [
+        ['id' => 30, 'question_number' => 17, 'question_text' => 'Prepping an actor', 'student_answer' => [['item_key' => '17', 'value' => 'B', 'type' => 'matching']]],
+        ['id' => 31, 'question_number' => 18, 'question_text' => 'Continuity', 'student_answer' => null],
+    ]);
+
+    expect($html)
+        ->toContain('listening-matching-group')
+        ->toContain('listening-matching-options-box')
+        ->toContain('being well-organised')
+        ->toContain('<table class="listening-matching-table">', false)
+        ->toContain('listening-matching-col-option')
+        ->toContain('listening-matching-radio')
+        ->toContain('type="radio"', false)
+        ->toContain('Prepping an actor')
+        ->toContain('Continuity')
+        ->toContain('name="listening_matching_q_30"', false)
+        ->toContain('data-item-key="17"', false)
+        ->toContain('value="B"', false)
+        ->toContain('checked', false)
+        ->not->toContain('<select')
+        ->not->toContain('listening-matching-pill-select');
+});

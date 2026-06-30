@@ -177,13 +177,18 @@ class ListeningGroupRendererService
             $html .= '</div>';
         }
 
-        $html .= '<div class="listening-matching-table" role="table">';
-        $html .= '<div class="listening-matching-table-head" role="row">';
-        $html .= '<span class="listening-matching-col-num" role="columnheader">#</span>';
-        $html .= '<span class="listening-matching-col-text" role="columnheader">Statement</span>';
-        $html .= '<span class="listening-matching-col-answer" role="columnheader">Answer</span>';
-        $html .= '<span class="listening-matching-col-action" role="columnheader"><span class="sr-only">Actions</span></span>';
-        $html .= '</div>';
+        $html .= '<div class="listening-matching-table-wrap overflow-x-auto">';
+        $html .= '<table class="listening-matching-table">';
+        $html .= '<thead><tr>';
+        $html .= '<th class="listening-matching-col-num">#</th>';
+        $html .= '<th class="listening-matching-col-text">Statement</th>';
+
+        foreach ($choices as $choice) {
+            $html .= '<th class="listening-matching-col-option">'.e((string) ($choice['key'] ?? '')).'</th>';
+        }
+
+        $html .= '<th class="listening-matching-col-action">Report</th>';
+        $html .= '</tr></thead><tbody>';
 
         foreach ($items as $item) {
             $key = (string) ($item['key'] ?? '');
@@ -193,28 +198,29 @@ class ListeningGroupRendererService
             $saved = $question !== null ? $this->savedLetterValue($question) : '';
             $isFlagged = ($question['is_flagged'] ?? false) === true;
 
-            $html .= '<div class="listening-matching-row listening-matching-question-row" role="row" data-question-number="'.$number.'" data-question-id="'.$questionId.'">';
-            $html .= '<span class="listening-matching-qnum listening-matching-col-num" role="cell">'.$number.'</span>';
-            $html .= '<span class="listening-matching-text listening-matching-col-text" role="cell">'.e((string) ($item['text'] ?? $key)).'</span>';
-            $html .= '<span class="listening-matching-col-answer" role="cell">';
-            $html .= '<select class="listening-answer-input listening-matching-pill-select" data-question-id="'.$questionId.'" data-question-number="'.$number.'" data-item-key="'.e($key).'" aria-label="Answer for question '.$number.'">';
-            $html .= '<option value=""> </option>';
+            $html .= '<tr class="listening-matching-row listening-matching-question-row" data-question-number="'.$number.'" data-question-id="'.$questionId.'">';
+            $html .= '<td class="listening-matching-qnum listening-matching-col-num">'.$number.'</td>';
+            $html .= '<td class="listening-matching-text listening-matching-col-text">'.e((string) ($item['text'] ?? $key)).'</td>';
 
             foreach ($choices as $choice) {
                 $choiceKey = (string) ($choice['key'] ?? '');
-                $selected = $saved !== '' && strtoupper($saved) === strtoupper($choiceKey) ? ' selected' : '';
-                $html .= '<option value="'.e($choiceKey).'"'.$selected.'>'.e($choiceKey).'</option>';
+                $checked = $saved !== '' && strtoupper($saved) === strtoupper($choiceKey) ? ' checked' : '';
+
+                $html .= '<td class="listening-matching-col-option">';
+                $html .= '<input type="radio" name="listening_matching_q_'.$questionId.'" value="'.e($choiceKey).'" class="listening-answer-input listening-matching-radio" data-question-id="'.$questionId.'" data-question-number="'.$number.'" data-item-key="'.e($key).'" aria-label="Question '.$number.' option '.e($choiceKey).'"'.$checked.'>';
+                $html .= '</td>';
             }
 
-            $html .= '</select></span>';
-            $html .= '<span class="listening-matching-col-action" role="cell">';
+            $html .= '<td class="listening-matching-col-action">';
             $html .= '<button type="button" class="listening-row-flag'.($isFlagged ? ' is-flagged' : '').'" data-question-id="'.$questionId.'" data-question-number="'.$number.'" aria-pressed="'.($isFlagged ? 'true' : 'false').'">';
             $html .= '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>';
             $html .= '<span>Flag</span></button>';
-            $html .= '</span></div>';
+            $html .= '</td></tr>';
         }
 
-        return $html.'</div></div>';
+        $html .= '</tbody></table></div>';
+
+        return $html.'</div>';
     }
 
     /**
