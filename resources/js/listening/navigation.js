@@ -42,7 +42,7 @@ export function createNavigation(state, ui, autosave, palette, hooks = {}) {
         });
 
         document.querySelectorAll(
-            '.listening-question-card.is-focused, .listening-matching-row.is-focused, .listening-dnd-dropzone.is-focused, .listening-blank.is-focused, .listening-inline-field.is-focused',
+            '.listening-question-card.is-focused, .listening-matching-dnd-row.is-focused, .listening-matching-row.is-focused, .listening-dnd-dropzone.is-focused, .listening-blank.is-focused, .listening-inline-field.is-focused',
         ).forEach((el) => {
             el.classList.remove('is-focused');
         });
@@ -53,6 +53,7 @@ export function createNavigation(state, ui, autosave, palette, hooks = {}) {
 
         const target =
             document.querySelector(`[data-question-number="${number}"].listening-question-card`)
+            ?? document.querySelector(`[data-question-number="${number}"].listening-matching-dnd-row`)
             ?? document.querySelector(`[data-question-number="${number}"].listening-matching-question-row`)
             ?? document.querySelector(`.listening-dnd-dropzone[data-question-number="${number}"]`)
             ?? document.querySelector(`[data-question-number="${number}"].listening-short-answer-item`)
@@ -86,6 +87,7 @@ export function createNavigation(state, ui, autosave, palette, hooks = {}) {
             ?? document.querySelector(`.listening-blank[data-question-number="${number}"]`)
             ?? document.querySelector(`.listening-dnd-dropzone[data-question-number="${number}"]`)
             ?? document.querySelector(`[data-question-number="${number}"].listening-question-card`)
+            ?? document.querySelector(`[data-question-number="${number}"].listening-matching-dnd-row`)
             ?? document.querySelector(`[data-question-number="${number}"].listening-matching-question-row`)
             ?? document.querySelector(`[data-question-number="${number}"]`)
             ?? document.querySelector(`input[data-question-number="${number}"]`)?.closest(

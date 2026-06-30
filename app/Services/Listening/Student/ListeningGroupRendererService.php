@@ -155,10 +155,19 @@ class ListeningGroupRendererService
      */
     private function renderMatching(array $group, array $questions): string
     {
-        if ($this->interactionMode($group) === 'drag_drop') {
+        if ($this->matchingDisplayMode($group) === 'drag_drop') {
             return $this->renderMatchingDragDrop($group, $questions);
         }
 
+        return $this->renderMatchingRadio($group, $questions);
+    }
+
+    /**
+     * @param  array<string, mixed>  $group
+     * @param  list<array<string, mixed>>  $questions
+     */
+    private function renderMatchingRadio(array $group, array $questions): string
+    {
         $options = is_array($group['options'] ?? null) ? $group['options'] : [];
         $choices = is_array($options['choices'] ?? null) ? $options['choices'] : [];
         $items = is_array($options['items'] ?? null) ? $options['items'] : [];
@@ -178,20 +187,7 @@ class ListeningGroupRendererService
             $questionsByKey[(string) ($question['question_number'] ?? '')] = $question;
         }
 
-        $html = '<div class="listening-matching-group">';
-
-        if ($choices !== []) {
-            $html .= '<div class="listening-matching-options-box" role="list" aria-label="Options">';
-
-            foreach ($choices as $choice) {
-                $html .= '<div class="listening-matching-option-chip" role="listitem">';
-                $html .= '<span class="listening-option-letter">'.e((string) ($choice['key'] ?? '')).'</span>';
-                $html .= '<span class="listening-matching-option-text">'.e((string) ($choice['text'] ?? '')).'</span>';
-                $html .= '</div>';
-            }
-
-            $html .= '</div>';
-        }
+        $html = '<div class="listening-matching-group listening-matching-group--radio">';
 
         $html .= '<div class="listening-matching-table-wrap overflow-x-auto">';
         $html .= '<table class="listening-matching-table">';
@@ -265,16 +261,9 @@ class ListeningGroupRendererService
             $questionsByKey[(string) ($question['question_number'] ?? '')] = $question;
         }
 
-        $html = '<div class="listening-dnd-group listening-matching-group" data-group-id="'.$groupId.'" data-dnd-allow-reuse="'.($this->allowReuse($group) ? '1' : '0').'">';
+        $html = '<div class="listening-dnd-group listening-matching-group listening-matching-group--drag-drop" data-group-id="'.$groupId.'" data-dnd-allow-reuse="'.($this->allowReuse($group) ? '1' : '0').'">';
         $html .= $this->renderDraggableOptionPool($groupId, $choices);
-        $html .= '<div class="listening-matching-table-wrap overflow-x-auto">';
-        $html .= '<table class="listening-matching-table">';
-        $html .= '<thead><tr>';
-        $html .= '<th class="listening-matching-col-num">#</th>';
-        $html .= '<th class="listening-matching-col-text">Statement</th>';
-        $html .= '<th class="listening-matching-col-drop">Answer</th>';
-        $html .= '<th class="listening-matching-col-action">Report</th>';
-        $html .= '</tr></thead><tbody>';
+        $html .= '<div class="listening-matching-dnd-list" role="list">';
 
         foreach ($items as $item) {
             $key = (string) ($item['key'] ?? '');
@@ -284,18 +273,18 @@ class ListeningGroupRendererService
             $saved = $question !== null ? $this->savedLetterValue($question) : '';
             $isFlagged = ($question['is_flagged'] ?? false) === true;
 
-            $html .= '<tr class="listening-matching-row listening-matching-question-row" data-question-number="'.$number.'" data-question-id="'.$questionId.'">';
-            $html .= '<td class="listening-matching-qnum listening-matching-col-num">'.$number.'</td>';
-            $html .= '<td class="listening-matching-text listening-matching-col-text">'.e((string) ($item['text'] ?? $key)).'</td>';
-            $html .= '<td class="listening-matching-col-drop">'.$this->matchingDropzoneMarkup($number, $questionId, $groupId, $key, $saved).'</td>';
-            $html .= '<td class="listening-matching-col-action">';
+            $html .= '<div class="listening-matching-dnd-row listening-matching-row listening-matching-question-row" role="listitem" data-question-number="'.$number.'" data-question-id="'.$questionId.'">';
+            $html .= '<span class="listening-matching-dnd-row__number listening-matching-qnum">'.$number.'</span>';
+            $html .= '<span class="listening-matching-dnd-row__text listening-matching-text">'.e((string) ($item['text'] ?? $key)).'</span>';
+            $html .= '<span class="listening-matching-dnd-row__drop">'.$this->matchingDropzoneMarkup($number, $questionId, $groupId, $key, $saved).'</span>';
+            $html .= '<span class="listening-matching-dnd-row__action">';
             $html .= '<button type="button" class="listening-row-flag'.($isFlagged ? ' is-flagged' : '').'" data-question-id="'.$questionId.'" data-question-number="'.$number.'" aria-pressed="'.($isFlagged ? 'true' : 'false').'">';
             $html .= '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>';
             $html .= '<span>Flag</span></button>';
-            $html .= '</td></tr>';
+            $html .= '</span></div>';
         }
 
-        $html .= '</tbody></table></div>';
+        $html .= '</div>';
 
         return $html.'</div>';
     }
@@ -337,7 +326,7 @@ class ListeningGroupRendererService
         $stateClass = $savedKey !== '' ? 'listening-dnd-dropzone--filled' : 'listening-dnd-dropzone--empty';
 
         return sprintf(
-            '<span class="listening-dnd-dropzone %6$s" data-question-number="%1$d" data-question-id="%2$d" data-group-id="%3$d" tabindex="0" role="button" aria-label="Answer for question %1$d">'
+            '<span class="listening-dnd-dropzone listening-dnd-dropzone--matching %6$s" data-question-number="%1$d" data-question-id="%2$d" data-group-id="%3$d" tabindex="0" role="button" aria-label="Answer for question %1$d">'
             .'<input type="hidden" class="listening-answer-input listening-dnd-input" data-question-id="%2$d" data-question-number="%1$d" data-group-id="%3$d" data-item-key="%5$s" data-answer-type="letter"%4$s />'
             .'<span class="listening-dnd-dropzone__placeholder">Drop answer here</span>'
             .'<span class="listening-dnd-dropzone__filled" hidden>'
@@ -352,6 +341,18 @@ class ListeningGroupRendererService
             e($itemKey),
             $stateClass,
         );
+    }
+
+    private function matchingDisplayMode(array $group): string
+    {
+        $settings = is_array($group['settings'] ?? null) ? $group['settings'] : [];
+        $mode = (string) ($settings['matching_type'] ?? $settings['interaction_mode'] ?? 'select');
+
+        if ($mode === 'drag_drop') {
+            return 'drag_drop';
+        }
+
+        return 'radio';
     }
 
     private function interactionMode(array $group): string

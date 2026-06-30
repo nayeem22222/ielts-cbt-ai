@@ -114,9 +114,7 @@ it('renders matching groups with option columns and radio buttons', function ():
     ]);
 
     expect($html)
-        ->toContain('listening-matching-group')
-        ->toContain('listening-matching-options-box')
-        ->toContain('being well-organised')
+        ->toContain('listening-matching-group--radio')
         ->toContain('<table class="listening-matching-table">', false)
         ->toContain('listening-matching-col-option')
         ->toContain('listening-matching-radio')
@@ -127,11 +125,15 @@ it('renders matching groups with option columns and radio buttons', function ():
         ->toContain('data-item-key="17"', false)
         ->toContain('value="B"', false)
         ->toContain('checked', false)
+        ->not->toContain('listening-dnd-pool')
+        ->not->toContain('listening-dnd-token')
+        ->not->toContain('listening-dnd-dropzone')
+        ->not->toContain('listening-matching-options-box')
         ->not->toContain('<select')
         ->not->toContain('listening-matching-pill-select');
 });
 
-it('renders matching drag and drop groups with draggable tokens and drop zones', function (): void {
+it('renders matching drag and drop groups with draggable tokens and statement drop rows', function (): void {
     $renderer = app(ListeningGroupRendererService::class);
 
     $html = $renderer->render([
@@ -154,15 +156,43 @@ it('renders matching drag and drop groups with draggable tokens and drop zones',
     ]);
 
     expect($html)
-        ->toContain('listening-dnd-group')
+        ->toContain('listening-matching-group--drag-drop')
+        ->toContain('listening-dnd-pool')
         ->toContain('listening-dnd-token')
-        ->toContain('listening-dnd-dropzone')
+        ->toContain('listening-dnd-dropzone--matching')
+        ->toContain('listening-matching-dnd-list')
+        ->toContain('listening-matching-dnd-row')
+        ->toContain('Drop answer here')
         ->toContain('data-option-key="A"', false)
         ->toContain('data-group-id="12"', false)
         ->toContain('draggable="true"', false)
         ->toContain('value="B"', false)
+        ->not->toContain('listening-matching-table')
+        ->not->toContain('listening-matching-col-option')
         ->not->toContain('type="radio"', false)
         ->not->toContain('<select');
+});
+
+it('uses matching_type drag_drop when interaction_mode is not set', function (): void {
+    $renderer = app(ListeningGroupRendererService::class);
+
+    $html = $renderer->render([
+        'id' => 13,
+        'question_type' => 'matching',
+        'content' => '',
+        'settings' => ['matching_type' => 'drag_drop'],
+        'options' => [
+            'choices' => [['key' => 'A', 'text' => 'Option A']],
+            'items' => [['key' => '1', 'text' => 'Statement']],
+        ],
+        'image_url' => null,
+    ], [
+        ['id' => 41, 'question_number' => 1, 'question_text' => 'Statement', 'student_answer' => null],
+    ]);
+
+    expect($html)
+        ->toContain('listening-matching-dnd-list')
+        ->not->toContain('listening-matching-radio');
 });
 
 it('renders completion drag and drop blanks when interaction mode is drag_drop', function (): void {
