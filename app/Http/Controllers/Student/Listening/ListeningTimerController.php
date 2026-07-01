@@ -65,7 +65,7 @@ class ListeningTimerController extends Controller
             return response()->json([
                 'success' => true,
                 'already_submitted' => true,
-                'redirect' => route('student.listening.attempts.submitted', $attempt),
+                'redirect' => route('student.listening.attempts.result', $attempt),
                 'timer' => $this->timer->getState($attempt)->toArray(),
             ]);
         }
@@ -76,7 +76,7 @@ class ListeningTimerController extends Controller
             return response()->json([
                 'success' => true,
                 'already_submitted' => false,
-                'redirect' => route('student.listening.attempts.submitted', $submitted),
+                'redirect' => route('student.listening.attempts.result', $submitted),
                 'timer' => $this->timer->getState($submitted)->toArray(),
             ]);
         }

@@ -31,6 +31,9 @@ use App\Http\Controllers\Student\ReadingTimerController;
 use App\Http\Controllers\StudentDashboardController;
 use App\Http\Controllers\TeacherDashboardController;
 use App\Http\Controllers\Student\Listening\ListeningAttemptController;
+use App\Http\Controllers\Student\Listening\ListeningResultController;
+use App\Http\Controllers\Student\Listening\ListeningReviewController;
+use App\Models\Listening\ListeningAttempt;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'pages.landing')->name('home');
@@ -141,6 +144,7 @@ Route::middleware(['auth', 'verified', 'role:admin,super_admin'])->prefix('admin
     require __DIR__.'/admin/enrollments.php';
     require __DIR__.'/admin/tests.php';
     require __DIR__.'/admin/listening.php';
+    require __DIR__.'/admin/listening-results.php';
 });
 
 Route::redirect('/student', '/student/dashboard');
@@ -218,6 +222,24 @@ Route::middleware(['auth', 'verified', 'role:student'])->group(function (): void
     Route::prefix('listening-attempts')->name('student.listening.attempts.')->middleware('module:listening')->group(function (): void {
         require __DIR__.'/student/listening-attempts.php';
     });
+
+    Route::prefix('listening/results')->name('student.listening.results.')->middleware('module:listening')->group(function (): void {
+        Route::get('/', [ListeningResultController::class, 'index'])->name('index');
+        Route::get('/{result}/review/audio/{section}', [ListeningReviewController::class, 'audio'])
+            ->whereNumber('section')
+            ->name('review.audio');
+        Route::get('/{result}/review/questions/{questionNumber}', [ListeningReviewController::class, 'question'])
+            ->whereNumber('questionNumber')
+            ->name('review.question');
+        Route::get('/{result}/review', [ListeningReviewController::class, 'show'])->name('review.show');
+        Route::get('/{result}', [ListeningResultController::class, 'show'])->name('show');
+    });
+
+    Route::get('/listening/attempts/{attempt}/result', fn (ListeningAttempt $attempt) => redirect()->route('student.listening.attempts.result', $attempt, 301))
+        ->middleware('module:listening');
+
+    Route::get('/listening/attempts/{attempt}/result/review', fn (ListeningAttempt $attempt) => redirect()->route('student.listening.attempts.result.review', $attempt, 301))
+        ->middleware('module:listening');
 
     Route::redirect('/listening/tests', '/listening-tests', 301)
         ->middleware('module:listening');

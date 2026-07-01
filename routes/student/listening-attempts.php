@@ -8,7 +8,8 @@ use App\Http\Controllers\Student\Listening\ListeningAudioStreamController;
 use App\Http\Controllers\Student\Listening\ListeningAutoSaveController;
 use App\Http\Controllers\Student\Listening\ListeningNavigationController;
 use App\Http\Controllers\Student\Listening\ListeningOfficialFlowController;
-use App\Http\Controllers\Student\Listening\ListeningReviewController;
+use App\Http\Controllers\Student\Listening\ListeningPlayerReviewController;
+use App\Http\Controllers\Student\Listening\ListeningResultController;
 use App\Http\Controllers\Student\Listening\ListeningTimerController;
 use Illuminate\Support\Facades\Route;
 
@@ -74,16 +75,22 @@ Route::middleware('listening.attempt.active')->group(function (): void {
         ->name('phase.transfer');
 });
 
-Route::get('/{attempt}/review', [ListeningReviewController::class, 'show'])
+Route::get('/{attempt}/review', [ListeningPlayerReviewController::class, 'show'])
     ->middleware('listening.attempt.active')
     ->name('review');
+
+Route::get('/{attempt}/result', [ListeningResultController::class, 'showByAttempt'])
+    ->name('result');
+
+Route::get('/{attempt}/result/review', [ListeningResultController::class, 'reviewByAttempt'])
+    ->name('result.review');
+
+Route::get('/{attempt}/submitted', [ListeningAttemptController::class, 'submitted'])
+    ->name('submitted');
 
 Route::post('/{attempt}/auto-submit', [ListeningTimerController::class, 'autoSubmit'])
     ->middleware('throttle:listening-submit')
     ->name('auto_submit');
-
-Route::get('/{attempt}/submitted', [ListeningAttemptController::class, 'submitted'])
-    ->name('submitted');
 
 Route::get('/{attempt}/expired', [ListeningAttemptController::class, 'expired'])
     ->name('expired');

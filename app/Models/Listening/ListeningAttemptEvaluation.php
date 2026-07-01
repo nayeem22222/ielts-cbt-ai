@@ -77,4 +77,14 @@ class ListeningAttemptEvaluation extends Model
     {
         return $this->hasOne(ListeningAttemptAnswerEvaluation::class)->latestOfMany();
     }
+
+    public function result(): HasOne
+    {
+        return $this->hasOne(ListeningResult::class, 'listening_attempt_evaluation_id')->latestOfMany();
+    }
+
+    public function reviewItems(): HasMany
+    {
+        return $this->hasMany(ListeningReviewItem::class, 'listening_attempt_evaluation_id')->orderBy('question_number');
+    }
 }

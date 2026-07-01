@@ -22,6 +22,7 @@ use App\Services\Listening\Student\ListeningAttemptService;
 use App\Services\Listening\Student\ListeningOfficialTimerService;
 use App\Services\Listening\Student\ListeningTestAccessService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -53,7 +54,7 @@ class ListeningAttemptController extends Controller
         ]);
 
         if ($attempt->status !== ListeningAttemptStatus::InProgress) {
-            return redirect()->route('student.listening.attempts.submitted', $attempt);
+            return redirect()->route('student.listening.attempts.result', $attempt);
         }
 
         if (config('listening.official_flow.auto_enter_transfer_phase', true) && $this->officialTimer->shouldEnterTransfer($attempt)) {
@@ -88,20 +89,26 @@ class ListeningAttemptController extends Controller
         return redirect()->route('student.listening.tests.start', $attempt->test);
     }
 
-    public function submit(SubmitListeningAttemptRequest $request, ListeningAttempt $attempt): RedirectResponse
+    public function submit(SubmitListeningAttemptRequest $request, ListeningAttempt $attempt): RedirectResponse|JsonResponse
     {
         $this->submitAttempt->execute($attempt, auto: false);
 
-        return redirect()->route('student.listening.attempts.submitted', $attempt);
+        if ($request->expectsJson()) {
+            return response()->json([
+                'data' => [
+                    'redirect_url' => route('student.listening.attempts.result', $attempt),
+                ],
+            ]);
+        }
+
+        return redirect()->route('student.listening.attempts.result', $attempt);
     }
 
-    public function submitted(ListeningAttempt $attempt): View
+    public function submitted(ListeningAttempt $attempt): RedirectResponse
     {
         $this->attempts->assertOwnedBy($attempt, auth()->user());
 
-        return view('student.listening.player.submitted', [
-            'attempt' => $attempt->load('test'),
-        ]);
+        return redirect()->route('student.listening.attempts.result', $attempt);
     }
 
     public function expired(ListeningAttempt $attempt): View

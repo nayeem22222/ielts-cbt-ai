@@ -297,7 +297,7 @@ it('submits attempt and blocks further edits', function (): void {
 
     $this->actingAs($student)
         ->post(route('student.listening.attempts.submit', $attempt))
-        ->assertRedirect(route('student.listening.attempts.submitted', $attempt));
+        ->assertRedirect(route('student.listening.attempts.result', $attempt));
 
     $attempt->refresh();
     expect($attempt->status)->toBe(ListeningAttemptStatus::Submitted);

@@ -45,7 +45,7 @@ class EnsureListeningAttemptIsActive
                 abort(403, 'Attempt is not active.');
             }
 
-            return redirect()->route('student.listening.attempts.submitted', $attempt);
+            return redirect()->route('student.listening.attempts.result', $attempt);
         }
 
         if ($this->timer->shouldEnterTransfer($attempt) && config('listening.official_flow.auto_enter_transfer_phase', true)) {

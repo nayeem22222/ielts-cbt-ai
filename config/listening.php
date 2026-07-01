@@ -405,4 +405,34 @@ return [
             ['min' => 0, 'max' => 1, 'band' => 2.0],
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Results (Volume 10)
+    |--------------------------------------------------------------------------
+    */
+    'results' => [
+        'code_prefix' => env('LISTENING_RESULT_CODE_PREFIX', 'LST'),
+        'show_correct_answers_default' => env('LISTENING_SHOW_CORRECT_ANSWERS_DEFAULT', true),
+        'show_accepted_answers_to_students' => env('LISTENING_SHOW_ACCEPTED_ANSWERS_TO_STUDENTS', false),
+        'auto_build_after_evaluation' => env('LISTENING_AUTO_BUILD_RESULT_AFTER_EVALUATION', true),
+        'visible_to_student_default' => env('LISTENING_RESULT_VISIBLE_TO_STUDENT_DEFAULT', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Review (Volume 10A)
+    |--------------------------------------------------------------------------
+    */
+    'review' => [
+        'enabled' => env('LISTENING_REVIEW_ENABLED', true),
+        'build_after_result' => env('LISTENING_REVIEW_BUILD_AFTER_RESULT', true),
+        'show_correct_answer_default' => env('LISTENING_REVIEW_SHOW_CORRECT_ANSWER_DEFAULT', true),
+        'show_accepted_answers_to_students' => env('LISTENING_REVIEW_SHOW_ACCEPTED_ANSWERS', false),
+        'show_transcript_highlight_default' => env('LISTENING_REVIEW_SHOW_TRANSCRIPT_HIGHLIGHT', false),
+        'show_audio_review_default' => env('LISTENING_REVIEW_SHOW_AUDIO_REVIEW', false),
+        'show_explanation_default' => env('LISTENING_REVIEW_SHOW_EXPLANATION', true),
+        'allow_student_copy_transcript' => env('LISTENING_REVIEW_ALLOW_COPY_TRANSCRIPT', false),
+        'audio_review_signed_url_ttl_minutes' => env('LISTENING_REVIEW_AUDIO_SIGNED_URL_TTL', 30),
+    ],
 ];

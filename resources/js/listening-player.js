@@ -9,6 +9,7 @@ import { createTimer } from './listening/timer';
 import { createOfficialFlow } from './listening/official-flow';
 import { createAudioFlow } from './listening/audio-flow';
 import { createListeningReview } from './listening/review';
+import { createListeningSubmitModal } from './listening/submit-modal';
 import { bindMultipleAnswerLimits } from './listening/multiple-answer';
 import { createListeningDragDrop } from './listening/drag-drop';
 
@@ -97,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
         afterQuestionChange: () => dragDrop.restore(questionArea),
     });
     review = createListeningReview(state, navigation, palette);
+    const submitModal = createListeningSubmitModal(state, autosave, navigation, review);
     const officialFlow = createOfficialFlow(state, ui);
     const timer = createTimer(state, ui, autosave, officialFlow);
     const recovery = createRecovery(state, autosave, navigation);
@@ -112,6 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     palette.bind();
     navigation.bind();
     review.bind();
+    submitModal.bind();
     navigation.showQuestion(state.activeQuestionNumber, 'resume');
     dragDrop.restore(questionArea);
     recovery.init();
@@ -218,28 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
             event.stopPropagation();
             toggleQuestionFlag(Number(button.dataset.questionId), button);
         });
-    });
-
-    document.getElementById('listening-submit-open')?.addEventListener('click', () => {
-        document.getElementById('listening-submit-modal')?.classList.remove('hidden');
-        document.getElementById('listening-submit-modal')?.classList.add('flex');
-    });
-    document.getElementById('listening-submit-cancel')?.addEventListener('click', () => {
-        document.getElementById('listening-submit-modal')?.classList.add('hidden');
-        document.getElementById('listening-submit-modal')?.classList.remove('flex');
-    });
-
-    document.getElementById('listening-submit-form')?.addEventListener('submit', async (event) => {
-        const preventUnsynced = state.config?.autosave?.prevent_submit_when_unsynced ?? true;
-        if (preventUnsynced && autosave.hasUnsynced()) {
-            const force = window.confirm('You have unsynced answers. Submit anyway?');
-            if (!force) {
-                event.preventDefault();
-                return;
-            }
-        }
-        await autosave.flushBeforeNavigation();
-        autosave.clearDraft();
     });
 
     document.getElementById('listening-loading-overlay')?.classList.add('hidden');

@@ -15,6 +15,7 @@ use App\Models\Listening\ListeningAttemptEvaluation;
 use App\Models\Listening\ListeningQuestion;
 use App\Repositories\Listening\Evaluation\ListeningAttemptEvaluationRepository;
 use App\Repositories\Listening\Student\ListeningAttemptRepository;
+use App\Services\Listening\Result\ListeningResultService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -27,6 +28,7 @@ class ListeningAnswerEngineService
         private readonly ListeningAttemptRepository $attempts,
         private readonly ListeningQuestionEvaluatorRegistry $evaluators,
         private readonly ListeningEvaluationAuditService $audit,
+        private readonly ListeningResultService $results,
     ) {}
 
     /**
@@ -154,6 +156,9 @@ class ListeningAnswerEngineService
                 'evaluation_type' => $evaluation->evaluation_type?->value,
             ],
         ]);
+
+        $evaluation->refresh();
+        $this->results->dispatchBuildForEvaluation($evaluation);
     }
 
     public function markAttemptEvaluationFailed(
@@ -174,6 +179,9 @@ class ListeningAnswerEngineService
                 'error' => $exception->getMessage(),
             ],
         ]);
+
+        $evaluation->refresh();
+        $this->results->dispatchBuildForEvaluation($evaluation);
     }
 
     private function toResultData(ListeningAttemptEvaluation $evaluation): ListeningEvaluationResultData

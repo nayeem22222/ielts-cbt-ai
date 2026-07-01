@@ -14,12 +14,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class ListeningAttempt extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
+        'uuid',
         'user_id',
         'listening_test_id',
         'status',
@@ -90,6 +92,20 @@ class ListeningAttempt extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (ListeningAttempt $attempt): void {
+            if (empty($attempt->uuid)) {
+                $attempt->uuid = (string) Str::uuid();
+            }
+        });
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -113,6 +129,21 @@ class ListeningAttempt extends Model
     public function latestEvaluation(): HasOne
     {
         return $this->hasOne(ListeningAttemptEvaluation::class)->latestOfMany();
+    }
+
+    public function result(): HasOne
+    {
+        return $this->hasOne(ListeningResult::class, 'listening_attempt_id')->latestOfMany();
+    }
+
+    public function results(): HasMany
+    {
+        return $this->hasMany(ListeningResult::class, 'listening_attempt_id');
+    }
+
+    public function reviewItems(): HasMany
+    {
+        return $this->hasMany(ListeningReviewItem::class, 'listening_attempt_id')->orderBy('question_number');
     }
 
     public function scopeInProgress(Builder $query): Builder

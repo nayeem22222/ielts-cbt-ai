@@ -92,6 +92,18 @@ enum Permission: string
     case ListeningAudiosWaveform = 'listening.audios.waveform';
     case ListeningAudiosValidate = 'listening.audios.validate';
 
+    case ListeningResultsView = 'listening.results.view';
+    case ListeningResultsAdminView = 'listening.results.admin_view';
+    case ListeningResultsPublish = 'listening.results.publish';
+    case ListeningResultsHide = 'listening.results.hide';
+    case ListeningResultsRebuild = 'listening.results.rebuild';
+
+    case ListeningReviewView = 'listening.review.view';
+    case ListeningReviewAdminView = 'listening.review.admin_view';
+    case ListeningReviewRebuild = 'listening.review.rebuild';
+    case ListeningReviewTranscript = 'listening.review.transcript';
+    case ListeningReviewAudio = 'listening.review.audio';
+
     case QuestionBanksView = 'question_banks.view';
     case QuestionBanksCreate = 'question_banks.create';
     case QuestionBanksUpdate = 'question_banks.update';
@@ -171,6 +183,18 @@ enum Permission: string
             self::ListeningAudiosRetry => 'Retry listening audio processing',
             self::ListeningAudiosWaveform => 'Generate listening audio waveforms',
             self::ListeningAudiosValidate => 'Validate listening audios',
+
+            self::ListeningResultsView => 'View own listening results',
+            self::ListeningResultsAdminView => 'View listening results (admin)',
+            self::ListeningResultsPublish => 'Publish listening results',
+            self::ListeningResultsHide => 'Hide listening results',
+            self::ListeningResultsRebuild => 'Rebuild listening results',
+
+            self::ListeningReviewView => 'View own listening review',
+            self::ListeningReviewAdminView => 'View listening review (admin)',
+            self::ListeningReviewRebuild => 'Rebuild listening review items',
+            self::ListeningReviewTranscript => 'View listening review transcript',
+            self::ListeningReviewAudio => 'View listening review audio',
 
             self::QuestionBanksView => 'View question banks',
             self::QuestionBanksCreate => 'Create question banks',
@@ -264,6 +288,18 @@ enum Permission: string
             self::ListeningAudiosWaveform,
             self::ListeningAudiosValidate => 'listening_audios',
 
+            self::ListeningResultsView,
+            self::ListeningResultsAdminView,
+            self::ListeningResultsPublish,
+            self::ListeningResultsHide,
+            self::ListeningResultsRebuild => 'listening_results',
+
+            self::ListeningReviewView,
+            self::ListeningReviewAdminView,
+            self::ListeningReviewRebuild,
+            self::ListeningReviewTranscript,
+            self::ListeningReviewAudio => 'listening_review',
+
             self::QuestionBanksView,
             self::QuestionBanksCreate,
             self::QuestionBanksUpdate,
@@ -279,6 +315,8 @@ enum Permission: string
         return match ($role) {
             UserRole::Student => [
                 self::AccessStudentDashboard,
+                self::ListeningResultsView,
+                self::ListeningReviewView,
             ],
             UserRole::Teacher => [
                 self::AccessTeacherDashboard,
@@ -346,6 +384,16 @@ enum Permission: string
                 self::ListeningAudiosRetry,
                 self::ListeningAudiosWaveform,
                 self::ListeningAudiosValidate,
+                self::ListeningResultsView,
+                self::ListeningResultsAdminView,
+                self::ListeningResultsPublish,
+                self::ListeningResultsHide,
+                self::ListeningResultsRebuild,
+                self::ListeningReviewView,
+                self::ListeningReviewAdminView,
+                self::ListeningReviewRebuild,
+                self::ListeningReviewTranscript,
+                self::ListeningReviewAudio,
                 self::QuestionBanksView,
                 self::QuestionBanksCreate,
                 self::QuestionBanksUpdate,
