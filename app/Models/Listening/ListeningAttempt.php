@@ -6,11 +6,13 @@ namespace App\Models\Listening;
 
 use App\Enums\Listening\ListeningAttemptPhase;
 use App\Enums\Listening\ListeningAttemptStatus;
+use App\Enums\Listening\ListeningEvaluationStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ListeningAttempt extends Model
@@ -47,6 +49,10 @@ class ListeningAttempt extends Model
         'security_flags',
         'result_meta',
         'timer_meta',
+        'evaluated_at',
+        'evaluation_status',
+        'evaluation_version',
+        'evaluation_meta',
     ];
 
     protected function casts(): array
@@ -78,6 +84,9 @@ class ListeningAttempt extends Model
             'security_flags' => 'array',
             'result_meta' => 'array',
             'timer_meta' => 'array',
+            'evaluated_at' => 'datetime',
+            'evaluation_status' => ListeningEvaluationStatus::class,
+            'evaluation_meta' => 'array',
         ];
     }
 
@@ -94,6 +103,16 @@ class ListeningAttempt extends Model
     public function answers(): HasMany
     {
         return $this->hasMany(ListeningAttemptAnswer::class);
+    }
+
+    public function evaluations(): HasMany
+    {
+        return $this->hasMany(ListeningAttemptEvaluation::class);
+    }
+
+    public function latestEvaluation(): HasOne
+    {
+        return $this->hasOne(ListeningAttemptEvaluation::class)->latestOfMany();
     }
 
     public function scopeInProgress(Builder $query): Builder

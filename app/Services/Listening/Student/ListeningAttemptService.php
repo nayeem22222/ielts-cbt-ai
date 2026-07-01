@@ -9,6 +9,7 @@ use App\Enums\Listening\ListeningAttemptStatus;
 use App\Models\Listening\ListeningAttempt;
 use App\Models\Listening\ListeningTest;
 use App\Models\User;
+use App\Actions\Listening\Evaluation\EvaluateListeningAttemptAction;
 use App\Repositories\Listening\Student\ListeningAttemptAnswerRepository;
 use App\Repositories\Listening\Student\ListeningAttemptRepository;
 use Illuminate\Support\Facades\DB;
@@ -70,12 +71,16 @@ class ListeningAttemptService
 
     public function markExpired(ListeningAttempt $attempt): ListeningAttempt
     {
-        return $this->attempts->update($attempt, [
+        $expired = $this->attempts->update($attempt, [
             'status' => ListeningAttemptStatus::Expired,
             'current_phase' => ListeningAttemptPhase::Expired,
             'submitted_at' => $attempt->submitted_at ?? now(),
             'remaining_seconds' => 0,
         ]);
+
+        app(EvaluateListeningAttemptAction::class)->execute($expired, ['dispatch_only' => true]);
+
+        return $expired->refresh();
     }
 
     public function assertOwnedBy(ListeningAttempt $attempt, User $user): void

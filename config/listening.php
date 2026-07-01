@@ -279,4 +279,130 @@ return [
         'disable_speed_change' => true,
         'allow_audio_only_in_listening_phase' => true,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Answer Normalization (Volume 9A)
+    |--------------------------------------------------------------------------
+    */
+    'normalization' => [
+        'case_sensitive_default' => false,
+        'ignore_punctuation_default' => true,
+        'ignore_articles_default' => true,
+        'allow_plural_default' => true,
+        'normalize_hyphen_default' => true,
+        'normalize_unicode' => true,
+
+        'articles' => ['a', 'an', 'the'],
+
+        'british_american_spelling' => [
+            'enabled' => false,
+            'map' => [
+                'colour' => 'color',
+                'centre' => 'center',
+                'theatre' => 'theater',
+                'licence' => 'license',
+                'programme' => 'program',
+            ],
+        ],
+
+        'numbers' => [
+            'words_to_numbers' => true,
+            'ordinals' => true,
+        ],
+
+        'dates' => [
+            'enabled' => true,
+            'allow_ordinal_suffix' => true,
+            'ambiguous_numeric_dates' => false,
+        ],
+
+        'times' => [
+            'enabled' => true,
+            'normalize_to_24_hour' => true,
+        ],
+
+        'currency' => [
+            'enabled' => true,
+            'normalize_symbols' => true,
+        ],
+
+        'regex_answers' => [
+            'enabled' => true,
+            'max_pattern_length' => 255,
+        ],
+
+        'word_limit' => [
+            'enforce' => true,
+            'hyphenated_as_one' => true,
+            'numbers_count_as_one' => true,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Answer Engine (Volume 9)
+    |--------------------------------------------------------------------------
+    */
+    'answer_engine' => [
+        'version' => env('LISTENING_ANSWER_ENGINE_VERSION', '1.0.0'),
+
+        'mode' => env('LISTENING_EVALUATION_MODE', 'queue'),
+
+        'queue' => env('LISTENING_EVALUATION_QUEUE', 'default'),
+
+        'evaluate_on_submit' => env('LISTENING_EVALUATE_ON_SUBMIT', true),
+
+        'allow_recheck' => env('LISTENING_ALLOW_EVALUATION_RECHECK', true),
+
+        'preserve_snapshots' => true,
+
+        'lock_ttl_seconds' => 120,
+
+        'normalization' => [
+            'trim' => true,
+            'collapse_whitespace' => true,
+            'lowercase_when_not_case_sensitive' => true,
+            'remove_punctuation_when_allowed' => true,
+            'normalize_hyphen_when_allowed' => true,
+            'remove_articles_when_allowed' => true,
+            'plural_variants_when_allowed' => true,
+        ],
+
+        'articles' => ['a', 'an', 'the'],
+
+        'punctuation_pattern' => '/[[:punct:]]+/u',
+
+        'date_formats' => ['d/m/Y', 'Y-m-d', 'd-m-Y', 'm/d/Y'],
+
+        'time_formats' => ['H:i', 'g:i A', 'g:i a', 'H:i:s'],
+
+        'multiple_answer' => [
+            'partial_marking' => env('LISTENING_MULTIPLE_ANSWER_PARTIAL', false),
+            'order_sensitive' => false,
+        ],
+
+        'word_limit' => [
+            'count_numbers_as_words' => false,
+            'count_hyphenated_as_one' => true,
+        ],
+
+        'band_score_map' => [
+            ['min' => 39, 'max' => 40, 'band' => 9.0],
+            ['min' => 37, 'max' => 38, 'band' => 8.5],
+            ['min' => 35, 'max' => 36, 'band' => 8.0],
+            ['min' => 32, 'max' => 34, 'band' => 7.5],
+            ['min' => 30, 'max' => 31, 'band' => 7.0],
+            ['min' => 26, 'max' => 29, 'band' => 6.5],
+            ['min' => 23, 'max' => 25, 'band' => 6.0],
+            ['min' => 18, 'max' => 22, 'band' => 5.5],
+            ['min' => 16, 'max' => 17, 'band' => 5.0],
+            ['min' => 13, 'max' => 15, 'band' => 4.5],
+            ['min' => 11, 'max' => 12, 'band' => 4.0],
+            ['min' => 6, 'max' => 9, 'band' => 3.5],
+            ['min' => 4, 'max' => 5, 'band' => 3.0],
+            ['min' => 2, 'max' => 3, 'band' => 2.5],
+            ['min' => 0, 'max' => 1, 'band' => 2.0],
+        ],
+    ],
 ];

@@ -7,6 +7,8 @@ namespace App\Models\Listening;
 use App\Enums\Listening\ListeningAnswerStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ListeningAttemptAnswer extends Model
 {
@@ -55,5 +57,15 @@ class ListeningAttemptAnswer extends Model
     public function question(): BelongsTo
     {
         return $this->belongsTo(ListeningQuestion::class, 'listening_question_id');
+    }
+
+    public function evaluations(): HasMany
+    {
+        return $this->hasMany(ListeningAttemptAnswerEvaluation::class);
+    }
+
+    public function latestEvaluation(): HasOne
+    {
+        return $this->hasOne(ListeningAttemptAnswerEvaluation::class)->latestOfMany();
     }
 }

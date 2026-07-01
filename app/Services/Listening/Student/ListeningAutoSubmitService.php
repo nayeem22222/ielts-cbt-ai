@@ -7,6 +7,7 @@ namespace App\Services\Listening\Student;
 use App\Enums\Listening\ListeningAttemptPhase;
 use App\Enums\Listening\ListeningAttemptStatus;
 use App\Models\Listening\ListeningAttempt;
+use App\Actions\Listening\Evaluation\EvaluateListeningAttemptAction;
 use App\Repositories\Listening\Student\ListeningAttemptRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,7 @@ class ListeningAutoSubmitService
         private readonly ListeningAttemptRepository $attempts,
         private readonly ListeningOfficialTimerService $timer,
         private readonly ListeningPhaseTransitionService $phases,
+        private readonly EvaluateListeningAttemptAction $evaluate,
     ) {}
 
     public function autoSubmitIfExpired(ListeningAttempt $attempt): bool
@@ -55,7 +57,7 @@ class ListeningAutoSubmitService
                 'at' => now()->toIso8601String(),
             ];
 
-            return $this->attempts->update($fresh, [
+            $submitted = $this->attempts->update($fresh, [
                 'status' => ListeningAttemptStatus::AutoSubmitted,
                 'current_phase' => ListeningAttemptPhase::Submitted,
                 'submitted_at' => now(),
@@ -63,6 +65,10 @@ class ListeningAutoSubmitService
                 'remaining_seconds' => 0,
                 'timer_meta' => $meta,
             ]);
+
+            $this->evaluate->execute($submitted, ['dispatch_only' => true]);
+
+            return $submitted->refresh();
         });
     }
 
